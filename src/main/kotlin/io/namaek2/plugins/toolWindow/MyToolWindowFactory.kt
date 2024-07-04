@@ -32,11 +32,11 @@ class MyToolWindowFactory : ToolWindowFactory {
         private val service = toolWindow.project.service<MyProjectService>()
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
-            val label = JBLabel(MyBundle.message("createLabel"))
+            val label = JBLabel(MyBundle.message("obfuscateLabel"))
             add(label)
-            add(JButton(MyBundle.message("create")).apply {
+            add(JButton(MyBundle.message("obfuscate")).apply {
                 addActionListener {
-                    label.text = MyBundle.message("createLabel", service.runPythonTask())
+                    label.text = MyBundle.message("obfuscateLabel", service.runPythonTask())
                 }
             })
         }

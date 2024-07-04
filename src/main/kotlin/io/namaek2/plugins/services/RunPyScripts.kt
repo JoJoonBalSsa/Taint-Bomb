@@ -25,13 +25,14 @@ class RunPyScripts {
 
     fun executeSinglePythonScript(javaFilesPath: String, outputFolder: String, scriptName: String) {
         // 스크립트 파일을 읽습니다.
-        val scriptStream = javaClass.getResourceAsStream("/pyscripts/$scriptName")
+        val scriptStream = javaClass.getResourceAsStream("/pyscripts/$scriptName.py")
         val scriptContent = scriptStream?.bufferedReader()?.use { it.readText() }
             ?: throw IllegalArgumentException("Script not found: $scriptName")
 
         // 임시 파일을 생성합니다.
-        val tempFile = Files.createTempFile("drawCallGraph", ".py")
+        val tempFile = Files.createTempFile(scriptName, ".py")
         scriptContent.toByteArray().let { Files.write(tempFile, it, StandardOpenOption.WRITE) }
+        println("$scriptName created successfully")
 
         // 프로세스 빌더를 생성합니다.
         val scriptPath = tempFile.toAbsolutePath().toString()
@@ -46,7 +47,7 @@ class RunPyScripts {
         try {
             // 프로세스를 시작합니다.
             val process = processBuilder.start()
-
+            println("$scriptName started")
             // 프로세스의 출력을 읽습니다.
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             var line: String?
