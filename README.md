@@ -194,9 +194,9 @@ It provides general information about the plugin, its dependencies, extensions, 
 
 ```xml
 <idea-plugin>
-  <id>org.jetbrains.plugins.template</id>
-  <name>Template</name>
-  <vendor>JetBrains</vendor>
+  <id>io.namaek2.plugins</id>
+  <name>Auto Obfuscator</name>
+  <vendor>GO For It</vendor>
   
   <depends>com.intellij.modules.platform</depends>
 

@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template.toolWindow
+package io.namaek2.plugins.toolWindow
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -8,8 +8,8 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
-import org.jetbrains.plugins.template.MyBundle
-import org.jetbrains.plugins.template.services.MyProjectService
+import io.namaek2.plugins.MyBundle
+import io.namaek2.plugins.services.MyProjectService
 import javax.swing.JButton
 
 
@@ -32,12 +32,11 @@ class MyToolWindowFactory : ToolWindowFactory {
         private val service = toolWindow.project.service<MyProjectService>()
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
-            val label = JBLabel(MyBundle.message("randomLabel", "?"))
-
+            val label = JBLabel(MyBundle.message("createLabel"))
             add(label)
-            add(JButton(MyBundle.message("shuffle")).apply {
+            add(JButton(MyBundle.message("create")).apply {
                 addActionListener {
-                    label.text = MyBundle.message("randomLabel", service.getRandomNumber())
+                    label.text = MyBundle.message("createLabel", service.runPythonTask())
                 }
             })
         }

@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template.listeners
+package io.namaek2.plugins.listeners
 
 import com.intellij.openapi.application.ApplicationActivationListener
 import com.intellij.openapi.diagnostic.thisLogger
