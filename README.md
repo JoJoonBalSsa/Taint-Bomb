@@ -8,7 +8,8 @@
 ![IntelliJ Platform Plugin Template][file:intellij-platform-plugin-template-dark]
 ![IntelliJ Platform Plugin Template][file:intellij-platform-plugin-template-light]
 
-> [!NOTE]
+> **Note**
+> 
 > Click the <kbd>Use this template</kbd> button and clone it in IntelliJ IDEA.
 
 <!-- Plugin description -->
@@ -194,9 +195,9 @@ It provides general information about the plugin, its dependencies, extensions, 
 
 ```xml
 <idea-plugin>
-  <id>org.jetbrains.plugins.template</id>
-  <name>Template</name>
-  <vendor>JetBrains</vendor>
+  <id>io.namaek2.plugins</id>
+  <name>Auto Obfuscator</name>
+  <vendor>GO For It</vendor>
   
   <depends>com.intellij.modules.platform</depends>
 
