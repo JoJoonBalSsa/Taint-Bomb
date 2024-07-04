@@ -19,7 +19,7 @@ class MyProjectService(project: Project) {
         val pythonScript = RunPyScripts()
         if (javaFilesPath != null) {
             if (outFolder != null) {
-                pythonScript.runPythonScript(javaFilesPath, outFolder)
+                pythonScript.executePythonScripts(javaFilesPath, outFolder)
             } else {
                 thisLogger().error(MyBundle.message("noOutputFolder"))
             }
