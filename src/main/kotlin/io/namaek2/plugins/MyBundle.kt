@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template
+package io.namaek2.plugins
 
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.NonNls
