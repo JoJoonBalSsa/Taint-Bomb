@@ -9,7 +9,6 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     private val scriptNames = mutableListOf<String>()
     private val scriptHashes = mutableListOf<String>()
     private var tempFilePath = ""
-    private var mainFilePath = ""
 
     init {
         readHashInfo()
@@ -48,9 +47,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 
             val tempFile = createNamedTempFile(scriptName, ".py").toPath()
             println(tempFile.toString())
-            if (scriptName == "main") {
-                mainFilePath = tempFile.toString()
-            }
+
             scriptContent.toByteArray().let { Files.write(tempFile, it, StandardOpenOption.WRITE) }
             println("$scriptName created successfully")
         }
@@ -104,7 +101,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     private fun executePythonScript() {
         try{
             // 프로세스 빌더를 생성합니다.
-            val scriptPath = mainFilePath
+            val scriptPath = tempFilePath + "/main.py"
             val processBuilder = ProcessBuilder("python", scriptPath, javaFilesPath, outputFolder)
 
             val currentDir = System.getProperty("user.dir")
