@@ -64,7 +64,6 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     private fun compareFileHashes(): Boolean {
         println("Comparing file hashes...")
         for (i in 0..scriptNames.size - 1) {
-            println(i)
             val fileName = scriptNames[i] + ".py"
             val expectedHash = scriptHashes[i]
 
