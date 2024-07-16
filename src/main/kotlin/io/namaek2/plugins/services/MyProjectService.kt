@@ -16,10 +16,10 @@ class MyProjectService(project: Project) {
     fun runPythonTask() {
         val javaFilesPath = projectFolder
         val outFolder = projectFolder
-        val pythonScript = RunPyScripts()
+
         if (javaFilesPath != null) {
             if (outFolder != null) {
-                pythonScript.executePythonScripts(javaFilesPath, outFolder)
+                RunPyScripts(javaFilesPath, outFolder)
             } else {
                 thisLogger().error(MyBundle.message("noOutputFolder"))
             }
