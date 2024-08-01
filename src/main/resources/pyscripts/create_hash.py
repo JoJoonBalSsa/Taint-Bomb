@@ -22,5 +22,5 @@ def hash_files_in_directory(directory_path, exclude_file='create_hash.py', outpu
     print(f"MD5 해시값이 {output_file} 파일에 저장되었습니다.")
 
 # 사용 예시
-directory_path = 'src/main/resources/pyscripts/'
+directory_path = './'
 hash_files_in_directory(directory_path)
