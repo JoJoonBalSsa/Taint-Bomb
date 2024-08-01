@@ -39,7 +39,15 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     private fun copyScripts() {
         println("Copying scripts...")
 
-        tempFilePath = System.getProperty("java.io.tmpdir")
+        tempFilePath = javaFilesPath + "/temp"
+        val result = File(tempFilePath).mkdir()
+
+        if (result) {
+            println("Directory created successfully")
+        } else {
+            println("Directory already exists")
+        }
+
         for (scriptName in scriptNames) {
             val scriptStream = javaClass.getResourceAsStream("/pyscripts/$scriptName" + ".py")
             val scriptContent = scriptStream?.bufferedReader()?.use { it.readText() }
@@ -55,7 +63,9 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 
     private fun createNamedTempFile(prefix: String, suffix: String): File {
         val fileName = "$prefix$suffix"
-        return File(tempFilePath, fileName).apply { createNewFile() }
+        val tempFolder = File(tempFilePath)
+
+        return File(tempFolder, fileName).apply { createNewFile() }
     }
 
     private fun compareFileHashes(): Boolean {
@@ -145,6 +155,15 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             } else {
                 println("$scriptName does not exist")
             }
+        }
+
+        val tempPath = File(tempFilePath)
+
+        try{
+            tempPath.delete()
+            println("$tempFilePath deleted successfully")
+        } catch (e: Exception) {
+            println("Error in deleting temp files: ${e.message}")
         }
     }
 }
