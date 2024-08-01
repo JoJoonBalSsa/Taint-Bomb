@@ -4,6 +4,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import io.namaek2.plugins.MyBundle
+import java.nio.file.*
+import kotlin.io.path.*
 
 @Service(Service.Level.PROJECT)
 class MyProjectService(project: Project) {
@@ -15,14 +17,28 @@ class MyProjectService(project: Project) {
 
     fun runPythonTask() {
         val javaFilesPath = projectFolder
-        val outFolder = projectFolder
+        val outFolder = projectFolder + "/obfuscated_project_folder"
 
         if (javaFilesPath != null) {
-            if (outFolder != null) {
-                RunPyScripts(javaFilesPath, outFolder)
-            } else {
-                thisLogger().error(MyBundle.message("noOutputFolder"))
+            copyFolder(Path(javaFilesPath), Path(outFolder))
+            RunPyScripts(javaFilesPath, outFolder)
+        } else {
+            thisLogger().error("Project path is null")
+        }
+    }
+
+    private fun copyFolder(source: Path, destination: Path) {
+        Files.walk(source).forEach { sourcePath ->
+            if(!sourcePath.toString().contains("obfuscated_project_folder")) {
+                val targetPath = destination.resolve(source.relativize(sourcePath))
+                if (Files.isDirectory(sourcePath)) {
+                    Files.createDirectories(targetPath)
+                } else {
+                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
+                    println("Copied: $sourcePath")
+                }
             }
         }
     }
+
 }

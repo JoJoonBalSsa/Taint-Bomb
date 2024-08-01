@@ -1,6 +1,4 @@
 import sys
-import os
-import shutil
 
 from taintAnalysis import taintAnalysis
 from removeComments import removeComments
@@ -26,22 +24,8 @@ def print_taint_result(flows):
         print()
 
 
-def copy_project_folder(input_path, output_folder):
-    of_project_path = os.path.join(output_folder, 'obfuscated')
-
-    print("복사 시작...")
-    if os.path.isdir(input_path):
-        shutil.copytree(input_path, of_project_path)
-    else:
-        os.makedirs(of_project_path)
-        shutil.copy2(input_path, of_project_path)
-    print("복사 완료.")
-
-    return of_project_path
-
-
 def main(java_folder_path, output_folder):
-    output_folder = copy_project_folder(java_folder_path, output_folder)
+    # output_folder = copy_project_folder(java_folder_path, output_folder)
 
     tainted = taintAnalysis(java_folder_path)
     print_taint_result(tainted.flows)
