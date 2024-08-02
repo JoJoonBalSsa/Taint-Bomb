@@ -9,6 +9,7 @@ def calculate_md5(file_path):
             md5_hash.update(byte_block)
     return md5_hash.hexdigest()
 
+
 def hash_files_in_directory(directory_path, exclude_file='create_hash.py', output_file='check_hash'):
     """디렉토리 내의 .py 파일들의 MD5 해시값을 계산하고 결과를 output_file에 저장합니다."""
     with open(directory_path + output_file, 'w') as output:
