@@ -9,6 +9,7 @@ class taintAnalysis:
     __flow = []
     flows = defaultdict(list)
 
+
     #메서드 단위로 AST 노드 저장, Taint 변수 탐색 및 저장
     def __init__(self, java_folder_path):
         # Step 1: Parse all Java files

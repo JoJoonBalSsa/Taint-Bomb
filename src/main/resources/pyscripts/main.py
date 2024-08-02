@@ -2,6 +2,8 @@ import sys
 
 from taintAnalysis import taintAnalysis
 from removeComments import removeComments
+from stringObfuscate import stringObfuscate
+
 
 def create_taint_result(output_path, flows):
     with open(output_path + "/result.txt", 'w', encoding='utf-8') as file:  # 결과 파일 생성
@@ -32,6 +34,7 @@ def main(java_folder_path, output_folder):
     create_taint_result(output_folder, tainted.flows)
 
     removeComments(output_folder)
+    stringObfuscate(output_folder)
 
 
 if __name__ == '__main__':
