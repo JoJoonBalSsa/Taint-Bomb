@@ -3,7 +3,7 @@ from re import sub
 from obfuscateTool import obfuscateTool
 
 
-class removeComments:
+class RemoveComments:
     def __init__(self, project_path):
         print("주석 제거 작업 시작...")
         self.__process_file(project_path)
