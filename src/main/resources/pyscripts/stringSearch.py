@@ -5,7 +5,9 @@ from obfuscateTool import obfuscateTool
 class stringSearch:
     def __init__(self, java_folder_path): 
         self.class_names = []
+        print("parsing strings...")
         self.trees = obfuscateTool.parse_java_files(java_folder_path)
+        print("extracting strings...")
         self.Literals = self.__extract_string_literals(self.trees)  # [package,class,[Literals,,]] 이렇게 넣을 예정
 
 

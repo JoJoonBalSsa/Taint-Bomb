@@ -15,7 +15,7 @@ def hash_files_in_directory(directory_path, exclude_file='create_hash.py', outpu
     with open(directory_path + output_file, 'w') as output:
         for root, _, files in os.walk(directory_path):
             for file in files:
-                if file.endswith('.py') and file != exclude_file:
+                if file. endswith('.py') and file != exclude_file:
                     file_path = os.path.join(root, file)
                     file_hash = calculate_md5(file_path)
                     file_name = file.replace('.py', '')
