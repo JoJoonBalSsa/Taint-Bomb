@@ -30,7 +30,7 @@ class removeComments:
     
     def __remove_comments(self, java_code):
         # 문자열 내부의 주석 기호를 임시로 대체
-        code = sub(r'(".*?(?<!\\)")', lambda m: m.group(0).replace('//', '@@').replace('/*', '##').replace('*/', '%%'),
+        code = sub(r'(".*?(?<!\\)")', lambda m: m.group(0).replace('//', '1^&32@16$').replace('/*', '1^&32@16&').replace('*/', '1^&32@16%'),
                     java_code)
 
         # 한 줄 주석 제거
@@ -40,7 +40,7 @@ class removeComments:
         code = sub(r'/\*[\s\S]*?\*/', '', code)
 
         # 임시로 대체했던 문자열 내부의 기호들을 원래대로 복구
-        code = code.replace('@@', '//').replace('##', '/*').replace('%%', '*/')
+        code = code.replace('1^&32@16$', '//').replace('1^&32@16&', '/*').replace('1^&32@16%', '*/')
 
         # 빈 줄 제거
         code = '\n'.join(line for line in code.splitlines() if line.strip())
