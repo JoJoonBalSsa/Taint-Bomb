@@ -22,14 +22,14 @@ class stringEncrypt:
         
         for p,c,strings in string_literals:
             aes_key = os.urandom(16)
-            enc_aes_key = os.urandom(8)  
-            
+            enc_aes_key = os.urandom(8)
             ko = KeyObfuscate(aes_key, enc_aes_key)
+            print("Key obfuscated")
             encrypted_aes_key = ko.enc_aes_key
 
             encrypted_aes_key = base64.b64encode(encrypted_aes_key).decode('utf-8').replace("=","")
             enc_aes_key = base64.b64encode(enc_aes_key).decode('utf-8').replace("=","")
-            
+            print("string encrypting..")
             encrypted_Literals.append([p,c,encrypted_aes_key,enc_aes_key,[(self.encrypt_string(literal, aes_key),_) for literal, _ in strings]])
 
         return encrypted_Literals

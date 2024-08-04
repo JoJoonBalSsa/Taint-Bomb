@@ -14,10 +14,11 @@ class stringInsert:
 
          print(self.str_decrypt)
          print(self.key_decrypt)
-
+         print("replacing strings...")
          self.__replace_string()
+         print("inserting strings...")
          self.__insert_string()
-
+         print("inserting decrypt functions...")
          self.__insert_str_decrypt(stringDecryptJava) # 복호화 함수 넣기
          self.__insert_key_decrypt(keyDecryptJava)
 
