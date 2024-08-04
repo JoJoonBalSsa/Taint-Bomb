@@ -1,7 +1,9 @@
 import sys
 
-from taintAnalysis import taintAnalysis
-from removeComments import removeComments
+from taintAnalysis import TaintAnalysis
+from removeComments import RemoveComments
+from stringObfuscate import StringObfuscate
+
 
 def create_taint_result(output_path, flows):
     with open(output_path + "/result.txt", 'w', encoding='utf-8') as file:  # 결과 파일 생성
@@ -24,22 +26,22 @@ def print_taint_result(flows):
         print()
 
 
-def main(java_folder_path, output_folder):
-    # output_folder = copy_project_folder(java_folder_path, output_folder)
-
-    tainted = taintAnalysis(java_folder_path)
+def main(output_folder, keyDecryptJava, stringDecryptJava):
+    tainted = TaintAnalysis(output_folder)
     print_taint_result(tainted.flows)
     create_taint_result(output_folder, tainted.flows)
 
-    removeComments(output_folder)
+    RemoveComments(output_folder)
+    StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python main.py <input_path> <output_folder>")
+    if len(sys.argv) != 4:
+        print("Usage: python main.py <output_folder> <keyDecryptJava> <stringDecryptJava>")
         exit(1)
 
-    input_path = sys.argv[1]
-    output_folder = sys.argv[2]
+    output_folder = sys.argv[1]
+    keyDecryptJava = sys.argv[2]
+    stringDecryptJava = sys.argv[3]
 
-    main(input_path, output_folder)
+    main(output_folder, keyDecryptJava, stringDecryptJava)

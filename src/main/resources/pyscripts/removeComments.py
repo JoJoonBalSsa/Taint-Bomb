@@ -1,31 +1,22 @@
 from re import sub
-import os
 
-class removeComments:
+from obfuscateTool import obfuscateTool
+
+
+class RemoveComments:
     def __init__(self, project_path):
         print("주석 제거 작업 시작...")
-        self.__find_java_files(project_path)
+        self.__process_file(project_path)
         print("주석 제거 완료.")
 
+    def __process_file(self, project_path):
+        java_files = obfuscateTool.parse_java_files(project_path)
 
-    def __find_java_files(self, project_path):
-        for root, _, files in os.walk(project_path):
-            for file in files:
-                if file.endswith('.java'):
-                    file_path = os.path.join(root, file)
-                    self.__process_file(file_path)
-
-
-    def __process_file(self, file_path):
-        with open(file_path, 'r', encoding='utf-8') as file:
-            java_code = file.read()
-
-        cleaned_code = self.__remove_comments(java_code)
-
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(cleaned_code)
-
-        print(f"Processed: {file_path}")
+        for path, tree, source_code in java_files:
+            cleaned_code = self.__remove_comments(source_code)
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(cleaned_code)
+            print(f"Processed: {path}")
 
     
     def __remove_comments(self, java_code):
@@ -46,6 +37,3 @@ class removeComments:
         code = '\n'.join(line for line in code.splitlines() if line.strip())
 
         return code
-
-
-
