@@ -4,7 +4,7 @@ from taintAnalysis import taintAnalysis
 from removeComments import removeComments
 
 def create_taint_result(output_path, flows):
-    with open(output_path + "result.txt", 'w', encoding='utf-8') as file:  # 결과 파일 생성
+    with open(output_path + "/result.txt", 'w', encoding='utf-8') as file:  # 결과 파일 생성
         for (class_method, var), value in flows.items():
             file.write("Tainted Variable:\n")
             file.write(f"{class_method}, {var}\n")
