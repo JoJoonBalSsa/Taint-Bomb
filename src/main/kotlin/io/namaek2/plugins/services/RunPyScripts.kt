@@ -15,6 +15,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
         copyScripts()
         if(compareFileHashes()) {
             executePythonScript()
+            //runGradle()
         }
         deleteTempFiles()
     }
@@ -108,14 +109,28 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
         return sb.toString()
     }
 
+    private fun readJavaCode(path: String): String {
+
+        val scriptStream = javaClass.getResourceAsStream("/java/" + path)
+        val javaCode = scriptStream?.bufferedReader()?.use { it.readText() }
+            ?: throw IllegalArgumentException("Script not found: $path")
+
+        return javaCode
+    }
+
     private fun executePythonScript() {
         try{
+            val keyDecryptJava = readJavaCode("keyDecrypt.java")
+            val stringDecryptJava = readJavaCode("stringDecrypt.java")
+
+
             // 프로세스 빌더를 생성합니다.
             val scriptPath = tempFilePath + "/main.py"
-            val processBuilder = ProcessBuilder("python", scriptPath, javaFilesPath, outputFolder)
+            val processBuilder = ProcessBuilder("python", scriptPath, outputFolder, keyDecryptJava, stringDecryptJava)
 
             val currentDir = System.getProperty("user.dir")
             processBuilder.directory(File(currentDir))
+            print("currentDir: $currentDir")
 
             // 프로세스의 출력을 캡처할 수 있도록 리디렉션합니다.
             processBuilder.redirectErrorStream(true)
@@ -145,6 +160,42 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             println("Error in script execution process: ${e.message}")
         }
     }
+//
+//    private fun runGradle() {
+//        try {
+//            // 프로세스 빌더를 생성합니다.
+//            val processBuilder = ProcessBuilder("gradle", "jar")
+//
+//            processBuilder.directory(File(outputFolder))
+//
+//            // 프로세스의 출력을 캡처할 수 있도록 리디렉션합니다.
+//            processBuilder.redirectErrorStream(true)
+//
+//            try {
+//                // 프로세스를 시작합니다.
+//                val process = processBuilder.start()
+//                println("jar build started")
+//                // 프로세스의 출력을 읽습니다.
+//                val reader = BufferedReader(InputStreamReader(process.inputStream))
+//                var line: String?
+//                while (reader.readLine().also { line = it } != null) {
+//                    println("gradle output: $line")
+//                }
+//
+//                // 프로세스가 종료될 때까지 대기합니다.
+//                val exitCode = process.waitFor()
+//                if (exitCode == 0) {
+//                    println("jar builded successfully")
+//                } else {
+//                    println("Error in jar building : $exitCode")
+//                }
+//            } catch (e: InterruptedException) {
+//                e.printStackTrace()
+//            }
+//        } catch (e: Exception) {
+//            println("Error in jar building process: ${e.message}")
+//        }
+//    }
 
     private fun deleteTempFiles() {
         for (scriptName in scriptNames) {
@@ -163,7 +214,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             tempPath.delete()
             println("$tempFilePath deleted successfully")
         } catch (e: Exception) {
-            println("Error in deleting temp files: ${e.message}")
+            println("Error in deleting temp folder: ${e.message}")
         }
     }
 }
