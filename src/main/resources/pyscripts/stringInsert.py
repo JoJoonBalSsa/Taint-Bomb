@@ -3,7 +3,7 @@ import javalang
 from obfuscateTool import obfuscateTool
 
 class stringInsert:
-     def __init__(self,Literals,enc_Literals,class_names,foler_path): 
+     def __init__(self,Literals,enc_Literals,class_names,foler_path , keyDecryptJava, stringDecryptJava):
          self.foler_path = foler_path
          self.Literals = Literals
          self.enc_Literals = enc_Literals
@@ -18,21 +18,20 @@ class stringInsert:
          self.__replace_string()
          self.__insert_string()
 
-         self.__insert_str_decrypt() # 복호화 함수 넣기
-         self.__insert_key_decrypt()
+         self.__insert_str_decrypt(stringDecryptJava) # 복호화 함수 넣기
+         self.__insert_key_decrypt(keyDecryptJava)
 
      
-     def __insert_key_decrypt(self):
+     def __insert_key_decrypt(self, key_decryptor_code):
          java_files = obfuscateTool.parse_java_files(self.foler_path) # insert 할때마다 position이 달라져서 여러번 하는중
          for path,tree,source_code in java_files:
            with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.insert_key_decrypt(source_code))
+            file.write(self.insert_key_decrypt(source_code, key_decryptor_code))
 
 
-     def insert_key_decrypt(self,code):
+     def insert_key_decrypt(self, code, key_decryptor_code):
         tree = javalang.parse.parse(code)
         lines = code.split('\n')
-        pos = None
 
         for path, node in tree:
             
@@ -45,13 +44,6 @@ class stringInsert:
                 
 
                 if self.key_decrypt[0] == package_name and self.key_decrypt[1] == class_name:
-                    decryptor_code = None
-                    key_decryptor_code = None
-                    key_decryptor_class_path = "./keyDecrypt.java"
-
-                    with open(key_decryptor_class_path,'r',encoding='utf-8') as file:
-                        key_decryptor_code = file.read()
-
                     key_decryptor_code = key_decryptor_code.split('\n')
                     key_decryptor_code = [line for line in key_decryptor_code if not line.startswith('import')]
                     key_decryptor_code = '\n'.join(key_decryptor_code)
@@ -78,14 +70,14 @@ class stringInsert:
         return code
 
 
-     def __insert_str_decrypt(self): # 복호화 함수 넣기
+     def __insert_str_decrypt(self, key_decryptor_code): # 복호화 함수 넣기
          java_files = obfuscateTool.parse_java_files(self.foler_path) # insert 할때마다 position이 달라져서 여러번 하는중
          for path,tree,source_code in java_files:
            with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.insert_str_decrypt(source_code))
-    
+            file.write(self.insert_str_decrypt(source_code, key_decryptor_code))
+
          
-     def insert_str_decrypt(self, code):
+     def insert_str_decrypt(self, code, key_decryptor_code):
         tree = javalang.parse.parse(code)
         lines = code.split('\n')
         pos = None
@@ -98,13 +90,6 @@ class stringInsert:
                 class_name = node.name
                 pos = node.position.line
                 if self.str_decrypt[0] == package_name and self.str_decrypt[1] == class_name:
-
-                    decryptor_code = None
-                    key_decryptor_code = None
-                    key_decryptor_class_path = "./stringDecrypt.java"
-
-                    with open(key_decryptor_class_path,'r',encoding='utf-8') as file:
-                        key_decryptor_code = file.read()
 
                     key_decryptor_code = key_decryptor_code.split('\n')
                     key_decryptor_code = [line for line in key_decryptor_code if not line.startswith('import')]
@@ -161,7 +146,6 @@ class stringInsert:
         code = '\n'.join(lines)
 
         return code
-
 
 
      def __insert_string(self): # 여기서 반복문으로 소스코드 돌리면서 암호화
