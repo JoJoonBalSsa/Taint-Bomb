@@ -123,7 +123,6 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             val keyDecryptJava = readJavaCode("keyDecrypt.java")
             val stringDecryptJava = readJavaCode("stringDecrypt.java")
 
-
             // 프로세스 빌더를 생성합니다.
             val scriptPath = tempFilePath + "/main.py"
             val processBuilder = ProcessBuilder("python", scriptPath, outputFolder, keyDecryptJava, stringDecryptJava)
