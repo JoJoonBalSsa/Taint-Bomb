@@ -21,8 +21,8 @@ class stringInsert:
          print("inserting decrypt functions...")
          self.__insert_str_decrypt(stringDecryptJava) # 복호화 함수 넣기
          self.__insert_key_decrypt(keyDecryptJava)
-         print("to : " + self.str_decrypt)
-         print("to : " + self.key_decrypt)
+         print("to : ", self.str_decrypt)
+         print("to : ", self.key_decrypt)
 
      
      def __insert_key_decrypt(self, key_decryptor_code):
