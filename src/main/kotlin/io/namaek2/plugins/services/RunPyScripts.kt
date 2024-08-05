@@ -109,14 +109,27 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
         return sb.toString()
     }
 
+    private fun readJavaCode(path: String): String {
+
+        val scriptStream = javaClass.getResourceAsStream("/java/" + path)
+        val javaCode = scriptStream?.bufferedReader()?.use { it.readText() }
+            ?: throw IllegalArgumentException("Script not found: $path")
+
+        return javaCode
+    }
+
     private fun executePythonScript() {
         try{
+            val keyDecryptJava = readJavaCode("keyDecrypt.java")
+            val stringDecryptJava = readJavaCode("stringDecrypt.java")
+
             // 프로세스 빌더를 생성합니다.
             val scriptPath = tempFilePath + "/main.py"
-            val processBuilder = ProcessBuilder("python", scriptPath, javaFilesPath, outputFolder)
+            val processBuilder = ProcessBuilder("python", scriptPath, outputFolder, keyDecryptJava, stringDecryptJava)
 
             val currentDir = System.getProperty("user.dir")
             processBuilder.directory(File(currentDir))
+            print("currentDir: $currentDir")
 
             // 프로세스의 출력을 캡처할 수 있도록 리디렉션합니다.
             processBuilder.redirectErrorStream(true)
@@ -200,7 +213,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             tempPath.delete()
             println("$tempFilePath deleted successfully")
         } catch (e: Exception) {
-            println("Error in deleting temp files: ${e.message}")
+            println("Error in deleting temp folder: ${e.message}")
         }
     }
 }
