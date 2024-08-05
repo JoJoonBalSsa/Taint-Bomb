@@ -8,14 +8,16 @@ Taint Bomb is an one click IntelliJ plugin obfuscator, with light but strong obf
 Taint Bomb은 IntelliJ에서 작동하는 원클릭 난독화 플러그인입니다. 가볍지만 강력한 난독화 기능을 지원하며, Taint 분석을 통해 자동으로 코드의 민감도를 식별하고 그에 기반하여 부분 난독화를 진행합니다.
 <!-- Plugin description end -->
 
+<a href="/docs/README-eng.md">English Docs</a>
+
 # Usage
 - 플러그인의 jar 파일을 intelliJ에 설치합니다.
 - 난독화 할 프로젝트를 intelliJ에서 열고, Taint-Bomb 창을 열어 Obfuscate 버튼을 클릭합니다.
-- 프로젝트 폴더 내에 'obfuscated_project_folder' 가 생성되며, 내부에는 난독화된 프로젝트 코드가, result.txt에는 Taint-Analysis 결과가, build/libs 내부에는 난독화된 프로젝트의 jar 빌드 파일이 존재합니다. 
-  
+- 프로젝트 폴더 내에 'obfuscated_project_folder' 가 생성되며, 내부에는 난독화된 프로젝트 코드가, result.txt에는 Taint-Analysis 결과가, build/libs 내부에는 난독화된 프로젝트의 jar 빌드 파일이 존재합니다.
+
 # Develop Document
-## Build
-- 디버깅은 프로젝트를 클론해 'Run IDE for UI Test' 로 디버깅합니다.
+## How to Build
+- 디버깅은 프로젝트를 클론해 'Run IDE ㄴfor UI Test' 로 디버깅합니다.
 - 빌드는 gradle 메뉴에서 jar을 실행합니다.
 
 ## resources/pyscipts
