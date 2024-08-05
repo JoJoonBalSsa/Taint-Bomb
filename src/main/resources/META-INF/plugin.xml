@@ -9,7 +9,7 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="io.namaek2.plugins.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <toolWindow factoryClass="io.namaek2.plugins.toolWindow.TaintBombFactory" id="Taint-Bomb"/>
     </extensions>
 
     <applicationListeners>

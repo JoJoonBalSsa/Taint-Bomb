@@ -12,7 +12,7 @@ class MyProjectService(project: Project) {
     private val projectFolder = project.basePath
     init {
         thisLogger().info(MyBundle.message("projectService", project.name))
-        thisLogger().warn("Don't forget to remove all non-needed sample code files with their corresponding registration entries in `plugin.xml`.")
+        // thisLogger().warn("Don't forget to remove all non-needed sample code files with their corresponding registration entries in `plugin.xml`.")
     }
 
     fun runPythonTask() {
