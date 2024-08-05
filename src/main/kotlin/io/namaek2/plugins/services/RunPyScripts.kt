@@ -4,6 +4,7 @@ import java.io.*
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import java.security.MessageDigest
+import java.util.*
 
 class RunPyScripts(private var javaFilesPath: String, private var outputFolder : String) {
     private val scriptNames = mutableListOf<String>()
@@ -121,7 +122,13 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     private fun executePythonScript() {
         try{
             val keyDecryptJava = readJavaCode("keyDecrypt.java")
-            val stringDecryptJava = readJavaCode("stringDecrypt.java")
+            var stringDecryptJava = ""
+            when (System.getProperty("os.name").lowercase(Locale.getDefault())) {
+                "windows" -> stringDecryptJava = readJavaCode("stringDecryptWin.java")
+                // "linux" -> println("Linux 운영 체제입니다.")
+                // "mac os x" -> println("macOS 운영 체제입니다.")
+                else -> stringDecryptJava = readJavaCode("stringDecryptLin.java")
+            }
 
             // 프로세스 빌더를 생성합니다.
             val scriptPath = tempFilePath + "/main.py"
