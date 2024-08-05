@@ -11,7 +11,7 @@ class obfuscateTool :
             return random_class
 
 
-    def overwrite_file(self, path, cleaned_code):
+    def overwrite_file(path, cleaned_code):
         with open(path, 'w', encoding='utf-8') as file:
                 file.write(cleaned_code)
 

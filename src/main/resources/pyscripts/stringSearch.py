@@ -22,7 +22,7 @@ class stringSearch:
                     package_name = node.name
                     
                 if isinstance(node, javalang.tree.ClassDeclaration): # 근데 클래스 밖에있는 문자열, 다른클래스에서 특정 클래스의 문자열을 불러온다면?
-                    Literal = self.__extract_strings(self, node, package_name)
+                    Literal = self.__extract_strings(node, package_name)
                     Literals.append(Literal) 
         return Literals
     
