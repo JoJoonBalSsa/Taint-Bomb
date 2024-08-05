@@ -3,24 +3,26 @@ import javalang
 from obfuscateTool import obfuscateTool
 
 class stringInsert:
-     def __init__(self,Literals,enc_Literals,class_names,foler_path , keyDecryptJava, stringDecryptJava):
-         self.foler_path = foler_path
+     def __init__(self, Literals, enc_Literals, class_names, foler_path, keyDecryptJava, stringDecryptJava):
          self.Literals = Literals
          self.enc_Literals = enc_Literals
          self.classes = class_names
+         self.foler_path = foler_path
 
          self.str_decrypt = self.classes[0]
          self.key_decrypt = self.classes[1]
 
-         print(self.str_decrypt)
-         print(self.key_decrypt)
          print("replacing strings...")
-         self.__replace_string()
+         self.__replace_strings()
+
          print("inserting strings...")
          self.__insert_string()
+
          print("inserting decrypt functions...")
          self.__insert_str_decrypt(stringDecryptJava) # 복호화 함수 넣기
          self.__insert_key_decrypt(keyDecryptJava)
+         print("to : " + self.str_decrypt)
+         print("to : " + self.key_decrypt)
 
      
      def __insert_key_decrypt(self, key_decryptor_code):
@@ -101,11 +103,11 @@ class stringInsert:
 
 
                     import_statements = [
-                    "import javax.crypto.Cipher;",
-                    "import javax.crypto.SecretKey;",
-                    "import javax.crypto.spec.SecretKeySpec;",
-                    "import java.util.Base64;",
-                    "import java.lang.reflect.Method;"
+                        "import javax.crypto.Cipher;",
+                        "import javax.crypto.SecretKey;",
+                        "import javax.crypto.spec.SecretKeySpec;",
+                        "import java.util.Base64;",
+                        "import java.lang.reflect.Method;"
                     ]
 
                     for import_statement in import_statements:
@@ -117,24 +119,22 @@ class stringInsert:
         return code
 
 
-     def __replace_string(self):
+     def __replace_strings(self):
          java_files = obfuscateTool.parse_java_files(self.foler_path)
          for path,tree,source_code in java_files:
-           with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.replace_string_literals(source_code))
+           replaced_code = self.replace_string_literals(source_code)
+           obfuscateTool.overwrite_file(path, replaced_code)
 
 
      def replace_string_literals(self, code):
         tree = javalang.parse.parse(code)
         lines = code.split('\n')
         for path, node in tree:
-            
             if isinstance(node, javalang.tree.PackageDeclaration):
                 package_name = node.name
-
             if isinstance(node, javalang.tree.ClassDeclaration): 
                 class_name = node.name
-                for p,c,literals in self.Literals:
+                for p, c, literals in self.Literals:
                      if p == package_name and c == class_name:
                          literals_sorted = sorted(literals, key=lambda x: (x[1][0], -x[1][1]))  # 라인 오른쪽부터 문자열 변환
                          for index, (literal, position) in enumerate(literals_sorted):
@@ -147,20 +147,19 @@ class stringInsert:
         code = '\n'.join(lines)
 
         return code
+     
 
-
-     def __insert_string(self): # 여기서 반복문으로 소스코드 돌리면서 암호화
+    # 여기서 반복문으로 소스코드 돌리면서 암호화 문자열 삽입
+     def __insert_string(self): 
          java_files = obfuscateTool.parse_java_files(self.foler_path)
-         for path,tree,source_code in java_files:
-           with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.insert_encrypted_string_array(source_code))
+         for path, tree, source_code in java_files:
+           inserted_code = self.insert_encrypted_string_array(source_code)
+           obfuscateTool.overwrite_file(path, inserted_code)            
      
 
      def insert_encrypted_string_array(self, code):
         tree = javalang.parse.parse(code)
         package_name = None
-
-        encrypted_literals = None
 
         array_declaration = []
 
