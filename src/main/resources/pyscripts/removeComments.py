@@ -6,17 +6,19 @@ from obfuscateTool import obfuscateTool
 class RemoveComments:
     def __init__(self, project_path):
         print("주석 제거 작업 시작...")
-        self.__process_file(project_path)
+
+        java_files = obfuscateTool.parse_java_files(project_path)
+        self.__process_file(java_files)
+
         print("주석 제거 완료.")
 
-    def __process_file(self, project_path):
-        java_files = obfuscateTool.parse_java_files(project_path)
 
+    def __process_file(self, java_files):
         for path, tree, source_code in java_files:
             cleaned_code = self.__remove_comments(source_code)
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(cleaned_code)
-            print(f"Processed: {path}")
+            obfuscateTool.overwrite_file(path, cleaned_code)
+            print(f"comment removed: {path}")
+
 
     def __remove_comments(self, java_code):
         # 문자열 내부의 주석 기호를 임시로 대체
