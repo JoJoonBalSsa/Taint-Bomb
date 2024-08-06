@@ -18,7 +18,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             executePythonScript()
             runGradle()
         }
-        deleteTempFiles()
+        deleteDirectory(File(tempFilePath))
     }
 
     private fun readHashInfo(){
@@ -203,24 +203,16 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
         }
     }
 
-    private fun deleteTempFiles() {
-        for (scriptName in scriptNames) {
-            val tempPath = File(tempFilePath + "/$scriptName.py")
-            if (tempPath.exists()) {
-                tempPath.delete()
-                println("$scriptName deleted successfully")
-            } else {
-                println("$scriptName does not exist")
+    private fun deleteDirectory(directory: File) {
+        if (directory.exists() && directory.isDirectory) {
+            directory.listFiles()?.forEach { file ->
+                if (file.isDirectory) {
+                    deleteDirectory(file)
+                } else {
+                    file.delete()
+                }
             }
-        }
-
-        val tempPath = File(tempFilePath)
-
-        try{
-            tempPath.delete()
-            println("$tempFilePath deleted successfully")
-        } catch (e: Exception) {
-            println("Error in deleting temp folder: ${e.message}")
+            directory.delete()
         }
     }
 }
