@@ -1,5 +1,5 @@
 # TaintBomb Obfuscator by GoForIt
-![TaintBombLogo](./src/main/resources/META-INF/pluginicon.svg)
+![TaintBombLogo](./.idea/icon.png)
 
 <!-- Plugin description -->
 Taint Bomb is an one click IntelliJ plugin obfuscator, with light but strong obfuscate feature. It analysis project's source codes with Taint Analysis and set obfuscate level by auto defined sensitivity.
@@ -15,9 +15,21 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 난독화 플러그인입니
 - 난독화 할 프로젝트를 intelliJ에서 열고, Taint-Bomb 창을 열어 Obfuscate 버튼을 클릭합니다.
 - 프로젝트 폴더 내에 'obfuscated_project_folder' 가 생성되며, 내부에는 난독화된 프로젝트 코드가, result.txt에는 Taint-Analysis 결과가, build/libs 내부에는 난독화된 프로젝트의 jar 빌드 파일이 존재합니다.
 
+# Dependencies
+## 플러그인
+- python 3.6 이상
+- pip javalang
+- pip pycryptodome
+- intelliJ : 2023.2.7 이상
+
+## 난독화 대상 프로젝트
+- javalang : 기본적으로 java SE8이나, 다음 문서에 호환되면 됨 http://docs.oracle.com/javase/specs/jls/se8/html/
+- gradle : 7.0 이상
+  - build.gradle에서 jar 속성이 정의되어있어야 합니다.
+
 # Develop Document
 ## How to Build
-- 디버깅은 프로젝트를 클론해 'Run IDE ㄴfor UI Test' 로 디버깅합니다.
+- 디버깅은 프로젝트를 클론해 'Run IDE for UI Test' 로 디버깅합니다.
 - 빌드는 gradle 메뉴에서 jar을 실행합니다.
 
 ## resources/pyscipts
@@ -42,6 +54,6 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 난독화 플러그인입니
 - copyScripts() : check_hash 리스트에 존재하는 pyscripts 밑의 파일을 시스템 tmp폴더 밑에 복사합니다.
 - compareFileHashes() : tmp폴더 밑의 스크립트들의 해시값을 검증합니다.
 - executePythonScript() : main 스크립트를 실행합니다.
-- runGradle() : Gradle을 사용하여 jar 파일을 빌드합니다. build.gradle에서 jar 속성이 정의되어있어야 합니다.
+- runGradle() : Gradle을 사용하여 jar 파일을 빌드합니다. 
 - deleteTempFiles() : tmp폴더 밑에 생성되었던 스크립트들을 삭제합니다.
 
