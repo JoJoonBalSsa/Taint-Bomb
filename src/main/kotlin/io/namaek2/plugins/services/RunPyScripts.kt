@@ -170,7 +170,13 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     private fun runGradle() {
         try {
             // 프로세스 빌더를 생성합니다.
-            val processBuilder = ProcessBuilder("gradle", "jar")
+            var processBuilder = ProcessBuilder()
+            when (System.getProperty("os.name").lowercase(Locale.getDefault())) {
+                "windows" -> processBuilder = ProcessBuilder("gradlew", "jar")
+                // "linux" -> println("Linux 운영 체제입니다.")
+                // "mac os x" -> println("macOS 운영 체제입니다.")
+                else -> processBuilder = ProcessBuilder("gradle", "jar")
+            }
 
             processBuilder.directory(File(outputFolder))
 
