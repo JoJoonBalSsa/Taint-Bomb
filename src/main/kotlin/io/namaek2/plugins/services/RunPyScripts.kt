@@ -22,12 +22,16 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     }
 
     private fun readHashInfo(){
-        println("Reading check_hash file...")
+        println("Reading python check_hash file...")
         val hashFileListPath = javaClass.getResourceAsStream("/pyscripts/check_hash")
-        val fileLists = hashFileListPath?.bufferedReader()?.readLines()
-            ?: throw IllegalArgumentException("check_hash file not found")
+        readHash(hashFileListPath)
+    }
 
-        for(fileList in fileLists){
+    private fun readHash(hashFileListPath: InputStream?) {
+        val fileLists = hashFileListPath?.bufferedReader()?.readLines()
+            ?: throw IllegalArgumentException("$hashFileListPath : check_hash file not found")
+
+        for(fileList in fileLists) {
             val parts = fileList.split(" ")
             if (parts.size == 2) {
                 scriptNames.add(parts[0])
@@ -111,7 +115,6 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     }
 
     private fun readJavaCode(path: String): String {
-
         val scriptStream = javaClass.getResourceAsStream("/java/" + path)
         val javaCode = scriptStream?.bufferedReader()?.use { it.readText() }
             ?: throw IllegalArgumentException("Script not found: $path")
@@ -121,13 +124,19 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 
     private fun executePythonScript() {
         try{
-            val keyDecryptJava = readJavaCode("keyDecrypt.java")
-            var stringDecryptJava = ""
-            when (System.getProperty("os.name").lowercase(Locale.getDefault())) {
-                "windows" -> stringDecryptJava = readJavaCode("stringDecryptWin.java")
-                // "linux" -> println("Linux 운영 체제입니다.")
-                // "mac os x" -> println("macOS 운영 체제입니다.")
-                else -> stringDecryptJava = readJavaCode("stringDecryptLin.java")
+            val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+            val stringDecryptJava = when {
+                "windows" in osName -> readJavaCode("stringDecryptWin.java")
+                "linux" in osName-> readJavaCode("stringDecryptLin.java")
+                "mac" in osName -> readJavaCode("stringDecryptLin.java")
+                else -> throw IllegalArgumentException("Unsupported OS: $osName")
+            }
+
+            val keyDecryptJava = when {
+                "windows" in osName -> readJavaCode("keyDecryptWin.java")
+                "linux" in osName-> readJavaCode("keyDecryptLin.java")
+                "mac" in osName -> readJavaCode("keyDecryptLin.java")
+                else -> throw IllegalArgumentException("Unsupported OS: $osName")
             }
 
             // 프로세스 빌더를 생성합니다.
@@ -170,12 +179,13 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     private fun runGradle() {
         try {
             // 프로세스 빌더를 생성합니다.
-            var processBuilder = ProcessBuilder()
-            when (System.getProperty("os.name").lowercase(Locale.getDefault())) {
-                "windows" -> processBuilder = ProcessBuilder("gradlew", "jar")
-                // "linux" -> println("Linux 운영 체제입니다.")
-                // "mac os x" -> println("macOS 운영 체제입니다.")
-                else -> processBuilder = ProcessBuilder("gradle", "jar")
+            val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+
+            val processBuilder = when {
+                "windows" in osName -> ProcessBuilder("gradle.bat", "jar")
+                "linux" in osName-> ProcessBuilder("gradle", "jar")
+                "mac" in osName -> ProcessBuilder("./gradlew", "jar")
+                else -> throw IllegalArgumentException("Unsupported OS: $osName")
             }
 
             processBuilder.directory(File(outputFolder))
