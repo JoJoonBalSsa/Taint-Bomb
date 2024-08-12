@@ -4,11 +4,11 @@ import javax.crypto.spec.SecretKeySpec;
 
 public static String stringDecrypt(String encryptedText, byte[] key) {
     try {
-        SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        SecretKeySpec secretKey = new SecretKeySpec(key, "\"AES\"");
+        Cipher cipher = Cipher.getInstance("\"AES/ECB/PKCS5Padding\"");
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
         byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedText));
-        String decrypted_str = new String(decryptedBytes, "UTF-8")
+        String decrypted_str = new String(decryptedBytes, "\"UTF-8\"")
                 .replace("\"\\n\"", "\"\n\"")
                 .replace("\"\\t\"", "\"\t\"")
                 .replace("\"\\r\"", "\"\r\"")
@@ -19,6 +19,6 @@ public static String stringDecrypt(String encryptedText, byte[] key) {
                 .replace("\"\\\\\\\\\"", "\"\\\\\"");
         return decrypted_str.substring(1, decrypted_str.length() - 1);
     } catch (Exception e) {
-        throw new RuntimeException("Decryptionfailed", e);
+        throw new RuntimeException("\"Decryptionfailed\"", e);
     }
 }
