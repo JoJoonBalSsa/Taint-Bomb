@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import io.namaek2.plugins.MyBundle
+import io.namaek2.plugins.toolWindow.MyConsoleLogger
 import java.nio.file.*
 import kotlin.io.path.*
 
@@ -35,7 +36,8 @@ class MyProjectService(project: Project) {
                     Files.createDirectories(targetPath)
                 } else {
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
-                    println("Copied: $sourcePath")
+
+                    MyConsoleLogger.println("Copied: $sourcePath")
                 }
             }
         }
