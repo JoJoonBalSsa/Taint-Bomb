@@ -1,5 +1,6 @@
 package io.namaek2.plugins.services
 
+import io.namaek2.plugins.toolWindow.MyConsoleLogger
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
@@ -22,7 +23,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     }
 
     private fun readHashInfo(){
-        println("Reading python check_hash file...")
+        MyConsoleLogger.println("Reading python check_hash file...")
         val hashFileListPath = javaClass.getResourceAsStream("/pyscripts/check_hash")
         readHash(hashFileListPath)
     }
@@ -37,21 +38,21 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
                 scriptNames.add(parts[0])
                 scriptHashes.add(parts[1])
             } else {
-                println("Invalid line: $fileList")
+                MyConsoleLogger.println("Invalid line: $fileList")
             }
         }
     }
 
     private fun copyScripts() {
-        println("Copying scripts...")
+        MyConsoleLogger.println("Copying scripts...")
 
         tempFilePath = javaFilesPath + "/temp"
         val result = File(tempFilePath).mkdir()
 
         if (result) {
-            println("Directory created successfully")
+            MyConsoleLogger.println("Directory created successfully")
         } else {
-            println("Directory already exists")
+            MyConsoleLogger.println("Directory already exists")
         }
 
         for (scriptName in scriptNames) {
@@ -60,10 +61,10 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
                 ?: throw IllegalArgumentException("Script not found: $scriptName")
 
             val tempFile = createNamedTempFile(scriptName, ".py").toPath()
-            println(tempFile.toString())
+            MyConsoleLogger.println(tempFile.toString())
 
             scriptContent.toByteArray().let { Files.write(tempFile, it, StandardOpenOption.WRITE) }
-            println("$scriptName created successfully")
+            MyConsoleLogger.println("$scriptName created successfully")
         }
     }
 
@@ -75,7 +76,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     }
 
     private fun compareFileHashes(): Boolean {
-        println("Comparing file hashes...")
+        MyConsoleLogger.println("Comparing file hashes...")
         for (i in 0..scriptNames.size - 1) {
             val fileName = scriptNames[i] + ".py"
             val expectedHash = scriptHashes[i]
@@ -84,13 +85,13 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             if (file.exists()) {
                 val actualHash = calculateMD5(file)
                 if (actualHash == expectedHash) {
-                    println("File $fileName matches the expected hash.")
+                    MyConsoleLogger.println("File $fileName matches the expected hash.")
                 } else {
-                    println("File $fileName does not match the expected hash.")
+                    MyConsoleLogger.println("File $fileName does not match the expected hash.")
                     return false
                 }
             } else {
-                println("File $fileName does not exist.")
+                MyConsoleLogger.println("File $fileName does not exist.")
                 return false
             }
         }
@@ -153,26 +154,26 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             try {
                 // 프로세스를 시작합니다.
                 val process = processBuilder.start()
-                println("main started")
+                MyConsoleLogger.println("main started")
                 // 프로세스의 출력을 읽습니다.
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
-                    println("main output: $line")
+                    MyConsoleLogger.println("main output: $line")
                 }
 
                 // 프로세스가 종료될 때까지 대기합니다.
                 val exitCode = process.waitFor()
                 if (exitCode == 0) {
-                    println("main executed successfully")
+                    MyConsoleLogger.println("main executed successfully")
                 } else {
-                    println("Error in main execution : $exitCode")
+                    MyConsoleLogger.println("Error in main execution : $exitCode")
                 }
             } catch (e: InterruptedException) {
                 e.printStackTrace()
             }
         } catch (e: Exception) {
-            println("Error in script execution process: ${e.message}")
+            MyConsoleLogger.println("Error in script execution process: ${e.message}")
         }
     }
 //
@@ -232,26 +233,26 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             try {
                 // 프로세스를 시작합니다.
                 val process = processBuilder.start()
-                println("jar build started")
+                MyConsoleLogger.println("jar build started")
                 // 프로세스의 출력을 읽습니다.
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
-                    println("gradle output: $line")
+                    MyConsoleLogger.println("gradle output: $line")
                 }
 
                 // 프로세스가 종료될 때까지 대기합니다.
                 val exitCode = process.waitFor()
                 if (exitCode == 0) {
-                    println("jar builded successfully")
+                    MyConsoleLogger.println("jar builded successfully")
                 } else {
-                    println("Error in jar building : $exitCode")
+                    MyConsoleLogger.println("Error in jar building : $exitCode")
                 }
             } catch (e: InterruptedException) {
                 e.printStackTrace()
             }
         } catch (e: Exception) {
-            println("Error in jar building process: ${e.message}")
+            MyConsoleLogger.println("Error in jar building process: ${e.message}")
         }
     }
 
