@@ -7,14 +7,14 @@ class stringSearch:
         self.class_names = []
         
         print("parsing strings...")
-        self.trees = obfuscateTool.parse_java_files(java_folder_path)
+        trees = obfuscateTool.parse_java_files(java_folder_path)
         print("extracting strings...")
-        self.Literals = self.__extract_string_literals(self.trees)  # [package,class,[Literals,,]] 이렇게 넣을 예정
+        self.Literals = self.__extract_string_literals(trees)  # [package,class,[Literals,,]] 이렇게 넣을 예정
 
 
     # trees 에서 각 tree 의 문자열들을 추출하고 Literals 에 package_class 와 함께 저장 
-    def __extract_string_literals(self, trees):  
-        Literals = []
+    def __extract_string_literals(self, trees):
+        literals = []
         package_name = None
         for file_path, tree, source_code in trees:
             for path, node in tree:
@@ -22,9 +22,9 @@ class stringSearch:
                     package_name = node.name
                     
                 if isinstance(node, javalang.tree.ClassDeclaration): # 근데 클래스 밖에있는 문자열, 다른클래스에서 특정 클래스의 문자열을 불러온다면?
-                    Literal = self.__extract_strings(node, package_name)
-                    Literals.append(Literal) 
-        return Literals
+                    literal = self.__extract_strings(node, package_name)
+                    literals.append(literal)
+        return literals
     
 
     # 클래스 별로 문자열 추출
