@@ -3,7 +3,7 @@ import sys
 from taintAnalysis import TaintAnalysis
 from removeComments import RemoveComments
 from stringObfuscate import StringObfuscate
-from analysisResultManager import analysisResultManager
+from analysisResultManager import AnalysisResultManager
 
 
 def create_taint_result(output_path, flows):
@@ -49,7 +49,7 @@ def print_result(flows):
 
 def __analyze_method(output_folder, tainted):
     json_file_path = output_folder + "/analysis_result.json"
-    result = analysisResultManager(json_file_path)
+    result = AnalysisResultManager(json_file_path)
 
     flows = tainted._priority_flow()
 
