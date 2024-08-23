@@ -1,7 +1,7 @@
 import json
 import os
 
-class analysisResultManager:
+class AnalysisResultManager:
     def __init__(self, json_file_path):
         self.json_file_path = json_file_path
         self.results = []
