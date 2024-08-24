@@ -35,6 +35,8 @@ class stringSearch:
 
         for sub_path, sub_node in node:
             if isinstance(sub_node, javalang.tree.Literal) and isinstance(sub_node.value, str) and sub_node.value.startswith('"') and sub_node.value.endswith('"'):
-                string_literals.append((sub_node.value, sub_node.position))
+                if not any(pos == sub_node.position for _, pos in string_literals):
+                    string_literals.append((sub_node.value, sub_node.position))
+                
         Literal = [package_name, class_name, string_literals]
         return Literal
