@@ -67,6 +67,7 @@ def __analyze_method(output_folder, tainted):
             source_code = tainted._extract_method_source_code()
 
             result.append(sensitivity, current_path, method_name, tree_position, cut_tree, source_code)
+            method_name = method_full_path
 
     result.save_to_json()  # 결과를 JSON 파일로 저장
 

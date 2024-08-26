@@ -5,7 +5,7 @@ import logging
 from sensitivityDB import SensitivityDB as S
 
 
-class taintAnalysis:
+class TaintAnalysis:
     __methods = defaultdict(list)
 
     __tainted_variables = []
@@ -47,7 +47,7 @@ class taintAnalysis:
 
                 # source와 sink의 민감도 값을 가져옴
                 source_sensitivity = S.source_functions.get(source, 0)  # 기본값 0
-                sink_sensitivity = self.__sink_functions.get(sink, 0)        # 기본값 0
+                sink_sensitivity = S.sink_functions.get(sink, 0)        # 기본값 0
 
                 # 민감도를 더함
                 total_sensitivity = source_sensitivity + sink_sensitivity
@@ -355,7 +355,7 @@ class taintAnalysis:
         if count>current_count:
             return
 
-        if node.member in self.__sink_functions.keys() and node.arguments:
+        if node.member in S.sink_functions.keys() and node.arguments:
             flow_added = False
 
             for arg in node.arguments:

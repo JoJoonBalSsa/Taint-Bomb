@@ -236,7 +236,7 @@ class SensitivityDB:
         'getThreadCpuTime': 1,
     }
 
-    __sink_functions = {
+    sink_functions = {
         # 파일 출력
         'write': 1,
         'writeBytes': 1,
