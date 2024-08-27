@@ -134,7 +134,7 @@ class stringInsert:
                 package_name = node.name
             if isinstance(node, javalang.tree.ClassDeclaration): 
                 class_name = node.name
-                for p, c, literals in self.Literals:
+                for p, c, literals,_ in self.Literals:
                      if p == package_name and c == class_name:
                          literals_sorted = sorted(literals, key=lambda x: (x[1][0], -x[1][1]))  # 라인 오른쪽부터 문자열 변환
                          for index, (literal, position) in enumerate(literals_sorted):
