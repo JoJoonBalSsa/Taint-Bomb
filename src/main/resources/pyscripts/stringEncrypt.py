@@ -20,7 +20,7 @@ class stringEncrypt:
     def encrypt_string_literals(self, string_literals): 
         encrypted_Literals = []
         
-        for p, c, strings in string_literals:
+        for p, c, strings,_ in string_literals:
             aes_key = os.urandom(16)
             enc_aes_key = os.urandom(8)
 
