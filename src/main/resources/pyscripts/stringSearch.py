@@ -1,6 +1,6 @@
 import javalang
 
-from obfuscateTool import obfuscateTool
+from obfuscateTool import ObfuscateTool
 from collections import defaultdict
 
 
@@ -9,7 +9,7 @@ class StringSearch:
         self.class_names = []
         
         print("parsing strings...")
-        trees = obfuscateTool.parse_java_files(java_folder_path)
+        trees = ObfuscateTool.parse_java_files(java_folder_path)
         print("extracting strings...")
         self.Literals = self.__extract_string_literals(trees)  # [package,class,[Literals,,]] 이렇게 넣을 예정
 
