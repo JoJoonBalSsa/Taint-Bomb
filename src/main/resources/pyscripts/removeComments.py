@@ -1,13 +1,13 @@
 from re import sub
 
-from obfuscateTool import obfuscateTool
+from obfuscateTool import ObfuscateTool
 
 
 class RemoveComments:
     def __init__(self, project_path):
         print("주석 제거 작업 시작...")
 
-        java_files = obfuscateTool.parse_java_files(project_path)
+        java_files = ObfuscateTool.parse_java_files(project_path)
         self.__process_file(java_files)
 
         print("주석 제거 완료.")
@@ -16,7 +16,7 @@ class RemoveComments:
     def __process_file(self, java_files):
         for path, tree, source_code in java_files:
             cleaned_code = self.__remove_comments(source_code)
-            obfuscateTool.overwrite_file(path, cleaned_code)
+            ObfuscateTool.overwrite_file(path, cleaned_code)
             print(f"comment removed: {path}")
 
 

@@ -2,19 +2,18 @@ import random
 import javalang
 import os
 
-class obfuscateTool :
-    def random_class(class_list, random_count): 
-            leng = len(class_list)
-            random_indices = [random.randint(0, leng - 1) for _ in range(random_count)]
-            random_class = [class_list[i] for i in random_indices]
-            
-            return random_class
 
+class ObfuscateTool:
+    def random_class(class_list, random_count):
+        leng = len(class_list)
+        random_indices = [random.randint(0, leng - 1) for _ in range(random_count)]
+        random_class = [class_list[i] for i in random_indices]
+
+        return random_class
 
     def overwrite_file(path, cleaned_code):
         with open(path, 'w', encoding='utf-8') as file:
-                file.write(cleaned_code)
-
+            file.write(cleaned_code)
 
     def parse_java_files(folder_path):
         java_files = []
@@ -34,4 +33,3 @@ class obfuscateTool :
                     except Exception as e:
                         print(f"Error parsing file {file_path}: {e}")
         return java_files
-
