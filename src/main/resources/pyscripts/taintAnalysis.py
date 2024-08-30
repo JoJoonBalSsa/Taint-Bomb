@@ -166,6 +166,7 @@ class TaintAnalysis:
 
 
     def __append_flow(self):
+        print("Tainted Variables: ", self.__tainted_variables)
         for class_method, var, count in self.__tainted_variables:
             self.__flow.clear()
             self.__track_variable_flow(class_method, var, count)
@@ -316,7 +317,6 @@ class TaintAnalysis:
         method_name = parts[1]
         self.__flow.append(class_method) # 흐름 추가
         method_nodes = self.__methods.get((class_name, method_name), []) #메서드 단위로 저장해둔 노드로 바로바로 접근가능
-
 
         current_count=0
         for file_path, method_node in method_nodes:

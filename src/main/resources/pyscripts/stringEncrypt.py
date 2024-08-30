@@ -4,7 +4,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from keyObfuscate import KeyObfuscate
 
-class stringEncrypt:
+class StringEncrypt:
     def __init__(self,Literals):
         self.encrypted_Literals = self.encrypt_string_literals(Literals)
 
