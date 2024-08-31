@@ -1,12 +1,13 @@
 from operationExtract import ExtractOperations
 from operationObfuscate import ObfuscateOperations
+from applyObfuscated import ApplyObfuscated
 
 import json
 
 
 class LevelObfuscation:
     def __init__(self, output_folder):
-        tainted_json = self.parse_json(output_folder + '/analysis_result.json')
+        tainted_json = self.parse_json(output_folder + '/analysis_result_copy.json')
 
         self.check_level(tainted_json)
 
@@ -35,4 +36,6 @@ class LevelObfuscation:
 
             if item["sensitivity"] == 2:
                 for tainted in item["tainted"]:
-                    ObfuscateOperations(tainted)
+                    O = ObfuscateOperations(tainted)
+                    obfuscated_code = O.return_obfuscated_code()
+                    ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
