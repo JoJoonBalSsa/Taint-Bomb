@@ -1,5 +1,6 @@
 package io.namaek2.plugins.services
 
+import com.intellij.openapi.progress.ProgressIndicator
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
 import java.io.*
 import java.nio.file.Files
@@ -7,12 +8,15 @@ import java.nio.file.StandardOpenOption
 import java.security.MessageDigest
 import java.util.*
 
-class RunPyScripts(private var javaFilesPath: String, private var outputFolder : String) {
+class RunPyScripts(private var javaFilesPath: String, private var outputFolder : String,  private val indicator: ProgressIndicator) {
     private val scriptNames = mutableListOf<String>()
     private val scriptHashes = mutableListOf<String>()
     private var tempFilePath = ""
 
     init {
+        indicator.text = "Initializing Python scripts..."
+        indicator.fraction = 0.5  // Assuming folder copy took 50%
+
         readHashInfo()
         copyScripts()
         if(compareFileHashes()) {
@@ -20,9 +24,13 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             runGradle()
         }
         deleteDirectory(File(tempFilePath))
+        indicator.fraction = 1.0
+        indicator.text = "Python scripts execution completed."
     }
 
     private fun readHashInfo(){
+        indicator.text = "Reading python check_hash file..."
+        indicator.fraction = 0.55
         MyConsoleLogger.println("Reading python check_hash file...")
         val hashFileListPath = javaClass.getResourceAsStream("/pyscripts/check_hash")
         readHash(hashFileListPath)
@@ -44,6 +52,8 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     }
 
     private fun copyScripts() {
+        indicator.text = "Copying scripts..."
+        indicator.fraction = 0.60
         MyConsoleLogger.println("Copying scripts...")
 
         tempFilePath = javaFilesPath + "/temp"
@@ -76,6 +86,8 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     }
 
     private fun compareFileHashes(): Boolean {
+        indicator.text = "Comparing file hashes..."
+        indicator.fraction = 0.65
         MyConsoleLogger.println("Comparing file hashes...")
         for (i in 0..scriptNames.size - 1) {
             val fileName = scriptNames[i] + ".py"
@@ -124,6 +136,8 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
     }
 
     private fun executePythonScript() {
+        indicator.text = "Executing Python script..."
+        indicator.fraction = 0.70
         try{
             val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
             val stringDecryptJava = when {
@@ -175,6 +189,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
         } catch (e: Exception) {
             MyConsoleLogger.println("Error in script execution process: ${e.message}")
         }
+        indicator.fraction = 0.85
     }
 //
 //    private fun runGradle() {
@@ -214,6 +229,8 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 //    }
 
     private fun runGradle() {
+        indicator.text = "Running Gradle..."
+        indicator.fraction = 0.90
         try {
             // 프로세스 빌더를 생성합니다.
             val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
@@ -254,9 +271,13 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
         } catch (e: Exception) {
             MyConsoleLogger.println("Error in jar building process: ${e.message}")
         }
+        indicator.fraction = 0.95
     }
 
     private fun deleteDirectory(directory: File) {
+        indicator.text = "Cleaning up temporary files..."
+        indicator.fraction = 0.98
+
         if (directory.exists() && directory.isDirectory) {
             directory.listFiles()?.forEach { file ->
                 if (file.isDirectory) {
