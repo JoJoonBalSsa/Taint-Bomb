@@ -50,11 +50,13 @@ class ApplyObfuscated:
 
             # 현재 메소드의 내용 추출 및 정규화
             current_method = content[start:end]
-            print(current_method)
             normalized_current_method = re.sub(r'\s+', '', current_method)
 
+            print("current : " + normalized_current_method)
+            print("source : " + normalized_method_code)
+
             # 메소드 내용이 일치하는지 확인
-            if normalized_current_method == normalized_method_code + '}':
+            if normalized_current_method == normalized_method_code:
                 content = content[:start] + obfuscated_code.strip() + content[end:]
                 print(f"메소드 '{method_name}'가 성공적으로 대체되었습니다.")
 
