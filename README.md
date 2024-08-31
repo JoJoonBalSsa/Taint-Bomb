@@ -33,17 +33,31 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 난독화 플러그인입니
 - 빌드는 gradle 메뉴에서 jar을 실행합니다.
 
 ## resources/pyscipts
+### Core1
+- analysisResultManager.py : Taint 분석 결과를 Json으로 출력하는 클래스입니다.
+- methodEndLineFinder.py : 메소드의 끝을 찾아주는 클래스입니다.
+- sensitivityDB.py : 민감도 레벨을 정의하는 클래스입니다.
+- taintAnalysis.py : 프로젝트를 taint 분석합니다. 프로젝트에 Source/Sink 흐름이 없다면 아무 것도 출력되지 않습니다.
+### Core2
+#### 주석 제거
+- removeComments.py : 프로젝트의 모든 .java 파일에서 주석을 제거합니다.
+#### 문자열 난독화
+- stringObfuscate.py : 문자열 난독화를 실행하는 스크립트입니다.
+- stringSearch.py : 프로젝트에서 문자열을 찾아내는 스크립트입니다.
+- stringEncrypt.py : 찾은 문자열들을 암호화하는 스크립트입니다.
+- stringInsert.py : 암호화된 문자열을 삽입하고, 문자열 호출을 복호화된 문자열 호출로 변경하고, 복호화 코드를 랜덤으로 선택한 클래스에 삽입합니다.
+- keyObfuscate.py : 문자열 암호화의 키를 암호화합니다.
+#### 연산자 난독화
+- operationDB.py : 연산자 난독화를 위한 연산자 데이터베이스입니다.
+- operationExtract.py : 파일에서 연산자를 추출합니다.
+- operationObfuscate.py : 추출한 연산자를 난독화합니다.
+### Plugin
 - main.py : 모든 스크립트가 실행되는 메인 스크립트입니다.
+- applyObfuscated.py : 민감도 레벨별로 난독화된 코드를 파일에 적용하는 클래스입니다.
+- levelObfuscate.py : 민감도 레벨별로 난독화를 진행하는 클래스입니다.
 - obfuscateTool.py : 여러 스크립트에서 공통적으로 사용되는 함수들을 모아둔 클래스입니다.
 - check_hash :  pyscript 폴더 밑의 모든 .py 파일의 해시 정보가 저장되어있습니다.
 - create_hasy.py : 실행하면 pyscript 폴더 밑의 모든 .py 파일의 해시 정보를 check_hash에 저장합니다.
-- taintAnalysis : 프로젝트를 taint 분석합니다. 프로젝트에 Source/Sink 흐름이 없다면 아무 것도 출력되지 않습니다.
-- removeComments : 프로젝트의 모든 .java 파일에서 주석을 제거합니다.
-- stringObfuscate : 문자열 난독화를 실행하는 스크립트입니다.
-- stringSearch : 프로젝트에서 문자열을 찾아내는 스크립트입니다.
-- stringEncrypt : 찾은 문자열들을 암호화하는 스크립트입니다.
-- stringInsert : 암호화된 문자열을 삽입하고, 문자열 호출을 복호화된 문자열 호출로 변경하고, 복호화 코드를 랜덤으로 선택한 클래스에 삽입합니다.
-- keyObfuscate : 문자열 암호화의 키를 암호화합니다.
 
 ## resource/java
 - keyDecrypt.java : 암호화된 문자열 암호화 키를 복호화하는 클래스입니다.

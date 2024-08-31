@@ -60,13 +60,13 @@ def __analyze_method(output_folder, tainted):
 
 def main(output_folder, keyDecryptJava, stringDecryptJava):
 
+    RemoveComments(output_folder)
+    StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
+
     tainted = TaintAnalysis(output_folder)
     print_result(tainted._priority_flow())
     create_result(output_folder, tainted.flows)
     __analyze_method(output_folder, tainted)
-
-    #RemoveComments(output_folder)
-    #StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
 
     LevelObfuscation(output_folder)
 
