@@ -14,13 +14,13 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 난독화 플러그인입니
 - 'obfuscated_project_folder' will be created in the project folder, and it contains obfuscated project code, result.txt contains Taint-Analysis result, and obfuscated project's jar build file is in build/libs.
 
 # Dependencies
-## 플러그인
+## For Plugin
 - python : version 3.6 or later
   - pip javalang
   - pip pycryptodome
 - intelliJ : version 2023.2.7 or later
 
-## 난독화 대상 프로젝트
+## Obfuscatable Project
 - javalang : based on java SE 8, but compatible with the following document http://docs.oracle.com/javase/specs/jls/se8/html/
 - gradle : 7.0 or later
     - jar properties must be defined in build.gradle.
@@ -31,17 +31,31 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 난독화 플러그인입니
 - You can build jar file by running 'gradle jar'.
 
 ## resources/pyscipts
-- main.py : is main script that all scripts are executed.
-- obfuscateTool.py : is a class that contains functions commonly used in multiple scripts.
-- check_hash : contains hash information of all '.py' files under the pyscript folder.
-- create_hasy.py : saves hash information of all '.py' files under the pyscript folder to check_hash. Should be executed after adding or editing python scripts.
-- taintAnalysis : performs taint analysis on the project. If there is no Source/Sink flow in the project, nothing will be output.
-- removeComments : removes comments from all '.java' files in the project.
-- stringObfuscate : script that performs string obfuscation.
-- stringSearch : script that finds strings in the project.
-- stringEncrypt : script that encrypts found strings.
-- stringInsert : inserts encrypted strings, changes string calls to decrypted string calls, and inserts decryption code into randomly selected classes.
-- keyObfuscate : encrypts the key for string encryption.
+### Core1
+- analysisResultManager.py : A class that outputs Taint analysis results in Json.
+- methodEndLineFinder.py : A class that finds the end of a method.
+- sensitivityDB.py : A class that defines sensitivity levels.
+- taintAnalysis.py : Analyzes the project with Taint analysis. If there is no Source/Sink flow in the project, nothing will be output.
+### Core2
+#### Comment Remove
+- removeComments.py : Removes comments from all .java files in the project.
+#### String Obfuscate
+- stringObfuscate.py : A script that performs string obfuscation.
+- stringSearch.py : A script that finds strings in the project.
+- stringEncrypt.py : A script that encrypts found strings.
+- stringInsert.py : Inserts encrypted strings, changes string calls to decrypted string calls, and inserts decryption code into randomly selected classes.
+- keyObfuscate.py : Encrypts the key for string encryption.
+#### Operator Obfuscate
+- operationDB.py : Operator database for operator obfuscation.
+- operationExtract.py : Extracts operators from files.
+- operationObfuscate.py : Obfuscates extracted operators.
+### Plugin
+- main.py : The main script where all scripts are executed.
+- applyObfuscated.py : A class that applies obfuscated code to a file.
+- levelObfuscate.py : A class that performs obfuscation by sensitivity level.
+- obfuscateTool.py : A class that contains functions which are commonly used in multiple scripts.
+- check_hash :  Contains hash information of all .py files under the pyscript folder.
+- create_hasy.py : When executed, it saves the hash information of all .py files under the pyscript folder to check_hash.
 
 ## resource/java
 - keyDecrypt.java : a class that decrypts the key for string encryption.
