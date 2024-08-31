@@ -3,6 +3,7 @@ import os
 from collections import defaultdict
 import logging
 from sensitivityDB import SensitivityDB as S
+from methodEndLineFinder import MethodEndLineFinder
 
 
 class TaintAnalysis:
@@ -17,10 +18,14 @@ class TaintAnalysis:
     _t_tree=defaultdict(list)
     flows = defaultdict(list)
     method_check = []
-    sink_check=[]
+    sink_check = []
 
     #메서드 단위로 AST 노드 저장, Taint 변수 탐색 및 저장
     def __init__(self, java_folder_path):
+        # 로그 설정
+        logging.basicConfig(filename='taint_analysis.log', level=logging.INFO,
+                            format='%(asctime)s - %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S')
         # Step 1: Parse all Java files
         trees = self.__parse_java_files(java_folder_path)
 
@@ -30,6 +35,8 @@ class TaintAnalysis:
         # Step 3: Append flow
         self.__append_flow()
         #self.__new_tree()
+
+
 
 
     def _priority_flow(self):
@@ -60,7 +67,7 @@ class TaintAnalysis:
                 prioritized_flows.append(prioritized_flow)
 
         # 우선순위에 따라 flows를 정렬
-        prioritized_flows.sort(reverse=True, key=lambda x: x[0])
+        # prioritized_flows.sort(reverse=True, key=lambda x: x[0])
         '''
         # 최종 결과 출력 (필요에 따라 반환하거나 다른 용도로 사용)
         for flow in prioritized_flows:
@@ -185,42 +192,6 @@ class TaintAnalysis:
             return key_tuple
 
 
-    def _get_end_line(self, node):
-        """
-        재귀적으로 노드의 마지막 줄을 찾는 함수.
-        """
-        if not hasattr(node, 'position') or node.position is None:
-            return 0
-
-        end_line = node.position.line
-
-        # TryStatement 특별 처리
-        if isinstance(node, javalang.tree.TryStatement):
-            # try 블록 확인
-            end_line = max(end_line, self._get_end_line(node.block))
-
-            # catch 절 확인
-            for catch in node.catches or []:
-                end_line = max(end_line, self._get_end_line(catch))
-
-            # finally 블록 확인
-            if node.finally_block:
-                end_line = max(end_line, self._get_end_line(node.finally_block))
-
-        # 일반적인 자식 노드 처리
-        for attr_name in dir(node):
-            attr = getattr(node, attr_name)
-            if isinstance(attr, list):
-                for item in attr:
-                    if isinstance(item, javalang.tree.Node):
-                        end_line = max(end_line, self._get_end_line(item))
-            elif isinstance(attr, javalang.tree.Node):
-                end_line = max(end_line, self._get_end_line(attr))
-
-        return end_line
-
-
-
     def _get_cut_tree(self, m_name):
         global _current_node
 
@@ -236,7 +207,9 @@ class TaintAnalysis:
                             start_line = node.position.line
 
                             # 끝 줄을 재귀적으로 계산합니다.
-                            end_line = self._get_end_line(node)
+                            finder = MethodEndLineFinder(self.source_codes[file_path])
+                            end_line = finder.find_method_end_line(start_line)
+
 
                             # Store start and end positions in a single variable
                             self._get_position=f"{start_line}-{end_line}"
@@ -302,7 +275,7 @@ class TaintAnalysis:
 
         extracted_lines = lines[start_line - 1:end_line]
 
-        return '\n'.join(extracted_lines)
+        return ''.join(extracted_lines)
 
 
     def __track_variable_flow(self, class_method, var_name, count=0): #변수 흐름 추적. (계속 추가 가능)
@@ -315,13 +288,15 @@ class TaintAnalysis:
 
         method_name = parts[1]
         self.__flow.append(class_method) # 흐름 추가
-        method_nodes = self.__methods.get((class_name, method_name), []) #메서드 단위로 저장해둔 노드로 바로바로 접근가능
-
+        method_nodes = self.__methods.get((class_name, method_name), []) #메서드 단위로 저장해둔 노드로 바로 접근 가능
 
         current_count=0
         for file_path, method_node in method_nodes:
             for path, node in method_node: #노드 내부 탐색
                 current_count +=1
+
+                if current_count <= count:
+                    continue
 
                 # sink 탐색
                 if isinstance(node, javalang.tree.MethodInvocation):
@@ -352,7 +327,7 @@ class TaintAnalysis:
         class_name = parts[0]
         method_name = parts[1]
 
-        if count>current_count:
+        if current_count <= count:
             return
 
         if node.member in S.sink_functions.keys() and node.arguments:
@@ -371,7 +346,9 @@ class TaintAnalysis:
                         break
 
             if flow_added:
-                self.__flow.append(f".{method_name}.{node.member}")
+                self.__flow.append(f".{method_name}.{node.member},")
+                log_message = f".{method_name}.{node.qualifier}.{node.member}"
+                logging.info(log_message)
                 self.sink_check.append(node.member)
                 # 새로운 키를 생성하고, 기존 키가 존재하면 새 키를 사용
                 existing_key = (class_method, var_name)
@@ -397,11 +374,6 @@ class TaintAnalysis:
             elif isinstance(arg.operandl, javalang.tree.BinaryOperation):
                 flow_added = self.__judge_binary_operation(arg.operandl, flow_added, var_name)
                 return flow_added
-
-    # 로그 파일 설정
-    logging.basicConfig(filename='error_log.txt', level=logging.ERROR,
-                        format='- %(message)s',
-                        encoding='utf-8')
 
 
     def __if_variable_assignment(self, node, class_method, var_name, count, current_count):

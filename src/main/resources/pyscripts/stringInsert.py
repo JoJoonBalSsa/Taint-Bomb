@@ -1,8 +1,9 @@
 import javalang
 
-from obfuscateTool import obfuscateTool
+from obfuscateTool import ObfuscateTool
 
-class stringInsert:
+
+class StringInsert:
      def __init__(self, Literals, enc_Literals, class_names, foler_path, keyDecryptJava, stringDecryptJava):
          self.Literals = Literals
          self.enc_Literals = enc_Literals
@@ -26,7 +27,7 @@ class stringInsert:
 
      
      def __insert_key_decrypt(self, key_decryptor_code):
-         java_files = obfuscateTool.parse_java_files(self.foler_path) # insert 할때마다 position이 달라져서 여러번 하는중
+         java_files = ObfuscateTool.parse_java_files(self.foler_path) # insert 할때마다 position이 달라져서 여러번 하는중
          for path,tree,source_code in java_files:
            with open(path, 'w', encoding='utf-8') as file:
             file.write(self.insert_key_decrypt(source_code, key_decryptor_code))
@@ -74,7 +75,7 @@ class stringInsert:
 
 
      def __insert_str_decrypt(self, key_decryptor_code): # 복호화 함수 넣기
-         java_files = obfuscateTool.parse_java_files(self.foler_path) # insert 할때마다 position이 달라져서 여러번 하는중
+         java_files = ObfuscateTool.parse_java_files(self.foler_path) # insert 할때마다 position이 달라져서 여러번 하는중
          for path,tree,source_code in java_files:
            with open(path, 'w', encoding='utf-8') as file:
             file.write(self.insert_str_decrypt(source_code, key_decryptor_code))
@@ -120,10 +121,10 @@ class stringInsert:
 
 
      def __replace_strings(self):
-         java_files = obfuscateTool.parse_java_files(self.foler_path)
+         java_files = ObfuscateTool.parse_java_files(self.foler_path)
          for path,tree,source_code in java_files:
            replaced_code = self.replace_string_literals(source_code)
-           obfuscateTool.overwrite_file(path, replaced_code)
+           ObfuscateTool.overwrite_file(path, replaced_code)
 
 
      def replace_string_literals(self, code):
@@ -151,10 +152,10 @@ class stringInsert:
 
     # 여기서 반복문으로 소스코드 돌리면서 암호화 문자열 삽입
      def __insert_string(self): 
-         java_files = obfuscateTool.parse_java_files(self.foler_path)
+         java_files = ObfuscateTool.parse_java_files(self.foler_path)
          for path, tree, source_code in java_files:
            inserted_code = self.insert_encrypted_string_array(source_code)
-           obfuscateTool.overwrite_file(path, inserted_code)            
+           ObfuscateTool.overwrite_file(path, inserted_code)
      
 
      def insert_encrypted_string_array(self, code):
