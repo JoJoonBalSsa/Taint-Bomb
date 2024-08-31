@@ -364,15 +364,17 @@ class TaintAnalysis:
         if isinstance(arg, javalang.tree.BinaryOperation):
             if isinstance(arg.operandl, javalang.tree.MemberReference):
                 if arg.operandl.member == var_name:
-
                     flow_added = True
                     return  flow_added# 하나의 인자만 확인하면 충분
-            elif isinstance(arg.operandr, javalang.tree.MemberReference):
+            if isinstance(arg.operandr, javalang.tree.MemberReference):
                 if arg.operandr.member == var_name:
                     flow_added = True
                     return  flow_added# 하나의 인자만 확인하면 충분
-            elif isinstance(arg.operandl, javalang.tree.BinaryOperation):
+            if isinstance(arg.operandl, javalang.tree.BinaryOperation):
                 flow_added = self.__judge_binary_operation(arg.operandl, flow_added, var_name)
+                return flow_added
+            if isinstance(arg.operandr, javalang.tree.BinaryOperation):
+                flow_added = self.__judge_binary_operation(arg.operandr, flow_added, var_name)
                 return flow_added
 
 
