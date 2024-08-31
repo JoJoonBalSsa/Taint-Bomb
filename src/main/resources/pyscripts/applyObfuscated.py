@@ -33,7 +33,7 @@ class ApplyObfuscated:
             raise ValueError("메소드 이름을 찾을 수 없습니다.")
 
         # 메소드를 찾기 위한 정규 표현식 패턴
-        pattern = r'(public|protected|private|static|\s) +[\w\<\>\[\]]+\s+' + re.escape(method_name) + r'\s*\([^\)]*\)\s*\{'
+        pattern = r'(public|protected|private|static|\s)* +[\w\<\>\[\]]+\s+' + re.escape(method_name) + r'\s*\([^\)]*\)\s*\{'
 
         matches = list(re.finditer(pattern, content))
         if not matches:
@@ -50,6 +50,7 @@ class ApplyObfuscated:
 
             # 현재 메소드의 내용 추출 및 정규화
             current_method = content[start:end]
+            print(current_method)
             normalized_current_method = re.sub(r'\s+', '', current_method)
 
             print("current : " + normalized_current_method)
