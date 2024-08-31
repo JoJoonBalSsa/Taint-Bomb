@@ -7,7 +7,7 @@ import json
 
 class LevelObfuscation:
     def __init__(self, output_folder):
-        tainted_json = self.parse_json(output_folder + '/analysis_result_copy.json')
+        tainted_json = self.parse_json(output_folder + '/analysis_result.json')
 
         self.check_level(tainted_json)
 
