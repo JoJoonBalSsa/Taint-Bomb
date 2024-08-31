@@ -6,7 +6,7 @@ from sensitivityDB import SensitivityDB as S
 from methodEndLineFinder import MethodEndLineFinder
 
 
-class taintAnalysis:
+class TaintAnalysis:
     __methods = defaultdict(list)
 
     __tainted_variables = []
