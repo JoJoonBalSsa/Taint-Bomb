@@ -40,9 +40,14 @@ class ObfuscateOperations:
         if expressions is not None:
             for expression in expressions:
                 obfuscated = self.obfuscate_expression(expression)
-                print(obfuscated)
-                # replace(cond,obfuscated)
+                print(f"Original: {expression}")
+                print(f"Obfuscated: {obfuscated}")
 
+                #self.source_code = self.replace_expression(self.source_code, expression, obfuscated)
+
+
+    def return_obfuscated_code(self):
+        return self.source_code
 
     def obfuscate_expression(self, expression):
         # 괄호 안의 내용을 먼저 처리
@@ -88,3 +93,14 @@ class ObfuscateOperations:
                 match = pattern.search(expression)
 
         return expression
+
+
+    def replace_expression(self, source_code, original, obfuscated):
+        # 정규표현식 특수문자를 이스케이프
+        escaped_original = re.escape(original)
+
+        # 공백을 허용하는 패턴으로 변경
+        pattern = r'\s*'.join(escaped_original.split())
+
+        # 대체
+        return re.sub(pattern, obfuscated, source_code)

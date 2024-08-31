@@ -65,8 +65,8 @@ def main(output_folder, keyDecryptJava, stringDecryptJava):
     create_result(output_folder, tainted.flows)
     __analyze_method(output_folder, tainted)
 
-    RemoveComments(output_folder)
-    StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
+    #RemoveComments(output_folder)
+    #StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
 
     LevelObfuscation(output_folder)
 
