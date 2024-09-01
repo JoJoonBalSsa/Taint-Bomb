@@ -12,4 +12,8 @@ object MyConsoleLogger {
     fun println(message: String) {
         console?.append("$message\n")
     }
+
+    fun clearConsole() {
+        console?.text = ""
+    }
 }
