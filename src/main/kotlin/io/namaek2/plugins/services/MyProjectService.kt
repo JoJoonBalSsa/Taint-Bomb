@@ -25,6 +25,8 @@ class MyProjectService(private val project: Project) {
         val outFolder = "$projectFolder/obfuscated_project_folder"
         val tempFolder = "$projectFolder/temp"
 
+        MyConsoleLogger.clearConsole()
+
         if (javaFilesPath != null) {
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Running Python Task") {
                 override fun run(indicator: ProgressIndicator) {
