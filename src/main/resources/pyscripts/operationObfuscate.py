@@ -31,6 +31,8 @@ class ObfuscateOperations:
         O = OperationDB()
         self.op_json = O.op_db()
 
+        self.obfuscated = None
+
         self.obfuscation_map = {}  # 난독화된 부분을 임시 저장할 맵
         self.counter = 0  # 난독화 넘버링에 사용
 
@@ -39,15 +41,17 @@ class ObfuscateOperations:
 
         if expressions is not None:
             for expression in expressions:
-                obfuscated = self.obfuscate_expression(expression)
-                print(f"Original: {expression}")
-                print(f"Obfuscated: {obfuscated}")
+                if len(expression) > 0:
+                    obfuscated = self.obfuscate_expression(expression)
 
-                #self.source_code = self.replace_expression(self.source_code, expression, obfuscated)
+                    # list to string
+                    expression = ''.join(expression)
+
+                    self.obfuscated = self.replace_expression(self.source_code, expression, obfuscated)
 
 
     def return_obfuscated_code(self):
-        return self.source_code
+        return self.obfuscated
 
     def obfuscate_expression(self, expression):
         # 괄호 안의 내용을 먼저 처리
@@ -96,11 +100,22 @@ class ObfuscateOperations:
 
 
     def replace_expression(self, source_code, original, obfuscated):
-        # 정규표현식 특수문자를 이스케이프
-        escaped_original = re.escape(original)
+        result = ""
+        index = 0
+        while index < len(source_code):
+            # 원본 표현식 찾기
+            found_index = source_code.find(original, index)
+            if found_index == -1:
+                # 더 이상 찾을 수 없으면 남은 부분을 결과에 추가하고 종료
+                result += source_code[index:]
+                break
 
-        # 공백을 허용하는 패턴으로 변경
-        pattern = r'\s*'.join(escaped_original.split())
+            # 찾은 위치 이전까지의 코드를 결과에 추가
+            result += source_code[index:found_index]
 
-        # 대체
-        return re.sub(pattern, obfuscated, source_code)
+            # 원본 표현식을 난독화된 표현식으로 대체
+            result += obfuscated
+
+            # 다음 검색 위치 갱신
+            index = found_index + len(original)
+        return result

@@ -22,7 +22,6 @@ class ApplyObfuscated:
     def replace_method(self, content, method_code, obfuscated_code):
         # 메소드 코드 정규화 (공백 제거)
         normalized_method_code = re.sub(r'\s+', '', method_code)
-        print(normalized_method_code)
 
         # 메소드 이름 추출
         method_name = re.search(r'\w+\s*\(', method_code)
@@ -50,7 +49,6 @@ class ApplyObfuscated:
 
             # 현재 메소드의 내용 추출 및 정규화
             current_method = content[start:end]
-            print(current_method)
             normalized_current_method = re.sub(r'\s+', '', current_method)
 
             print("current : " + normalized_current_method)
@@ -59,7 +57,7 @@ class ApplyObfuscated:
             # 메소드 내용이 일치하는지 확인
             if normalized_current_method == normalized_method_code:
                 content = content[:start] + obfuscated_code.strip() + content[end:]
-                print(f"메소드 '{method_name}'가 성공적으로 대체되었습니다.")
+                print(f"메소드 '{method_name}'가 성공적으로 대체되었습니다.\n")
 
                 return content
 
