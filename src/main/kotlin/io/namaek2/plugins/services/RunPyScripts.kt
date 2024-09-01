@@ -15,7 +15,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 
     init {
         indicator.text = "Initializing Python scripts..."
-        indicator.fraction = 0.5  // Assuming folder copy took 50%
+        indicator.fraction = 0.2  // Assuming folder copy took 50%
 
         readHashInfo()
         copyScripts()
@@ -23,15 +23,16 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             executePythonScript()
             runGradle()
         }
-        deleteDirectory(File(tempFilePath))
-        indicator.fraction = 1.0
+
+        indicator.fraction = 0.95
         indicator.text = "Python scripts execution completed."
     }
 
     private fun readHashInfo(){
         indicator.text = "Reading python check_hash file..."
-        indicator.fraction = 0.55
+        indicator.fraction = 0.22
         MyConsoleLogger.println("Reading python check_hash file...")
+
         val hashFileListPath = javaClass.getResourceAsStream("/pyscripts/check_hash")
         readHash(hashFileListPath)
     }
@@ -53,7 +54,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 
     private fun copyScripts() {
         indicator.text = "Copying scripts..."
-        indicator.fraction = 0.60
+        indicator.fraction = 0.25
         MyConsoleLogger.println("Copying scripts...")
 
         tempFilePath = javaFilesPath + "/temp"
@@ -87,7 +88,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 
     private fun compareFileHashes(): Boolean {
         indicator.text = "Comparing file hashes..."
-        indicator.fraction = 0.65
+        indicator.fraction = 0.3
         MyConsoleLogger.println("Comparing file hashes...")
         for (i in 0..scriptNames.size - 1) {
             val fileName = scriptNames[i] + ".py"
@@ -137,7 +138,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 
     private fun executePythonScript() {
         indicator.text = "Executing Python script..."
-        indicator.fraction = 0.70
+        indicator.fraction = 0.35
         try{
             val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
             val stringDecryptJava = when {
@@ -236,21 +237,5 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             MyConsoleLogger.println("Error in jar building process: ${e.message}")
         }
         indicator.fraction = 0.95
-    }
-
-    private fun deleteDirectory(directory: File) {
-        indicator.text = "Cleaning up temporary files..."
-        indicator.fraction = 0.98
-
-        if (directory.exists() && directory.isDirectory) {
-            directory.listFiles()?.forEach { file ->
-                if (file.isDirectory) {
-                    deleteDirectory(file)
-                } else {
-                    file.delete()
-                }
-            }
-            directory.delete()
-        }
     }
 }

@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import io.namaek2.plugins.MyBundle
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
+import java.io.File
 import java.nio.file.*
 import kotlin.io.path.*
 
@@ -21,19 +22,25 @@ class MyProjectService(private val project: Project) {
 
     fun runPythonTask() {
         val javaFilesPath = projectFolder
-        val outFolder = projectFolder + "/obfuscated_project_folder"
+        val outFolder = "$projectFolder/obfuscated_project_folder"
+        val tempFolder = "$projectFolder/temp"
 
         if (javaFilesPath != null) {
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Running Python Task") {
                 override fun run(indicator: ProgressIndicator) {
                     indicator.isIndeterminate = false
 
-                    // Copying folder
-                    indicator.text = "Copying project folder..."
+                    indicator.text = "Deleting past obfuscated directory..."
                     indicator.fraction = 0.0
-                    copyFolder(Path(javaFilesPath), Path(outFolder), indicator)
+                    deleteDirectory(File(outFolder))
+
+                    copyDirectory(Path(javaFilesPath), Path(outFolder), indicator)
 
                     RunPyScripts(javaFilesPath, outFolder, indicator)
+
+                    indicator.text = "Deleting temp directory..."
+                    deleteDirectory(File(tempFolder))
+                    indicator.fraction = 1.0
                 }
             })
         } else {
@@ -41,7 +48,7 @@ class MyProjectService(private val project: Project) {
         }
     }
 
-    private fun copyFolder(source: Path, destination: Path, indicator: ProgressIndicator) {
+    private fun copyDirectory(source: Path, destination: Path, indicator: ProgressIndicator) {
         val totalFiles = Files.walk(source).count()
         var copiedFiles = 0
 
@@ -55,10 +62,23 @@ class MyProjectService(private val project: Project) {
                     MyConsoleLogger.println("Copied: $sourcePath")
 
                     copiedFiles++
-                    indicator.fraction = 0.5 * (copiedFiles.toDouble() / totalFiles)
+                    indicator.fraction = 0.2 * (copiedFiles.toDouble() / totalFiles)
                     indicator.text = "Copying files... (${copiedFiles}/${totalFiles})"
                 }
             }
+        }
+    }
+
+    private fun deleteDirectory(directory: File) {
+        if (directory.exists() && directory.isDirectory) {
+            directory.listFiles()?.forEach { file ->
+                if (file.isDirectory) {
+                    deleteDirectory(file)
+                } else {
+                    file.delete()
+                }
+            }
+            directory.delete()
         }
     }
 }
