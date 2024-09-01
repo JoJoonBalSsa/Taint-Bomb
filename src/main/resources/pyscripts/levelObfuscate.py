@@ -28,14 +28,17 @@ class LevelObfuscation:
                 ddb = DumbDB()
                 for tainted in item["tainted"]:
                     # 연산자 난독화
-                    print("연산자")
+                    print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
                     obfuscated_code = O.return_obfuscated_code()
 
                     # 더미 코드 추가
                     rand = ddb.get_unique_random_number()
                     if rand is not None:
-                        print("더미코드")
+                        if obfuscated_code is None:
+                            obfuscated_code = tainted["source_code"]
+
+                        print("dummy code insertion started...")
                         dummy_code = ddb.get_dumb(rand)
                         idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
                         if idc.get_obfuscated_code() is not None:
@@ -44,11 +47,14 @@ class LevelObfuscation:
                     else:
                         continue
 
-                    print(obfuscated_code)
-                    ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+                    if obfuscated_code is not None:
+                        ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
 
             if item["sensitivity"] == 2:
                 for tainted in item["tainted"]:
+                    print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
                     obfuscated_code = O.return_obfuscated_code()
-                    ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+
+                    if obfuscated_code is not None:
+                        ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)

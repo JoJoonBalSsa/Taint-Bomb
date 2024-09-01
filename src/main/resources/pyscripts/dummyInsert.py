@@ -36,6 +36,9 @@ class InsertDummyCode:
             return None
         else:
             obfuscated_code += self.dummy
+            print("dummy code inserted : ")
+            print(obfuscated_code)
+
             return obfuscated_code
 
 
