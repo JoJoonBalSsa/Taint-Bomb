@@ -2,6 +2,7 @@ from operationObfuscate import ObfuscateOperations
 from applyObfuscated import ApplyObfuscated
 from dumbDB import DumbDB
 from dummyInsert import InsertDummyCode
+from methodSplit import SplitMethod
 
 import json
 
@@ -24,7 +25,7 @@ class LevelObfuscation:
             if item["sensitivity"] == 1:
                 continue
 
-            if item["sensitivity"] == 3:
+            if item["sensitivity"] == 2:
                 ddb = DumbDB()
                 for tainted in item["tainted"]:
                     # 연산자 난독화
@@ -38,19 +39,36 @@ class LevelObfuscation:
                         if obfuscated_code is None:
                             obfuscated_code = tainted["source_code"]
 
-                        print("dummy code insertion started...")
-                        dummy_code = ddb.get_dumb(rand)
-                        idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
-                        if idc.get_obfuscated_code() is not None:
+                            print("dummy code insertion started...")
+                            dummy_code = ddb.get_dumb(rand)
+                            idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
                             obfuscated_code = idc.get_obfuscated_code()
+
+                        else:
+                            print("dummy code insertion started...")
+                            dummy_code = ddb.get_dumb(rand)
+                            idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
+                            temp_ob = idc.get_obfuscated_code()
+                            if temp_ob is not None:
+                                obfuscated_code = temp_ob
 
                     else:
                         continue
 
+                    print("function spliting... ",)
+                    if obfuscated_code is None:
+                        obfuscated_code = tainted["source_code"]
+                    # 메소드 분할
+                    O = SplitMethod(obfuscated_code)
+                    temp_ob = O.obfuscate_method()
+
+                    if temp_ob is not None:
+                        obfuscated_code = temp_ob
+
                     if obfuscated_code is not None:
                         ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
 
-            if item["sensitivity"] == 2:
+            if item["sensitivity"] == 3:
                 for tainted in item["tainted"]:
                     print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
