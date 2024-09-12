@@ -33,7 +33,7 @@ class SplitMethod:
 
         # 난독화된 메소드 구성
         obfuscated_body = f"""{{
-            int state = 0;
+            int state = 0
             while(state != -1) {{
                 switch(state) {{
                     {' '.join(labeled_blocks)}
