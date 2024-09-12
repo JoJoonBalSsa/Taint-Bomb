@@ -187,7 +187,6 @@ class StringInsert:
         
         lines = code.split('\n')
         classes_pos = sorted(classes_pos, key=lambda x: (x, -x))  # 아래 클래스부터 추가
-        
         array_declaration = array_declaration.reverse() if len(array_declaration) > 1 else array_declaration
         key_declaration_list = key_declaration_list.reverse() if len(key_declaration_list) > 1 else key_declaration_list
 
@@ -205,9 +204,11 @@ class StringInsert:
          """
         
         for i,pos in enumerate(classes_pos):
-             lines.insert(pos,array_declaration[i])
-             lines.insert(pos+1,key_declaration_list[i])
-             lines.insert(pos+2,decrypt_code)
+            print("pos : ", pos)
+            print("array_declaration : ", array_declaration[i])
+            lines.insert(pos,array_declaration[i])
+            lines.insert(pos+1,key_declaration_list[i])
+            lines.insert(pos+2,decrypt_code)
     
         reflection = 'import java.lang.reflect.Method;'
         if reflection not in lines:
