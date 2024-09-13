@@ -30,7 +30,7 @@ class StringEncrypt:
             enc_aes_key = base64.b64encode(enc_aes_key).decode('utf-8').replace("=","")
             encrypted_aes_key = base64.b64encode(encrypted_aes_key).decode('utf-8').replace("=","")
 
-            encrypted_Literals.append([p, c, encrypted_aes_key, enc_aes_key,[(self.encrypt_string(literal, aes_key), _) for literal, _ in strings]])
+            encrypted_Literals.append([p, c, encrypted_aes_key, enc_aes_key,[(self.encrypt_string(literal, aes_key), _) for literal, _ in strings],_])
 
         return encrypted_Literals
     
