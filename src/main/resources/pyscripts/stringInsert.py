@@ -123,11 +123,11 @@ class StringInsert:
      def __replace_strings(self):
          java_files = ObfuscateTool.parse_java_files(self.foler_path)
          for path,tree,source_code in java_files:
-           replaced_code = self.replace_string_literals(source_code)
+           replaced_code = self.replace_string_literals(source_code,path)
            ObfuscateTool.overwrite_file(path, replaced_code)
 
 
-     def replace_string_literals(self, code):
+     def replace_string_literals(self, code,file_path):
         tree = javalang.parse.parse(code)
         lines = code.split('\n')
         for path, node in tree:
@@ -136,11 +136,12 @@ class StringInsert:
             if isinstance(node, javalang.tree.ClassDeclaration): 
                 class_name = node.name
                 for p, c, literals,_ in self.Literals:
-                     if p == package_name and c == class_name:
+                     if p == package_name and c == class_name and file_path == _:
                          literals_sorted = sorted(literals, key=lambda x: (x[1][0], -x[1][1]))  # 라인 오른쪽부터 문자열 변환
                          for index, (literal, position) in enumerate(literals_sorted):
                               line_index = position[0] - 1
                               column_index = position[1] - 1
+
                               line = lines[line_index]
                               end_column_index = column_index + len(literal)
                               new_line = line[:column_index] + f'STRING_LITERALS[{index}]' + line[end_column_index:]
@@ -154,11 +155,11 @@ class StringInsert:
      def __insert_string(self): 
          java_files = ObfuscateTool.parse_java_files(self.foler_path)
          for path, tree, source_code in java_files:
-           inserted_code = self.insert_encrypted_string_array(source_code)
+           inserted_code = self.insert_encrypted_string_array(source_code,path)
            ObfuscateTool.overwrite_file(path, inserted_code)
      
 
-     def insert_encrypted_string_array(self, code):
+     def insert_encrypted_string_array(self, code,file_path):
         tree = javalang.parse.parse(code)
         package_name = None
 
@@ -174,8 +175,8 @@ class StringInsert:
                 package_name = node.name
             if isinstance(node, javalang.tree.ClassDeclaration): # 근데 클래스 밖에있는 문자열, 다른클래스에서 특정 클래스의 문자열을 불러온다면?
                 class_name = node.name
-                for p,c,encrypted_aes_key,enc_aes_key,literals in self.enc_Literals:
-                     if p == package_name and c == class_name: # 클래스 별 암호화된 문자열 삽입
+                for p,c,encrypted_aes_key,enc_aes_key,literals,_ in self.enc_Literals:
+                     if p == package_name and c == class_name and _ == file_path: # 클래스 별 암호화된 문자열 삽입
                           classes_pos.append(node.position[0])
                           literals_sorted = sorted(literals, key=lambda x: (x[1][0], -x[1][1]))  # 라인 오른쪽부터 문자열 변환
 
@@ -187,8 +188,8 @@ class StringInsert:
         
         lines = code.split('\n')
         classes_pos = sorted(classes_pos, key=lambda x: (x, -x))  # 아래 클래스부터 추가
-        array_declaration = array_declaration.reverse() if len(array_declaration) > 1 else array_declaration
-        key_declaration_list = key_declaration_list.reverse() if len(key_declaration_list) > 1 else key_declaration_list
+        array_declaration = list(reversed(array_declaration)) if len(array_declaration) > 1 else array_declaration
+        key_declaration_list = list(reversed(key_declaration_list))if len(key_declaration_list) > 1 else key_declaration_list
 
         decrypt_code = f"""        
              static{{try {{Class<?> decryptorClass1 = Class.forName("{self.key_decrypt[0]}.{self.key_decrypt[1]}");
@@ -202,13 +203,11 @@ class StringInsert:
              ENCRYPTION_KEY)); 
              }}}} catch (Exception e) {{}}}}
          """
-        
+
         for i,pos in enumerate(classes_pos):
-            print("pos : ", pos)
-            print("array_declaration : ", array_declaration[i])
-            lines.insert(pos,array_declaration[i])
-            lines.insert(pos+1,key_declaration_list[i])
-            lines.insert(pos+2,decrypt_code)
+             lines.insert(pos,array_declaration[i])
+             lines.insert(pos+1,key_declaration_list[i])
+             lines.insert(pos+2,decrypt_code)
     
         reflection = 'import java.lang.reflect.Method;'
         if reflection not in lines:
