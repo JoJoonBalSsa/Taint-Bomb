@@ -5,7 +5,7 @@ from removeComments import RemoveComments
 from stringObfuscate import StringObfuscate
 from analysisResultManager import AnalysisResultManager
 from levelObfuscate import LevelObfuscation
-
+from identifierObfuscate import ob_identifier
 
 def create_result(output_folder, flows):
     path = output_folder + "/result.txt"
@@ -69,6 +69,9 @@ def main(output_folder, keyDecryptJava, stringDecryptJava):
     __analyze_method(output_folder, tainted)
 
     LevelObfuscation(output_folder)
+
+    print(output_folder)
+    ob_identifier(output_folder,output_folder)
 
 
 if __name__ == '__main__':
