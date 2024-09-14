@@ -2,7 +2,7 @@ from operationObfuscate import ObfuscateOperations
 from applyObfuscated import ApplyObfuscated
 from dumbDB import DumbDB
 from dummyInsert import InsertDummyCode
-from methodSplit import SplitMethod
+from methodSplit import MethodSplit
 
 import json
 
@@ -58,9 +58,10 @@ class LevelObfuscation:
                     print("function spliting... ",)
                     if obfuscated_code is None:
                         obfuscated_code = tainted["source_code"]
+
                     # 메소드 분할
-                    O = SplitMethod(obfuscated_code)
-                    temp_ob = O.obfuscate_method()
+                    O = MethodSplit(obfuscated_code)
+                    temp_ob = O.get_new_method()
 
                     if temp_ob is not None:
                         obfuscated_code = temp_ob
