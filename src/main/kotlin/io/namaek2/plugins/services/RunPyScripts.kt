@@ -185,7 +185,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
                     MyConsoleLogger.println("Error in main execution : $exitCode")
                 }
             } catch (e: InterruptedException) {
-                e.printStackTrace()
+                MyConsoleLogger.println("Error in main execution process: ${e.message}")
             }
         } catch (e: Exception) {
             MyConsoleLogger.println("Error in script execution process: ${e.message}")
