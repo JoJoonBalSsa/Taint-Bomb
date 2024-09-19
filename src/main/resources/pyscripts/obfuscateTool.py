@@ -27,11 +27,9 @@ class ObfuscateTool:
 
                     try:
                         tree = javalang.parse.parse(source_code)
+                        java_files.append((file_path, tree, source_code))
                     except javalang.parser.JavaParserError as e:
                         print(f"Error parsing file {file_path}: {e}")
                     except javalang.parser.JavaSyntaxError as e:
                         print(f"Syntax error in file {file_path}: {e}")
-
-
-                        java_files.append((file_path, tree, source_code))
         return java_files

@@ -22,7 +22,7 @@ class StringEncrypt:
         
         for p, c, strings,_ in string_literals:
             aes_key = os.urandom(16)
-            enc_aes_key = os.urandom(4)
+            enc_aes_key = os.urandom(8)
 
             ko = KeyObfuscate(aes_key, enc_aes_key)
             encrypted_aes_key = ko.enc_aes_key
