@@ -6,13 +6,14 @@ from stringObfuscate import StringObfuscate
 from analysisResultManager import AnalysisResultManager
 from levelObfuscate import LevelObfuscation
 from identifierObfuscate import ob_identifier
+from makeMD import MakeMD
 
 def create_result(output_folder, flows):
     path = output_folder + "/result.txt"
     with open(path, 'w', encoding='utf-8') as file:  # 결과 파일 생성
         for (class_method, var), value in flows.items():
             file.write("Tainted Variable:\n")
-            file.write(f"{class_method}, {var}\n")
+            file.write(f"{var}\n")
             file.write("흐름 파악\n")
             for f in value:
                 if isinstance(f[0], list):
@@ -64,9 +65,13 @@ def main(output_folder, keyDecryptJava, stringDecryptJava):
     StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
 
     tainted = TaintAnalysis(output_folder)
+
     print_result(tainted._priority_flow())
     create_result(output_folder, tainted.flows)
     __analyze_method(output_folder, tainted)
+
+    make_md = MakeMD(output_folder + "/result.txt", output_folder + "/analysis_result.md")
+    make_md.make_md_file()
 
     LevelObfuscation(output_folder)
 
