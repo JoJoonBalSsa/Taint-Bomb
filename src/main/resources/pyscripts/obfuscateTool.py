@@ -1,12 +1,13 @@
 import random
 import javalang
 import os
-
+import secrets
 
 class ObfuscateTool:
     def random_class(class_list, random_count):
         leng = len(class_list)
-        random_indices = [random.randint(0, leng - 1) for _ in range(random_count)]
+        secrets.randbelow(leng-1)
+        random_indices = [secrets.randbelow(leng) for _ in range(random_count)]
         random_class = [class_list[i] for i in random_indices]
 
         return random_class
