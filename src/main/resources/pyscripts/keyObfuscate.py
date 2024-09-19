@@ -1,4 +1,6 @@
 import hashlib
+import os
+
 
 class KeyObfuscate:
     def __init__(self, aes_key, enc_key):
@@ -7,8 +9,9 @@ class KeyObfuscate:
 
     def __key_schedule(self, key, rounds):
         schedule = [key]
+        salt = os.urandom(16)
         for i in range(1, rounds):
-            new_key = hashlib.sha256(schedule[-1]).digest()
+            new_key = hashlib.sha256(salt + schedule[-1]).digest()
             schedule.append(new_key[:16])  # 16바이트로 제한
         return schedule
 
