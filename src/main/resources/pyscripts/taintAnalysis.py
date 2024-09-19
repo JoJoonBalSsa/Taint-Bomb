@@ -56,23 +56,20 @@ class TaintAnalysis:
                 source_sensitivity = S.source_functions.get(source, 0)  # 기본값 0
                 sink_sensitivity = S.sink_functions.get(sink, 0)        # 기본값 0
 
-                # 민감도를 더함
-                total_sensitivity = source_sensitivity + sink_sensitivity
-
-                # 민감도를 0.5 단위로 반올림하여 1, 2, 3 중 하나로 설정
-                rounded_sensitivity = round(total_sensitivity / 1.5) * 1.5
+                # source와 sink 민감도 중 더 큰 값을 사용 (max)
+                total_sensitivity = max(source_sensitivity, sink_sensitivity)
 
                 # 민감도를 흐름 앞에 삽입
-                prioritized_flow = [int(round(rounded_sensitivity))] + flow
+                prioritized_flow = [int(round(total_sensitivity))] + flow
                 prioritized_flows.append(prioritized_flow)
 
         # 우선순위에 따라 flows를 정렬
         # prioritized_flows.sort(reverse=True, key=lambda x: x[0])
-        '''
+
         # 최종 결과 출력 (필요에 따라 반환하거나 다른 용도로 사용)
-        for flow in prioritized_flows:
-            print(flow)
-        '''
+        # for flow in prioritized_flows:
+        #     print(flow)
+
         return prioritized_flows
 
 
@@ -213,7 +210,6 @@ class TaintAnalysis:
 
                             # Store start and end positions in a single variable
                             self._get_position=f"{start_line}-{end_line}"
-                            print(self._get_position)
                             # Return or use node_positions as needed
                             return self._method_declaration_to_string(node)
 
@@ -346,7 +342,7 @@ class TaintAnalysis:
                         break
 
             if flow_added:
-                self.__flow.append(f".{method_name}.{node.member},")
+                self.__flow.append(f"{class_name}.{method_name}.{node.member}")
                 log_message = f".{method_name}.{node.qualifier}.{node.member}"
                 logging.info(log_message)
                 self.sink_check.append(node.member)
