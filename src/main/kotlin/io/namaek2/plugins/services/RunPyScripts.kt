@@ -185,7 +185,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
                     MyConsoleLogger.println("Error in main execution : $exitCode")
                 }
             } catch (e: InterruptedException) {
-                MyConsoleLogger.println("Error in main execution process: ${e.message}")
+                MyConsoleLogger.println("Canceled by user")
             }
         } catch (e: Exception) {
             MyConsoleLogger.println("Error in script execution process: ${e.message}")
@@ -267,7 +267,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
                     MyConsoleLogger.println("Error in jar building : $exitCode")
                 }
             } catch (e: InterruptedException) {
-                e.printStackTrace()
+                MyConsoleLogger.println("Canceled by user")
             }
         } catch (e: Exception) {
             MyConsoleLogger.println("Error in jar building process: ${e.message}")
