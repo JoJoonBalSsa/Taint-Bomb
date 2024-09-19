@@ -3,9 +3,8 @@ import os
 import datetime
 from collections import defaultdict, Counter
 
-
 class MakeMD:
-    def __init__(self, input_file, output_file):
+    def __init__(self, input_file='result.txt', output_file='analysis_result.md'):
         self.input_file = input_file
         self.output_file = output_file
 
@@ -20,8 +19,8 @@ class MakeMD:
 
         i = 0
         while i < len(lines):
-            line = lines[i].strip()
-            if line.startswith("Tainted Variable:"):
+            line = lines[i].strip() if lines[i] is not None else ""
+            if line and line.startswith("Tainted Variable:"):
                 variable_name = lines[i + 1].strip()
                 flow = []
                 i += 3  # 'Tainted Variable:' 줄과 변수 이름 줄을 건너뜁니다
