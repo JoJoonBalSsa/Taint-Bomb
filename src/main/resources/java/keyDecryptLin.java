@@ -2,9 +2,9 @@ public static List<byte[]> keySchedule(byte[] key, int rounds) throws NoSuchAlgo
         List<byte[]> schedule = new ArrayList<>();
         schedule.add(key);
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        MessageDigest digestt = MessageDigest.getInstance("SHA-256");
         for (int i = 1; i < rounds; i++) {
-            byte[] newKey = digest.digest(schedule.get(schedule.size() - 1));
+            byte[] newKey = digestt.digest(schedule.get(schedule.size() - 1));
             schedule.add(Arrays.copyOf(newKey, 16)); // 16바이트로 제한
         }
         return schedule;
