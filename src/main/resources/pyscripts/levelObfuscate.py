@@ -20,7 +20,7 @@ class LevelObfuscation:
 
     def check_level(self, json):
         for item in json:
-            print("sensitivity", item["sensitivity"])
+            print("\nsensitivity", item["sensitivity"])
 
             if item["sensitivity"] == 1:
                 continue
@@ -28,6 +28,7 @@ class LevelObfuscation:
             if item["sensitivity"] == 2:
                 ddb = DumbDB()
                 for tainted in item["tainted"]:
+                    print(f"\n'{tainted["method_name"]}' level obfuscation")
                     # 연산자 난독화
                     print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
@@ -71,6 +72,7 @@ class LevelObfuscation:
 
             if item["sensitivity"] == 3:
                 for tainted in item["tainted"]:
+                    print(f"\n{tainted["method_name"]} level obfuscation")
                     print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
                     obfuscated_code = O.return_obfuscated_code()

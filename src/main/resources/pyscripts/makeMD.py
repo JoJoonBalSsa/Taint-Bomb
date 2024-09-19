@@ -30,7 +30,6 @@ class MakeMD:
                     try:
                         clean_line = self.clean_flow(lines[i].strip())
                         for flow_node in clean_line:
-                            print(flow_node)
                             flow.append(flow_node)
                     except ValueError:
                         print(f"Warning: Unable to parse line: {lines[i].strip()}")
@@ -210,4 +209,4 @@ class MakeMD:
             md_file.write(".call-graph svg { min-width: 100%; min-height: 100%; }\n")
             md_file.write("</style>\n")
 
-        print(f"Markdown 보고서가 생성되었습니다: {self.output_file}")
+        print(f"\nMarkdown 보고서가 생성되었습니다: {self.output_file}")

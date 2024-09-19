@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.Task
 import io.namaek2.plugins.MyBundle
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
 import java.io.File
+import java.io.IOException
 import java.nio.file.*
 import kotlin.io.path.*
 
@@ -28,21 +29,18 @@ class MyProjectService(private val project: Project) {
         MyConsoleLogger.clearConsole()
 
         if (javaFilesPath != null) {
-            ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Running Python Task") {
+            ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Running tasks...") {
                 override fun run(indicator: ProgressIndicator) {
                     indicator.isIndeterminate = false
 
                     indicator.text = "Deleting past obfuscated directory..."
-                    indicator.fraction = 0.0
-                    deleteDirectory(File(outFolder))
-
+                    deleteDirectory(File(outFolder), indicator, 0.0)
                     copyDirectory(Path(javaFilesPath), Path(outFolder), indicator)
 
                     RunPyScripts(javaFilesPath, outFolder, indicator)
 
                     indicator.text = "Deleting temp directory..."
-                    deleteDirectory(File(tempFolder))
-                    indicator.fraction = 1.0
+                    deleteDirectory(File(tempFolder), indicator, 1.0)
                 }
             })
         } else {
@@ -53,6 +51,7 @@ class MyProjectService(private val project: Project) {
     private fun copyDirectory(source: Path, destination: Path, indicator: ProgressIndicator) {
         val totalFiles = Files.walk(source).count()
         var copiedFiles = 0
+
 
         Files.walk(source).forEach { sourcePath ->
             if (!sourcePath.toString().contains("obfuscated_project_folder")) {
@@ -71,11 +70,21 @@ class MyProjectService(private val project: Project) {
         }
     }
 
-    private fun deleteDirectory(directory: File) {
+    private fun deleteDirectory(directory: File, indicator: ProgressIndicator, fractionValue: Double = 0.0) {
+        indicator.fraction = fractionValue
+
+        try {
+            deleteFile(directory)
+        } catch (e: IOException) {
+            thisLogger().error("Error deleting directory: ${e.message}")
+        }
+    }
+
+    private fun deleteFile(directory: File) {
         if (directory.exists() && directory.isDirectory) {
             directory.listFiles()?.forEach { file ->
                 if (file.isDirectory) {
-                    deleteDirectory(file)
+                    deleteFile(file)
                 } else {
                     file.delete()
                 }
