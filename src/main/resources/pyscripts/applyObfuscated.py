@@ -52,7 +52,7 @@ class ApplyObfuscated:
             normalized_current_method = re.sub(r'\s+', '', current_method)
 
             print("current : " + normalized_current_method)
-            print("source : " + normalized_method_code)
+            print("obfuscated source : " + obfuscated_code)
 
             # 메소드 내용이 일치하는지 확인
             if normalized_current_method == normalized_method_code:
