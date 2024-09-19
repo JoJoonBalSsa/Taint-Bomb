@@ -23,7 +23,8 @@ class StringSearch:
                 if isinstance(node, javalang.tree.PackageDeclaration):
                     package_name = node.name
 
-                if isinstance(node, javalang.tree.ClassDeclaration): # 근데 클래스 밖에있는 문자열, 다른클래스에서 특정 클래스의 문자열을 불러온다면?
+                if isinstance(node, javalang.tree.ClassDeclaration):
+                    # To-Do : 근데 클래스 밖에있는 문자열, 다른클래스에서 특정 클래스의 문자열을 불러온다면?
                     literal = self.__extract_strings(node, package_name)
                     literal.append(file_path)
                     literals.append(literal)

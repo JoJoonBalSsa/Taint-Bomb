@@ -6,7 +6,7 @@ import secrets
 class ObfuscateTool:
     def random_class(class_list, random_count):
         leng = len(class_list)
-        
+
         random_indices = [secrets.randbelow(leng) for _ in range(random_count)]
         random_class = [class_list[i] for i in random_indices]
 
@@ -27,7 +27,9 @@ class ObfuscateTool:
 
                     try:
                         tree = javalang.parse.parse(source_code)
-                        java_files.append((file_path, tree, source_code))
-                    except Exception as e:
+                        java_files.append((file_path, tree, source_code)
+                    except javalang.parser.JavaParserError as e:
                         print(f"Error parsing file {file_path}: {e}")
+                    except javalang.parser.JavaSyntaxError as e:
+                        print(f"Syntax error in file {file_path}: {e}")
         return java_files
