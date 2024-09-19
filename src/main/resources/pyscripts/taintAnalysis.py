@@ -96,10 +96,10 @@ class TaintAnalysis:
                         self.source_codes[file_path] = source_code  # 파일 경로와 소스 코드를 딕셔너리에 저장
                         success_files.append(file_path)
                         logger.info(f"파싱 성공: {file_path}")
+                    except javalang.parser.JavaSyntaxError as e:
+                        print(f"파싱 오류 발생 in {file_path}: {str(e)}")
                     except Exception as e:
-                        error_message = f"파싱 오류 발생 in {file_path}: {str(e)}"
-                        logger.error(error_message)
-                        error_files.append((file_path, str(e)))
+                        print(f"예상치 못한 오류 발생 in {file_path}: {str(e)}")
 
         logger.info(f"총 {total_files}개의 파일 중 {len(success_files)}개 파싱 성공, {len(error_files)}개 파싱 실패")
 
@@ -395,10 +395,12 @@ class TaintAnalysis:
                 if count < current_count:
                     return
 
-        except Exception as e:
+        except (NameError, ValueError) as e:
             error_message = f"오류 발생 in __if_variable_assignment: {str(e)}"
             logging.error(error_message)  # 오류 메시지를 파일에 기록
-            pass  # 오류 발생 시 무시하고 계속 진행
+        except Exception as e:
+            error_message = f"예상치 못한 오류 발생: {str(e)}"
+            logging.critical(error_message)
 
 
     def __if_local_variable_declaration(self, node, class_method, var_name, count, current_count):
