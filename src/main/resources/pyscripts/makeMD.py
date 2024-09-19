@@ -19,8 +19,10 @@ class MakeMD:
 
         i = 0
         while i < len(lines):
-            line = lines[i].strip() if lines[i] is not None else ""
-            if line and line.startswith("Tainted Variable:"):
+            line = lines[i].strip()
+            if line is None == "":
+                raise ValueError("No Line Error")
+            if line.startswith("Tainted Variable:"):
                 variable_name = lines[i + 1].strip()
                 flow = []
                 i += 3  # 'Tainted Variable:' 줄과 변수 이름 줄을 건너뜁니다
