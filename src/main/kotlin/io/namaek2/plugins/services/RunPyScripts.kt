@@ -96,11 +96,17 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
 
             val file = File(tempFilePath, fileName)
             if (file.exists()) {
-                val actualHash = calculateMD5(file)
-                if (actualHash == expectedHash) {
-                    MyConsoleLogger.println("File $fileName matches the expected hash.")
-                } else {
-                    MyConsoleLogger.println("File $fileName does not match the expected hash.")
+                try {
+                    val actualHash = calculateSHA256(file)
+                    if (actualHash == expectedHash) {
+                        MyConsoleLogger.println("File $fileName matches the expected hash.")
+                    } else {
+                        MyConsoleLogger.println("File $fileName does not match the expected hash.")
+                        return false
+                    }
+                }
+                catch (e: IOException) {
+                    MyConsoleLogger.println("File doesn't exist: ${e.message}")
                     return false
                 }
             } else {
@@ -111,9 +117,9 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
         return true
     }
 
-    private fun calculateMD5(file: File): String {
-        val buffer = ByteArray(1024)
-        val md = MessageDigest.getInstance("MD5")
+    private fun calculateSHA256(file: File): String {
+        val buffer = ByteArray(8192)  // 버퍼 크기를 8KB로 증가
+        val md = MessageDigest.getInstance("SHA-256")
         FileInputStream(file).use { fis ->
             var numRead: Int
             while (fis.read(buffer).also { numRead = it } != -1) {
@@ -121,11 +127,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             }
         }
         val hashBytes = md.digest()
-        val sb = StringBuilder()
-        for (b in hashBytes) {
-            sb.append(String.format("%02x", b))
-        }
-        return sb.toString()
+        return hashBytes.joinToString("") { "%02x".format(it) }
     }
 
     private fun readJavaCode(path: String): String {
@@ -187,7 +189,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             } catch (e: InterruptedException) {
                 MyConsoleLogger.println("Canceled by user")
             }
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             MyConsoleLogger.println("Error in script execution process: ${e.message}")
         }
         indicator.fraction = 0.85
@@ -269,7 +271,7 @@ class RunPyScripts(private var javaFilesPath: String, private var outputFolder :
             } catch (e: InterruptedException) {
                 MyConsoleLogger.println("Canceled by user")
             }
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             MyConsoleLogger.println("Error in jar building process: ${e.message}")
         }
         indicator.fraction = 0.95
