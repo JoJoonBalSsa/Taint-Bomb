@@ -1,7 +1,7 @@
 import secrets
 import javalang
 import os
-
+import secrets
 
 class ObfuscateTool:
     def random_class(class_list, random_count):
