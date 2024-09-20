@@ -1,12 +1,28 @@
-public static List<byte[]> keySchedule(byte[] key, int rounds) throws NoSuchAlgorithmException {
+
+private static List<byte[]> keySchedule(byte[] key, int rounds) {
+    int keyLength = key.length;
     List<byte[]> schedule = new ArrayList<>();
     schedule.add(key);
 
-    MessageDigest digest = MessageDigest.getInstance("\"SHA-256\"");
     for (int i = 1; i < rounds; i++) {
-        byte[] newKey = digest.digest(schedule.get(schedule.size() - 1));
-        schedule.add(Arrays.copyOf(newKey, 16)); // 16바이트로 제한
+        byte[] prevKey = schedule.get(schedule.size() - 1);
+        byte[] newKey = new byte[keyLength];
+
+        for (int j = 0; j < keyLength; j++) {
+            newKey[j] = (byte) (prevKey[(j + 1) % keyLength] ^
+                    prevKey[(j + 5) % keyLength] ^
+                    prevKey[(j + 13) % keyLength]);
+        }
+
+        for (int j = 0; j < keyLength; j++) {
+            if (j % 2 == 0) {
+                newKey[j] = (byte) (~newKey[j] & 0xFF);
+            }
+        }
+
+        schedule.add(newKey);
     }
+
     return schedule;
 }
 

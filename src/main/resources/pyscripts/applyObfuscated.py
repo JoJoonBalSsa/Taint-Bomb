@@ -26,7 +26,6 @@ class ApplyObfuscated:
         # 메소드 이름 추출
         method_name = re.search(r'\w+\s*\(', method_code)
         if method_name:
-            print(f"메소드 이름: {method_name.group().strip('(').strip()}")
             method_name = method_name.group().strip('(').strip()
         else:
             raise ValueError("메소드 이름을 찾을 수 없습니다.")
@@ -52,12 +51,12 @@ class ApplyObfuscated:
             normalized_current_method = re.sub(r'\s+', '', current_method)
 
             print("current : " + normalized_current_method)
-            print("source : " + normalized_method_code)
+            print("obfuscated source : " + obfuscated_code)
 
             # 메소드 내용이 일치하는지 확인
             if normalized_current_method == normalized_method_code:
                 content = content[:start] + obfuscated_code.strip() + content[end:]
-                print(f"메소드 '{method_name}'가 성공적으로 대체되었습니다.\n")
+                print(f"메소드 '{method_name}'가 성공적으로 대체되었습니다.")
 
                 return content
 

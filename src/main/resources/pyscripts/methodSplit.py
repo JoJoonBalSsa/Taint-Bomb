@@ -1,5 +1,5 @@
 import re
-import random
+import secrets
 import string
 
 
@@ -66,10 +66,13 @@ class MethodSplit:
         return 'try' in method_body
 
     def __generate_random_string(self, length=8):
-        letters = string.ascii_lowercase + string.digits
-        first_char = random.choice(string.ascii_lowercase)
-        remaining_chars = ''.join(random.choice(letters) for _ in range(length - 1))
-        return first_char + remaining_chars
+        if length < 1:
+            return None
+        letters = string.ascii_lowercase
+        letters_and_digits = string.ascii_lowercase + string.digits
+        first_char = secrets.choice(letters)
+        rest_chars = "".join(secrets.choice(letters_and_digits) for _ in range(length - 1))
+        return first_char + rest_chars
 
     def __generate_java_function(self, method_body, return_type, method_param):
         function_name = self.__generate_random_string()

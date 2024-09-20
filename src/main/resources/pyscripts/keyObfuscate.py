@@ -1,15 +1,29 @@
 import hashlib
+import os
+
 
 class KeyObfuscate:
     def __init__(self, aes_key, enc_key):
         self.enc_aes_key = self.__key_encrypt(aes_key, enc_key)
 
-
     def __key_schedule(self, key, rounds):
+        key_length = len(key)
         schedule = [key]
         for i in range(1, rounds):
-            new_key = hashlib.sha256(schedule[-1]).digest()
-            schedule.append(new_key[:16])  # 16바이트로 제한
+            prev_key = schedule[-1]
+            new_key = bytearray(key_length)
+
+            # 순환 왼쪽 시프트와 XOR 연산을 사용하여 새 키 생성
+            for j in range(key_length):
+                new_key[j] = prev_key[(j + 1) % key_length] ^ prev_key[(j + 5) % key_length] ^ prev_key[(j + 13) % key_length]
+
+            # 추가적인 복잡성을 위해 비트 반전 연산 추가
+            for j in range(key_length):
+                if j % 2 == 0:
+                    new_key[j] = ~new_key[j] & 0xFF
+
+            schedule.append(bytes(new_key))
+
         return schedule
 
 

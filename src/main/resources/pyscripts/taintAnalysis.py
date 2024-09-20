@@ -88,18 +88,13 @@ class TaintAnalysis:
                 if file_name.endswith('.java'):
                     total_files += 1
                     file_path = os.path.join(root, file_name)
-                    try:
-                        with open(file_path, 'r', encoding='utf-8') as file:
-                            source_code = file.read()
-                        tree = javalang.parse.parse(source_code)
-                        trees.append((file_path, tree))
-                        self.source_codes[file_path] = source_code  # 파일 경로와 소스 코드를 딕셔너리에 저장
-                        success_files.append(file_path)
-                        logger.info(f"파싱 성공: {file_path}")
-                    except Exception as e:
-                        error_message = f"파싱 오류 발생 in {file_path}: {str(e)}"
-                        logger.error(error_message)
-                        error_files.append((file_path, str(e)))
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        source_code = file.read()
+                    tree = javalang.parse.parse(source_code)
+                    trees.append((file_path, tree))
+                    self.source_codes[file_path] = source_code  # 파일 경로와 소스 코드를 딕셔너리에 저장
+                    success_files.append(file_path)
+                    logger.info(f"파싱 성공: {file_path}")
 
         logger.info(f"총 {total_files}개의 파일 중 {len(success_files)}개 파싱 성공, {len(error_files)}개 파싱 실패")
 
@@ -375,31 +370,24 @@ class TaintAnalysis:
 
 
     def __if_variable_assignment(self, node, class_method, var_name, count, current_count):
-        try:
-            if isinstance(node.value, javalang.tree.MethodInvocation):  # 2-2
-                if node.value.arguments:
-                    for arg_index, arg in enumerate(node.value.arguments):
-                        if isinstance(arg, javalang.tree.MemberReference) and arg.member == var_name and (count < current_count):
-                            # self.__flow.append([node.value.member,var_name])
-                            self.__track_variable_flow(class_method, node.expressionl.member, current_count)  # 같은 메서드에서 추적
+        if isinstance(node.value, javalang.tree.MethodInvocation):  # 2-2
+            if node.value.arguments:
+                for arg_index, arg in enumerate(node.value.arguments):
+                    if isinstance(arg, javalang.tree.MemberReference) and arg.member == var_name and (count < current_count):
+                        # self.__flow.append([node.value.member,var_name])
+                        self.__track_variable_flow(class_method, node.expressionl.member, current_count)  # 같은 메서드에서 추적
 
-            if isinstance(node.value, javalang.tree.MethodInvocation) and (node.value.qualifier == var_name) and (count < current_count):
-                # self.__flow.append([node.value.member,var_name])
-                self.__track_variable_flow(class_method, node.expressionl.member, current_count)  # 같은 메서드에서 추적
+        if isinstance(node.value, javalang.tree.MethodInvocation) and (node.value.qualifier == var_name) and (count < current_count):
+            # self.__flow.append([node.value.member,var_name])
+            self.__track_variable_flow(class_method, node.expressionl.member, current_count)  # 같은 메서드에서 추적
 
-            if isinstance(node.expressionl, javalang.tree.MemberReference) and node.value.member == var_name and (count < current_count):  # 1-1
-                self.__track_variable_flow(class_method, node.expressionl.member, current_count)
+        if isinstance(node.expressionl, javalang.tree.MemberReference) and node.value.member == var_name and (count < current_count):  # 1-1
+            self.__track_variable_flow(class_method, node.expressionl.member, current_count)
 
-            if isinstance(node.expressionl, javalang.tree.MemberReference) and node.expressionl.member == var_name and (count < current_count):  # 1-2
-                # 초기화 값이 Source 함수일 경우 추가 필요
-                if count < current_count:
-                    return
-
-        except Exception as e:
-            error_message = f"오류 발생 in __if_variable_assignment: {str(e)}"
-            logging.error(error_message)  # 오류 메시지를 파일에 기록
-            pass  # 오류 발생 시 무시하고 계속 진행
-
+        if isinstance(node.expressionl, javalang.tree.MemberReference) and node.expressionl.member == var_name and (count < current_count):  # 1-2
+            # 초기화 값이 Source 함수일 경우 추가 필요
+            if count < current_count:
+                return
 
     def __if_local_variable_declaration(self, node, class_method, var_name, count, current_count):
         for var_decl in node.declarators:

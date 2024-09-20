@@ -3,9 +3,8 @@ import os
 import datetime
 from collections import defaultdict, Counter
 
-
 class MakeMD:
-    def __init__(self, input_file, output_file):
+    def __init__(self, input_file='result.txt', output_file='analysis_result.md'):
         self.input_file = input_file
         self.output_file = output_file
 
@@ -21,6 +20,8 @@ class MakeMD:
         i = 0
         while i < len(lines):
             line = lines[i].strip()
+            if line is None == "":
+                raise ValueError("No Line Error")
             if line.startswith("Tainted Variable:"):
                 variable_name = lines[i + 1].strip()
                 flow = []
@@ -29,7 +30,6 @@ class MakeMD:
                     try:
                         clean_line = self.clean_flow(lines[i].strip())
                         for flow_node in clean_line:
-                            print(flow_node)
                             flow.append(flow_node)
                     except ValueError:
                         print(f"Warning: Unable to parse line: {lines[i].strip()}")
@@ -209,4 +209,4 @@ class MakeMD:
             md_file.write(".call-graph svg { min-width: 100%; min-height: 100%; }\n")
             md_file.write("</style>\n")
 
-        print(f"Markdown 보고서가 생성되었습니다: {self.output_file}")
+        print(f"\nMarkdown 보고서가 생성되었습니다: {self.output_file}")

@@ -1,4 +1,4 @@
-import random
+import secrets
 
 
 class DumbDB :
@@ -14,7 +14,7 @@ class DumbDB :
             return None
 
         while True:
-            rand = random.randint(0, self.list_length - 1)
+            rand = secrets.randbelow(self.list_length)
             if rand not in self.generated_numbers:
                 self.generated_numbers.add(rand)
                 return rand

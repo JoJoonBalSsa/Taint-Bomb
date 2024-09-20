@@ -1,12 +1,13 @@
-import random
+import secrets
 import javalang
 import os
-
+import secrets
 
 class ObfuscateTool:
     def random_class(class_list, random_count):
         leng = len(class_list)
-        random_indices = [random.randint(0, leng - 1) for _ in range(random_count)]
+
+        random_indices = [secrets.randbelow(leng) for _ in range(random_count)]
         random_class = [class_list[i] for i in random_indices]
 
         return random_class
@@ -27,9 +28,7 @@ class ObfuscateTool:
                     try:
                         tree = javalang.parse.parse(source_code)
                         java_files.append((file_path, tree, source_code))
+                    except SyntaxError as e:  # 문법 오류는 파이썬의 SyntaxError로 처리
+                         print(f"Syntax error in file {file_path}: {e}")
 
-                    except javalang.parser.JavaSyntaxError as e:
-                        print(f"Syntax error in file {file_path}: {e}")
-                    except Exception as e:
-                        print(f"Error parsing file {file_path}: {e}")
         return java_files

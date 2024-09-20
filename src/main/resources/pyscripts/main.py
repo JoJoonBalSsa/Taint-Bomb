@@ -25,6 +25,7 @@ def create_result(output_folder, flows):
 
 
 def print_result(flows):
+    print("\nTainted flows:")
     for f in flows:
         print(f)
     print()
@@ -41,7 +42,6 @@ def __analyze_method(output_folder, tainted):
 
         for count in range(1, len(flow)):
             method_full_path = flow[count]
-            print(method_full_path)
             big_parts = method_full_path.split(',')
             if len(big_parts) == 1:
                 big_parts.append("")
@@ -75,7 +75,6 @@ def main(output_folder, keyDecryptJava, stringDecryptJava):
 
     LevelObfuscation(output_folder)
 
-    print(output_folder)
     ob_identifier(output_folder,output_folder)
 
 
