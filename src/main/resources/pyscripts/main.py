@@ -75,7 +75,7 @@ def main(output_folder, keyDecryptJava, stringDecryptJava):
 
     LevelObfuscation(output_folder)
 
-    # ob_identifier(output_folder,output_folder)
+    ob_identifier(output_folder,output_folder)
 
 
 if __name__ == '__main__':
