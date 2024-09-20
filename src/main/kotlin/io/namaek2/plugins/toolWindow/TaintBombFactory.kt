@@ -9,7 +9,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
 import io.namaek2.plugins.MyBundle
-import io.namaek2.plugins.services.MyProjectService
+import io.namaek2.plugins.services.TaintBombService
 import javax.swing.JButton
 import javax.swing.JTextArea
 
@@ -35,14 +35,14 @@ class TaintBombFactory : ToolWindowFactory {
 
     class TaintBomb(toolWindow: ToolWindow) {
 
-        private val service = toolWindow.project.service<MyProjectService>()
+        private val service = toolWindow.project.service<TaintBombService>()
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
             val label = JBLabel(MyBundle.message("obfuscateLabel"))
             add(label)
             add(JButton(MyBundle.message("obfuscate")).apply {
                 addActionListener {
-                    label.text = MyBundle.message("obfuscateLabel", service.runPythonTask())
+                    label.text = MyBundle.message("obfuscateLabel", service.startTaintBomb())
                 }
             })
         }
