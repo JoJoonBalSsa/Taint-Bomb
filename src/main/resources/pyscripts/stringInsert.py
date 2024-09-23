@@ -36,6 +36,7 @@ class StringInsert:
      def insert_key_decrypt(self, code, key_decryptor_code):
         tree = javalang.parse.parse(code)
         lines = code.split('\n')
+        package_name = None
 
         for path, node in tree:
             
@@ -45,9 +46,8 @@ class StringInsert:
             if isinstance(node, javalang.tree.ClassDeclaration): 
                 class_name = node.name
                 pos = node.position.line
-                
 
-                if self.key_decrypt[0] == package_name and self.key_decrypt[1] == class_name:
+                if (self.key_decrypt[0] is None or self.key_decrypt[0] == package_name) and self.key_decrypt[1] == class_name:
                     key_decryptor_code = key_decryptor_code.split('\n')
                     key_decryptor_code = [line for line in key_decryptor_code if not line.startswith('import')]
                     key_decryptor_code = '\n'.join(key_decryptor_code)
@@ -84,6 +84,7 @@ class StringInsert:
      def insert_str_decrypt(self, code, key_decryptor_code):
         tree = javalang.parse.parse(code)
         lines = code.split('\n')
+        package_name = None
         pos = None
         for path, node in tree:
             
@@ -93,7 +94,7 @@ class StringInsert:
             if isinstance(node, javalang.tree.ClassDeclaration): 
                 class_name = node.name
                 pos = node.position.line
-                if self.str_decrypt[0] == package_name and self.str_decrypt[1] == class_name:
+                if (self.str_decrypt[0] is None or self.str_decrypt[0] == package_name) and self.str_decrypt[1] == class_name:
 
                     key_decryptor_code = key_decryptor_code.split('\n')
                     key_decryptor_code = [line for line in key_decryptor_code if not line.startswith('import')]
@@ -136,7 +137,7 @@ class StringInsert:
             if isinstance(node, javalang.tree.ClassDeclaration): 
                 class_name = node.name
                 for p, c, literals,_ in self.Literals:
-                     if p == package_name and c == class_name and file_path == _:
+                     if  c == class_name and file_path == _:
                          literals_sorted = sorted(literals, key=lambda x: (x[1][0], -x[1][1]))  # 라인 오른쪽부터 문자열 변환
                          for index, (literal, position) in enumerate(literals_sorted):
                               line_index = position[0] - 1
