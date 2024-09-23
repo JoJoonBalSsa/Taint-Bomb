@@ -177,7 +177,7 @@ class StringInsert:
             if isinstance(node, javalang.tree.ClassDeclaration): # 근데 클래스 밖에있는 문자열, 다른클래스에서 특정 클래스의 문자열을 불러온다면?
                 class_name = node.name
                 for p,c,encrypted_aes_key,enc_aes_key,literals,_ in self.enc_Literals:
-                     if p == package_name and c == class_name and _ == file_path: # 클래스 별 암호화된 문자열 삽입
+                     if  c == class_name and _ == file_path: # 클래스 별 암호화된 문자열 삽입
                           classes_pos.append(node.position[0])
                           literals_sorted = sorted(literals, key=lambda x: (x[1][0], -x[1][1]))  # 라인 오른쪽부터 문자열 변환
 
