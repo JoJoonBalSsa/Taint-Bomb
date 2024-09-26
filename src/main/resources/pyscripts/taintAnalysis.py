@@ -88,13 +88,24 @@ class TaintAnalysis:
                 if file_name.endswith('.java'):
                     total_files += 1
                     file_path = os.path.join(root, file_name)
-                    with open(file_path, 'r', encoding='utf-8') as file:
-                        source_code = file.read()
-                    tree = javalang.parse.parse(source_code)
-                    trees.append((file_path, tree))
-                    self.source_codes[file_path] = source_code  # 파일 경로와 소스 코드를 딕셔너리에 저장
-                    success_files.append(file_path)
-                    logger.info(f"파싱 성공: {file_path}")
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as file:
+                            source_code = file.read()
+                        tree = javalang.parse.parse(source_code)
+                        trees.append((file_path, tree))
+                        self.source_codes[file_path] = source_code  # 파일 경로와 소스 코드를 딕셔너리에 저장
+                        success_files.append(file_path)
+                        logger.info(f"파싱 성공: {file_path}")
+                    except javalang.parser.JavaSyntaxError as e:
+                        error_message = f"문법 오류 발생 in {file_path}: {str(e)}"
+                        logger.error(error_message)
+                        error_files.append((file_path, str(e)))
+
+                    except javalang.parser.JavaParserError as e:
+                        error_message = f"파싱 오류 발생 in {file_path}: {str(e)}"
+                        logger.error(error_message)
+                        error_files.append((file_path, str(e)))
+
 
         logger.info(f"총 {total_files}개의 파일 중 {len(success_files)}개 파싱 성공, {len(error_files)}개 파싱 실패")
 
