@@ -34,6 +34,8 @@ class ObfuscateTool:
                         print(f"Error parsing file {file_path}: {e}")
                     except javalang.parser.JavaSyntaxError as e:
                         print(f"Syntax error in file {file_path}: {e}")
+                    except SyntaxError as e:  # 문법 오류는 파이썬의 SyntaxError로 처리
+                         print(f"Syntax error in file {file_path}: {e}")
 
 
                         java_files.append((file_path, tree, source_code))
