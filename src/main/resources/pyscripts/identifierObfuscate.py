@@ -79,6 +79,7 @@ class ob_identifier:
             # 클래스나 Enum 선언
             elif isinstance(node, javalang.tree.ClassDeclaration) or isinstance(node, javalang.tree.EnumDeclaration):
                 current_class = node.name
+                print(current_class)
                 self.generate_obfuscated_name(node.name)
 
             # 메서드 선언
@@ -165,6 +166,9 @@ class ob_identifier:
         # 난독화 맵을 사용하여 소스 코드에 난독화된 식별자 치환 적용
         obfuscated_code = self.replace_identifiers_in_code(source_code,file_path)
 
+        relative_path = os.path.relpath(file_path, self.folder_path)
+        base_dir, original_filename = os.path.split(relative_path)
+
         # 파일 이름을 난독화된 클래스 또는 Enum 이름으로 변경
         file_name = os.path.basename(file_path)
         class_or_enum_name = os.path.splitext(file_name)[0]
@@ -174,7 +178,7 @@ class ob_identifier:
 
         # 새 파일 이름으로 저장 (클래스나 Enum 이름에 맞춰 파일명 설정)
         new_file_name = f"{class_or_enum_obfuscated}.java"
-        output_path = os.path.join(output_folder, new_file_name)
+        output_path = os.path.join(self.output_folder, base_dir, new_file_name)
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
@@ -215,6 +219,8 @@ class ob_identifier:
         curr_class =None
         for i, line in enumerate(lines):
             # import로 시작하는 라인을 처리
+            if line.strip().startswith("@"):
+                continue
             if line.strip().startswith('import'):
                 package_name_match = re.match(r'import\s+([\w\.]+);', line)
                 if package_name_match:
@@ -253,11 +259,12 @@ class ob_identifier:
 
 
             # 함수 호출 패턴 (외부 함수 난독화에서 제외)
-            pattern = r'(\w+)\.(\w+)\(\)'
+            pattern = r'(\w+)\.(\w+)\s*\((.*?)\)'
             matches = re.findall(pattern, line)
             for ii in range(len(matches)):
-                var , fun =  matches[ii]
-                if var in imp_var_list or var in external_class:
+                var , fun , _=  matches[ii]
+                if (var in imp_var_list) or (var in external_class):
+
                     line = line.replace(var+"."+fun+"(",var+"."+fun+"_DO_NOT_OBFUSCATE(")
 
 
@@ -266,8 +273,6 @@ class ob_identifier:
             for j, part in enumerate(parts):
                 # 문자열 리터럴은 그대로 두고, 리터럴이 아닌 코드 부분만 난독화 처리
                 if not part.startswith('"'):  # 큰따옴표로 시작하지 않으면 코드 부분
-
-
 
                     """ 변수 선언 및 정의 식별 """
                     variable_pattern = re.compile(r'(\w+)\s+(\w+)\s*=\s*') # 타입 변수 = 값 패턴을 찾는건데 타입 변수; 이렇게 끝나는 경우는?
@@ -280,14 +285,14 @@ class ob_identifier:
 
 
 
-                for original, obfuscated in self.identifier_map.items():
+                    for original, obfuscated in self.identifier_map.items():
 
-                    # 일반적인 식별자 패턴
-                    pattern = r'\b' + re.escape(original) + r'\b'
-                    part = re.sub(pattern, obfuscated, part)
+                        # 일반적인 식별자 패턴
+                        pattern = r'\b' + re.escape(original) + r'\b'
+                        part = re.sub(pattern, obfuscated, part)
 
 
-                part = part.replace("_DO_NOT_OBFUSCATE","")
+                    part = part.replace("_DO_NOT_OBFUSCATE","")
                 parts[j] = part
 
 
