@@ -8,6 +8,8 @@ class ob_identifier:
     def __init__(self, folder_path, output_folder):
         self.folder_path = folder_path
         self.output_folder = output_folder
+
+        self.not_ob_list = ['Class','get','main','accept','getName','run'] #난독화 하면 안되는 식별자들
         self.identifier_map = {}  # 난독화 맵
         self.files = []  # 파일 경로 저장
         self.package_map = []  # 패키지 이름 저장 or set으로 해야할지도
@@ -25,7 +27,7 @@ class ob_identifier:
 
     def generate_obfuscated_name(self, name, length=8):
         """난독화된 이름을 생성합니다."""
-        if name not in self.identifier_map and name != 'main':
+        if name not in self.identifier_map and (name not in self.not_ob_list):
             obfuscated_name = None
             ran = self.ran
 
@@ -60,8 +62,14 @@ class ob_identifier:
             with open(file_path, 'r', encoding='utf-8') as file:
                 source_code = file.read()
 
-            # 자바 소스코드를 파싱하여 AST 추출
-            tree = javalang.parse.parse(source_code)
+
+            try:
+                # 자바 소스코드를 파싱하여 AST 추출
+                tree = javalang.parse.parse(source_code)
+            except SyntaxError as e:  # 문법 오류는 파이썬의 SyntaxError로 처리
+                print(f"Syntax error in file {file_path}: {e}")
+            except javalang.parser.JavaSyntaxError as e:
+                print(f"Java syntax error in file {file_path}: {e}")
 
             # AST에서 식별자 수집 및 난독화 맵 구축
             self.collect_identifiers_from_ast(tree, file_path)
@@ -79,7 +87,6 @@ class ob_identifier:
             # 클래스나 Enum 선언
             elif isinstance(node, javalang.tree.ClassDeclaration) or isinstance(node, javalang.tree.EnumDeclaration):
                 current_class = node.name
-                print(current_class)
                 self.generate_obfuscated_name(node.name)
 
             # 메서드 선언
@@ -259,13 +266,17 @@ class ob_identifier:
 
 
             # 함수 호출 패턴 (외부 함수 난독화에서 제외)
-            pattern = r'(\w+)\.(\w+)\s*\((.*?)\)'
+            pattern = r'(?:(?:\((?:[a-zA-Z][\w.$]*(?:\[\])?)\))?\s*)?([a-zA-Z][\w.$]*?)\.([a-zA-Z]\w*)(?:\s*\((.*?)\))?'
+
+
             matches = re.findall(pattern, line)
             for ii in range(len(matches)):
                 var , fun , _=  matches[ii]
-                if (var in imp_var_list) or (var in external_class):
-
-                    line = line.replace(var+"."+fun+"(",var+"."+fun+"_DO_NOT_OBFUSCATE(")
+                if (var in imp_var_list) or (var in external_class) or (var in self.not_ob_list):
+                    if _:
+                        line = line.replace(var+"."+fun+"(",var+"."+fun+"_DO_NOT_OBFUSCATE(")
+                    else :
+                        line = line.replace(var+"."+fun,var+"."+fun+"_DO_NOT_OBFUSCATE")
 
 
             # 문자열 리터럴 ("...")을 분리하여 처리
@@ -275,12 +286,13 @@ class ob_identifier:
                 if not part.startswith('"'):  # 큰따옴표로 시작하지 않으면 코드 부분
 
                     """ 변수 선언 및 정의 식별 """
-                    variable_pattern = re.compile(r'(\w+)\s+(\w+)\s*=\s*') # 타입 변수 = 값 패턴을 찾는건데 타입 변수; 이렇게 끝나는 경우는?
+                    variable_pattern = re.compile(r'(?:(public|protected|private|static|final|abstract|synchronized|volatile)\s+)*(\w+(?:<.*?>)?(?:\[\])?)\s+(\w+)\s*(?:=\s*(.+?))?;?')
+                    # 타입 변수 = 값 패턴을 찾는건데 타입 변수; 이렇게 끝나는 경우는?
 
                     match = variable_pattern.search(part)
                     if match:
-                        var_type, var_name = match.groups()
-                        if var_type in external_class:
+                        _,var_type, var_name,_ = match.groups()
+                        if (var_type in external_class) or ("<" in var_type):
                             imp_var_list.append(var_name)
 
 

@@ -199,10 +199,7 @@ class StringInsert:
              Class<?> decryptorClass2 = Class.forName("{self.str_decrypt[0]}.{self.str_decrypt[1]}");
              Method decryptMethod2 = decryptorClass2.getMethod("stringDecrypt", String.class, byte[].class);
              for (int i = 0; i < STRING_LITERALS.length; i++) 
-            {{STRING_LITERALS[i] = 
-             (String) decryptMethod2.invoke(null, STRING_LITERALS[i], 
-             (byte[]) decryptMethod1.invoke(null,ENC_ENCRYPTION_KEY,
-             ENCRYPTION_KEY)); 
+            {{STRING_LITERALS[i] = (String) decryptMethod2.invoke(null, STRING_LITERALS[i], (byte[]) decryptMethod1.invoke(null,ENC_ENCRYPTION_KEY,ENCRYPTION_KEY)); 
              }}}} catch (Exception e) {{}}}}
          """
 
