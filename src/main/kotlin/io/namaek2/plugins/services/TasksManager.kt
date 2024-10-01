@@ -17,14 +17,14 @@ class TasksManager(private val javaFilesPath: String, private var outFolder : St
 
         indicator.text = "Deleting past obfuscated directory..."
         deleteDirectory(File(outFolder), 0.0)
-
         copyDirectory(Path(javaFilesPath), Path(outFolder), 0.10)
 
         manageHash.parseHashInfo(0.22)
         copyScripts(manageHash.getScriptNames(), 0.25)
 
         if(manageHash.compareFileHashes(0.30)) {
-            if(manageScripts.executePythonScript(0.35)) {
+            val venvPath = prepareVenv(tempFolder)
+            if(manageScripts.executePythonScript(venvPath, 0.35)) {
                 manageBuild.runGradle(0.8)
             } else {
                 thisLogger().error("Error running python scripts")
@@ -33,6 +33,58 @@ class TasksManager(private val javaFilesPath: String, private var outFolder : St
 
         indicator.text = "Deleting temp directory..."
         deleteDirectory(File(tempFolder), 0.95)
+    }
+
+    private fun prepareVenv(path: String): String {
+        val venvPath = File(path, "venv")
+        val isWindows = System.getProperty("os.name").lowercase().contains("win")
+        val pythonExecutable = if (isWindows) "python" else "python3"
+        val venvPythonPath = if (isWindows) "${venvPath}\\Scripts\\python.exe" else "${venvPath}/bin/python"
+
+        try {
+            // Create virtual environment
+            MyConsoleLogger.println("Creating virtual environment...")
+            val createVenvProcess = ProcessBuilder(pythonExecutable, "-m", "venv", venvPath.toString())
+                .redirectErrorStream(true)
+                .start()
+            createVenvProcess.inputStream.bufferedReader().use { reader ->
+                reader.lines().forEach(::println)
+            }
+            if (createVenvProcess.waitFor() != 0) {
+                throw IOException("Failed to create virtual environment")
+            }
+
+            // Install pycryptodome using the venv's pip
+            MyConsoleLogger.println("Installing libraries...")
+            val installScript = """
+            import subprocess
+            import sys
+            
+            def install(package):
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+            
+            if __name__ == '__main__':
+                install('pycryptodome')
+                install('javalang')
+                print('installed successfully')
+        """.trimIndent()
+
+            val installProcess = ProcessBuilder(venvPythonPath, "-c", installScript)
+                .redirectErrorStream(true)
+                .start()
+            installProcess.inputStream.bufferedReader().use { reader ->
+                reader.lines().forEach(::println)
+            }
+            if (installProcess.waitFor() != 0) {
+                throw IOException("Failed to isntalling python libraries")
+            }
+
+            MyConsoleLogger.println("Virtual environment created and python libraries installed successfully at: $venvPath")
+            return venvPythonPath
+        } catch (e: IOException) {
+            MyConsoleLogger.println("An error occurred: ${e.message}")
+            throw e
+        }
     }
 
     private fun copyDirectory(source: Path, destination: Path, fractionValue: Double) {
