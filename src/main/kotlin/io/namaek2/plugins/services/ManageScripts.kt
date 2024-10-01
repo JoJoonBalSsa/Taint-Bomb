@@ -34,7 +34,7 @@ class ManageScripts(private var javaFilesPath: String, private var outputFolder 
             }
 
             // 프로세스 빌더를 생성합니다.
-            val scriptPath = tempFolder + "/main.py"
+            val scriptPath = "$tempFolder/main.py"
             val processBuilder = ProcessBuilder(venvPath, scriptPath, outputFolder, keyDecryptJava, stringDecryptJava)
 
             val currentDir = System.getProperty("user.dir")
