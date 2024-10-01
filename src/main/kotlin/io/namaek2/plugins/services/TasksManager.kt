@@ -58,35 +58,20 @@ class TasksManager(private val javaFilesPath: String, private var outFolder : St
 
             // Install pycryptodome using the venv's pip
             MyConsoleLogger.println("Installing libraries...")
-            val installScript = """
-            import subprocess
-            import sys
-            
-            def install(package):
-                try:
-                    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-                    print(f"'{package}' installed successfully")
-                except subprocess.CalledProcessError as e:
-                    print(f"Error occurred while installing '{package}': {e}")
-                except Exception as e:
-                    print(f"An unexpected error occurred: {e}")
-            
-            if __name__ == '__main__':
-                install('pycryptodome')
-                install('javalang')
-        """.trimIndent()
+            val installScript = "$tempFolder/installScripts.py"
 
-            val installProcess = ProcessBuilder(venvPythonPath, "-c", installScript)
+            val installProcess = ProcessBuilder(venvPythonPath, installScript)
                 .redirectErrorStream(true)
                 .start()
             val reader = BufferedReader(InputStreamReader(installProcess.inputStream))
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 MyConsoleLogger.println("installing output: $line")
+
             }
 
             if (installProcess.waitFor() != 0) {
-                throw IOException("Failed to isntalling python libraries")
+                throw IOException("Failed to installing python libraries")
             }
 
             MyConsoleLogger.println("Virtual environment created and python libraries installed successfully at: $venvPath")
