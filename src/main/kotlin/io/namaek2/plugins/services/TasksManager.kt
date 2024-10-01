@@ -3,8 +3,10 @@ package io.namaek2.plugins.services
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProgressIndicator
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
+import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
+import java.io.InputStreamReader
 import java.nio.file.*
 import kotlin.io.path.Path
 
@@ -61,20 +63,28 @@ class TasksManager(private val javaFilesPath: String, private var outFolder : St
             import sys
             
             def install(package):
-                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+                try:
+                    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+                    print(f"'{package}' installed successfully")
+                except subprocess.CalledProcessError as e:
+                    print(f"Error occurred while installing '{package}': {e}")
+                except Exception as e:
+                    print(f"An unexpected error occurred: {e}")
             
             if __name__ == '__main__':
                 install('pycryptodome')
                 install('javalang')
-                print('installed successfully')
         """.trimIndent()
 
             val installProcess = ProcessBuilder(venvPythonPath, "-c", installScript)
                 .redirectErrorStream(true)
                 .start()
-            installProcess.inputStream.bufferedReader().use { reader ->
-                reader.lines().forEach(::println)
+            val reader = BufferedReader(InputStreamReader(installProcess.inputStream))
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                MyConsoleLogger.println("installing output: $line")
             }
+
             if (installProcess.waitFor() != 0) {
                 throw IOException("Failed to isntalling python libraries")
             }
