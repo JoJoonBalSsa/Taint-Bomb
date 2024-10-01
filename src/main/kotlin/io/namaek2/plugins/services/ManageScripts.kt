@@ -36,10 +36,10 @@ class ManageScripts(private var javaFilesPath: String, private var outputFolder 
             // 프로세스 빌더를 생성합니다.
             val scriptPath = tempFolder + "/main.py"
             val processBuilder = ProcessBuilder(venvPath, scriptPath, outputFolder, keyDecryptJava, stringDecryptJava)
-//
-//            val currentDir = System.getProperty("user.dir")
-//            processBuilder.directory(File(currentDir))
-//            print("currentDir: $currentDir")
+
+            val currentDir = System.getProperty("user.dir")
+            processBuilder.directory(File(currentDir))
+            print("currentDir: $currentDir")
 
             // 프로세스의 출력을 캡처할 수 있도록 리디렉션합니다.
             processBuilder.redirectErrorStream(true)
