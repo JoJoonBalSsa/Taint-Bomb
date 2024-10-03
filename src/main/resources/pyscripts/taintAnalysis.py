@@ -4,7 +4,7 @@ from collections import defaultdict
 import logging
 from sensitivityDB import SensitivityDB as S
 from methodEndLineFinder import MethodEndLineFinder
-
+import inspect
 
 class TaintAnalysis:
     __methods = defaultdict(list)
@@ -281,6 +281,19 @@ class TaintAnalysis:
 
 
     def __track_variable_flow(self, class_method, var_name, count=0): #변수 흐름 추적. (계속 추가 가능)
+
+        MAX_RECURSION_DEPTH = 30  # 재귀 호출 최대 깊이 설정
+
+        # 현재 재귀 깊이를 가져옴
+        current_recursion_depth = len(inspect.stack())
+
+        # 재귀 깊이가 MAX_RECURSION_DEPTH 이상이면 종료
+        if current_recursion_depth >= MAX_RECURSION_DEPTH:
+            print(f"Recursion limit reached for variable: {var_name}, stopping further tracing.")
+            return
+
+
+
         parts = class_method.split('.')
 
         class_name = parts[0]
@@ -350,7 +363,7 @@ class TaintAnalysis:
             if flow_added:
                 self.__flow.append(f"{class_name}.{method_name}.{node.member}")
                 log_message = f".{method_name}.{node.qualifier}.{node.member}"
-                logging.info(log_message)
+                #logging.info(log_message)
                 self.sink_check.append(node.member)
                 # 새로운 키를 생성하고, 기존 키가 존재하면 새 키를 사용
                 existing_key = (class_method, var_name)
@@ -385,20 +398,21 @@ class TaintAnalysis:
             if node.value.arguments:
                 for arg_index, arg in enumerate(node.value.arguments):
                     if isinstance(arg, javalang.tree.MemberReference) and arg.member == var_name and (count < current_count):
-                        # self.__flow.append([node.value.member,var_name])
-                        self.__track_variable_flow(class_method, node.expressionl.member, current_count)  # 같은 메서드에서 추적
+                        expression_member = getattr(node, 'expressionl', None)
+                        if expression_member and hasattr(expression_member, 'member'):
+                            self.__track_variable_flow(class_method, expression_member.member, current_count)  # 같은 메서드에서 추적
 
-        if isinstance(node.value, javalang.tree.MethodInvocation) and (node.value.qualifier == var_name) and (count < current_count):
-            # self.__flow.append([node.value.member,var_name])
-            self.__track_variable_flow(class_method, node.expressionl.member, current_count)  # 같은 메서드에서 추적
+        if isinstance(node.value, javalang.tree.MethodInvocation) and (getattr(node.value, 'qualifier', None) == var_name) and (count < current_count):
+            self.__track_variable_flow(class_method, getattr(node, 'expressionl', None).member, current_count)  # 같은 메서드에서 추적
 
-        if isinstance(node.expressionl, javalang.tree.MemberReference) and node.value.member == var_name and (count < current_count):  # 1-1
-            self.__track_variable_flow(class_method, node.expressionl.member, current_count)
+        if isinstance(node.expressionl, javalang.tree.MemberReference) and (getattr(node.value, 'member', None) == var_name) and (count < current_count):  # 1-1
+            self.__track_variable_flow(class_method, getattr(node, 'expressionl', None).member, current_count)
 
-        if isinstance(node.expressionl, javalang.tree.MemberReference) and node.expressionl.member == var_name and (count < current_count):  # 1-2
+        if isinstance(node.expressionl, javalang.tree.MemberReference) and (getattr(node.expressionl, 'member', None) == var_name) and (count < current_count):  # 1-2
             # 초기화 값이 Source 함수일 경우 추가 필요
             if count < current_count:
                 return
+
 
     def __if_local_variable_declaration(self, node, class_method, var_name, count, current_count):
         for var_decl in node.declarators:
