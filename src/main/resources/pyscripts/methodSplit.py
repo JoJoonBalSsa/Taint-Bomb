@@ -7,15 +7,22 @@ class MethodSplit:
     def __init__(self, method):
         self.method = method
 
-        access_modifier, return_type, method_name, method_param, body, is_static = self.__extract_java_method_info(
-            self.method)
+        result = self.__extract_java_method_info(self.method)
+
+        if result is None:
+            self.new_method = None
+            return
+
+        access_modifier, return_type, method_name, method_param, body, is_static = result
+
         if is_static:
             self.new_method = None
             return
-        else :
+        else:
             new_func, new_func_name = self.__generate_java_function(body, return_type, method_param)
             modified_body = self.__replace_method_body(self.method, method_name, new_func_name, return_type, method_param)
             self.new_method = self.__add_new_method(modified_body, new_func)
+
 
     def get_new_method(self):
         return self.new_method
