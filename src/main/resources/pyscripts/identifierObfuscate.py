@@ -9,7 +9,11 @@ class ob_identifier:
         self.folder_path = folder_path
         self.output_folder = output_folder
 
-        self.not_ob_list = ['Class','get','main','accept','getName','run'] #난독화 하면 안되는 식별자들
+        self.ann_list = []
+        self.not_ob_list = ['Class','get','main','accept','getName',
+                            'Runnable','run','Callable','call','Comparable','compareTo','Cloneable','clone',#자바에서 자주 사용하는 인터페이스 및 메서드
+                            'toObservable','map','toString'
+                            ] #난독화 하면 안되는 식별자들
         self.identifier_map = {}  # 난독화 맵
         self.files = []  # 파일 경로 저장
         self.package_map = []  # 패키지 이름 저장 or set으로 해야할지도
@@ -77,16 +81,18 @@ class ob_identifier:
 
 
     def collect_identifiers_from_ast(self, tree, file_path):
-        current_class = None
 
         for path, node in tree: # 패키지 선언
             if isinstance(node, javalang.tree.PackageDeclaration):
                 self.package_map.append(node.name)  # 패키지 이름 저장
 
 
-            # 클래스나 Enum 선언
-            elif isinstance(node, javalang.tree.ClassDeclaration) or isinstance(node, javalang.tree.EnumDeclaration):
-                current_class = node.name
+            # 클래스나 Enum 선언 (+ Interface)
+            elif isinstance(node, javalang.tree.ClassDeclaration) or isinstance(node, javalang.tree.EnumDeclaration) or isinstance(node, javalang.tree.InterfaceDeclaration):
+                self.generate_obfuscated_name(node.name)
+
+            elif isinstance(node, javalang.tree.AnnotationDeclaration): # 여기서 어노테이션들 이름 기록해 놔야함 (어노테이션 난독화)
+                self.ann_list.append(node.name)
                 self.generate_obfuscated_name(node.name)
 
             # 메서드 선언
@@ -131,6 +137,7 @@ class ob_identifier:
     def apply_obfuscation_to_files(self):
         """난독화된 맵을 사용하여 각 파일을 다시 처리하고 난독화된 파일로 저장합니다."""
         for file_path in self.files:
+            print(f"Identifier Obfuscating.. {file_path}")
             self.obfuscate_java_file(file_path, self.output_folder)
 
         self.replace_gradle()
@@ -156,6 +163,23 @@ class ob_identifier:
                 replace_main_class,
                 build_gradle_content
             )
+
+            # 'mainClassName = 'pkg.?????' 패턴을 찾아서 대체
+            def replace_main_class(match):
+                original_fully_qualified_class_name = match.group(2)
+                package_name = '.'.join(original_fully_qualified_class_name.split('.')[:-1])
+                original_class_name = original_fully_qualified_class_name.split('.')[-1]
+                new_class_name = self.identifier_map.get(original_class_name, original_class_name)
+                return f"{match.group(1)}{package_name}.{new_class_name}{match.group(3)}"
+
+            # mainClassName 패턴으로 대체
+            build_gradle_content = re.sub(
+                r"(mainClassName\s*=\s*['\"])([\w.]+)(['\"])",
+                replace_main_class,
+                build_gradle_content
+            )
+
+
 
             # 수정된 내용을 다시 build.gradle에 씀
             with open(build_gradle_path, 'w', encoding='utf-8') as file:
@@ -211,12 +235,20 @@ class ob_identifier:
         else:
             return False, None
 
+    def extract_annotation_identifier(self,line): # 어노테이션 식별
+        pattern = r'@\s*(\w+)'
+        match = re.match(pattern, line.strip())
+        if match:
+            return match.group(1)
+        else:
+            return None
 
 
 
     def replace_identifiers_in_code(self, source_code,file_path):
         """난독화된 식별자 맵을 사용하여 소스 코드 내의 모든 식별자를 정확하게 치환하되, 리터럴 문자열은 제외."""
 
+        ann = None
         external_class = set()
 
         imp_var_list = list()
@@ -226,16 +258,34 @@ class ob_identifier:
         curr_class =None
         for i, line in enumerate(lines):
             # import로 시작하는 라인을 처리
-            if line.strip().startswith("@"):
+            if line.strip().startswith("package"):
                 continue
+
+            if line.strip().startswith("@"): # 어노테이션 식별(사용자 정의인지 확인후 아니라면 난독화 제약 걸기)
+                ann = self.extract_annotation_identifier(line)
+                if ann and ann not in self.ann_list:
+                    line = line.replace("@"+ann,"@"+ann+"_DO_NOT_OBFUSCATE")
+                    variable_pattern = re.compile(r'(\w+)\s*=\s*(\w+\.class)')
+                    matches = variable_pattern.findall(line)
+
+                    for match in matches:
+                        variable_name = match[0]
+                        line = line.replace(variable_name, variable_name + "_DO_NOT_OBFUSCATE")
+
+
+
             if line.strip().startswith('import'):
-                package_name_match = re.match(r'import\s+([\w\.]+);', line)
+                package_name_match = re.match(r'import\s+(static\s+)?([\w\.]+);', line)
                 if package_name_match:
-                    package_name = package_name_match.group(1)
+                    package_name = package_name_match.group(2)
 
                     # 패키지 맵에 있는 패키지이면 난독화 적용
                     if any(package_name.startswith(pkg) for pkg in self.package_map):
-                        pass
+                        for pkg in self.package_map:
+                            if package_name.startswith(pkg):
+                                ob_pkg = package_name.replace(".","_DO_NOT_OBFUSCATE.") # ㅎㅎ;
+                                line = line.replace(package_name,ob_pkg)
+
                     else:
                         external_class.add(package_name.split('.')[-1])
                         continue
