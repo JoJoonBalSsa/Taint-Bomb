@@ -28,6 +28,9 @@ class StringSearch:
                 if isinstance(node, javalang.tree.ClassDeclaration):
                     # 클래스 밖에 있는 문자열도 처리해야 함.
                     print(file_path)
+                    class_name = node.name
+                    if 'public' in node.modifiers:
+                        self.class_names.append([package_name, class_name]) # static 있는 클래스만 기록
                     literal = self.__extract_strings(node, package_name)
                     literal.append(file_path)
                     literals.append(literal)
@@ -85,9 +88,8 @@ class StringSearch:
     # 클래스 별로 문자열 추출
     def __extract_strings(self, node, package_name):
         string_literals = []
-        class_name = node.name
-        self.class_names.append([package_name, class_name])
         self.ban_list = []
+        class_name = node.name
 
         for sub_path, sub_node in node:
             self.__check_and_remove_annotation_literals(sub_node)
