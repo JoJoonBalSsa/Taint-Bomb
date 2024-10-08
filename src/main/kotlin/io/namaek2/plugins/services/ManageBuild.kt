@@ -37,7 +37,6 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
                 FileInputStream(gradlePropertiesFile).use {
                     Properties().load(it)
                     properties.getProperty("gradleVersion")?.let {
-                        MyConsoleLogger.println("Gradle version: $it")
                         return it
                     }
                 }
@@ -87,7 +86,7 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
         findGradleVersion(File(javaFilesPath))?.let {
             MyConsoleLogger.println("Gradle version: $it")
             if (it < "8.0.0") {
-                MyConsoleLogger.println("Gradle version is lower than 8.0")
+                MyConsoleLogger.println("Build is not supported cause Gradle version is lower than 8.0")
                 return
             }
         }
