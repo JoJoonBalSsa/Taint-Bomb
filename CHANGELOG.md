@@ -769,10 +769,6 @@
 - GitHub Actions to automate testing and deployment
 - Kotlin support
 
-[Unreleased]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v2.0.1...HEAD
-[2.0.1]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v1.14.2...v2.0.0
-[1.14.2]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v1.14.1...v1.14.2
 [1.14.1]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v1.14.0...v1.14.1
 [1.14.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v1.12.0...v1.13.0
@@ -813,5 +809,3 @@
 [0.3.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.0.2...v0.1.0
-[0.0.2]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.0.1...v0.0.2
-[0.0.1]: https://github.com/JetBrains/intellij-platform-plugin-template/commits/v0.0.1
