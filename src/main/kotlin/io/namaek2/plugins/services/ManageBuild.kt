@@ -6,12 +6,78 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
+import java.io.FileInputStream
 import java.util.*
 
 class ManageBuild (private val javaFilesPath: String, private var outFolder : String, private val indicator: ProgressIndicator) {
-      fun runGradle(fractionValue : Double) {
-        indicator.text = "Running Gradle..."
+    private fun isGradleProject() : Boolean {
+        val gradleFiles = listOf(
+            "build.gradle",
+            "build.gradle.kts",
+            "settings.gradle",
+            "settings.gradle.kts",
+            "gradlew",
+            "gradlew.bat"
+        )
+
+        val isGradle = gradleFiles.any { fileName ->
+            File(javaFilesPath, fileName).exists()
+        }
+
+        return isGradle
+    }
+
+    private fun findGradleVersion(projectDir: File): String? {
+        // 방법 1: gradle.properties 파일에서 버전 확인
+        val gradlePropertiesFile = File(projectDir, "gradle.properties")
+        if (gradlePropertiesFile.exists()) {
+            val properties = Properties()
+            FileInputStream(gradlePropertiesFile).use {
+                properties.load(it)
+            }
+            properties.getProperty("gradleVersion")?.let {
+                MyConsoleLogger.println("Gradle version: $it")
+                return it
+            }
+        }
+
+        // 방법 2: gradle/wrapper/gradle-wrapper.properties 파일에서 버전 확인
+        val wrapperPropertiesFile = File(projectDir, "gradle/wrapper/gradle-wrapper.properties")
+        if (wrapperPropertiesFile.exists()) {
+            val properties = Properties()
+            FileInputStream(wrapperPropertiesFile).use {
+                properties.load(it)
+            }
+            val distributionUrl = properties.getProperty("distributionUrl") ?: return null
+
+            // URL에서 버전 추출 (예: gradle-7.4.2-bin.zip)
+            val versionRegex = "gradle-([\\d.]+)".toRegex()
+            val matchResult = versionRegex.find(distributionUrl)
+            MyConsoleLogger.println("Gradle version: ${matchResult?.groupValues?.get(1)}")
+            return matchResult?.groupValues?.get(1)
+        }
+
+        return null
+    }
+
+    fun runGradle(fractionValue : Double) {
+        indicator.text = "Building with Gradle..."
         indicator.fraction = fractionValue
+
+        isGradleProject().let {
+            if(!it) {
+                MyConsoleLogger.println("Not a gradle project")
+                return
+            }
+        }
+
+        findGradleVersion(File(javaFilesPath))?.let {
+            MyConsoleLogger.println("Gradle version: $it")
+            if (it < "8.0.0") {
+                MyConsoleLogger.println("Gradle version is lower than 8.0")
+                return
+            }
+        }
 
         try {
             // 프로세스 빌더를 생성합니다.
@@ -20,7 +86,7 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             val processBuilder = when {
                 "windows" in osName -> ProcessBuilder("gradle.bat", "jar")
                 "linux" in osName-> ProcessBuilder("gradle", "jar")
-                "mac" in osName -> ProcessBuilder("./gradlew", "jar")
+                // "mac" in osName -> ProcessBuilder("./gradlew", "jar")
                 else -> throw IllegalArgumentException("Unsupported OS: $osName")
             }
 
