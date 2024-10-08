@@ -30,24 +30,37 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
     private fun findGradleVersion(projectDir: File): String? {
         // 방법 1: gradle.properties 파일에서 버전 확인
         val gradlePropertiesFile = File(projectDir, "gradle.properties")
+
         if (gradlePropertiesFile.exists()) {
             val properties = Properties()
-            FileInputStream(gradlePropertiesFile).use {
-                properties.load(it)
+            try {
+                FileInputStream(gradlePropertiesFile).use {
+                    Properties().load(it)
+                    properties.getProperty("gradleVersion")?.let {
+                        MyConsoleLogger.println("Gradle version: $it")
+                        return it
+                    }
+                }
+            } catch (e: IOException) {
+                MyConsoleLogger.println("Error reading gradle.properties: ${e.message}")
+                return null
             }
-            properties.getProperty("gradleVersion")?.let {
-                MyConsoleLogger.println("Gradle version: $it")
-                return it
-            }
+
         }
 
         // 방법 2: gradle/wrapper/gradle-wrapper.properties 파일에서 버전 확인
         val wrapperPropertiesFile = File(projectDir, "gradle/wrapper/gradle-wrapper.properties")
         if (wrapperPropertiesFile.exists()) {
             val properties = Properties()
-            FileInputStream(wrapperPropertiesFile).use {
-                properties.load(it)
+            try {
+                FileInputStream(wrapperPropertiesFile).use {
+                    properties.load(it)
+                }
+            } catch (e: IOException) {
+                MyConsoleLogger.println("Error reading gradle-wrapper.properties: ${e.message}")
+                return null
             }
+
             val distributionUrl = properties.getProperty("distributionUrl") ?: return null
 
             // URL에서 버전 추출 (예: gradle-7.4.2-bin.zip)
