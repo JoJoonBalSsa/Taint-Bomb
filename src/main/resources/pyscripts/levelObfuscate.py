@@ -28,7 +28,7 @@ class LevelObfuscation:
             if item["sensitivity"] == 3:
                 ddb = DumbDB()
                 for tainted in item["tainted"]:
-                    print(f"\n'{tainted["method_name"]}' level obfuscation")
+                    #print(f"\n'{tainted[\"method_name\"]}' level obfuscation")
                     # 연산자 난독화
                     print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
@@ -72,7 +72,7 @@ class LevelObfuscation:
 
             if item["sensitivity"] == 2:
                 for tainted in item["tainted"]:
-                    print(f"\n{tainted["method_name"]} level obfuscation")
+                    #print(f"\n{tainted["method_name"]} level obfuscation")
                     print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
                     obfuscated_code = O.return_obfuscated_code()
