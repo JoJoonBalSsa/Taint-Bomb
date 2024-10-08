@@ -122,7 +122,7 @@ class TasksManager(private val javaFilesPath: String, private var outFolder : St
     }
 
     private fun copyScript(scriptName : String) {
-        val scriptStream = javaClass.getResourceAsStream("/pyscripts/$scriptName" + ".py")
+        val scriptStream = javaClass.getResourceAsStream("/pyscripts/$scriptName.py")
         val scriptContent = scriptStream?.bufferedReader()?.use { it.readText() }
             ?: throw IllegalArgumentException("Script not found: $scriptName")
 
