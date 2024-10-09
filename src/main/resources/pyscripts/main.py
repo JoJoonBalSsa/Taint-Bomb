@@ -1,12 +1,7 @@
-import sys
-
 from taintAnalysis import TaintAnalysis
-from removeComments import RemoveComments
-from stringObfuscate import StringObfuscate
 from analysisResultManager import AnalysisResultManager
-from levelObfuscate import LevelObfuscation
-from identifierObfuscate import ob_identifier
 from makeMD import MakeMD
+from datetime import datetime
 
 def create_result(output_folder, flows):
     path = output_folder + "/result.txt"
@@ -58,38 +53,35 @@ def __analyze_method(output_folder, tainted):
 
     result.save_to_json()  # 결과를 JSON 파일로 저장
 
-
-def main(output_folder, keyDecryptJava, stringDecryptJava):
-
-    RemoveComments(output_folder)
-    StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
-
+def main(output_folder) :
     tainted = TaintAnalysis(output_folder)
+    priority_flow = tainted._priority_flow()
 
-    print_result(tainted._priority_flow())
-    create_result(output_folder, tainted.flows)
-    __analyze_method(output_folder, tainted)
+    if not priority_flow:  # priority_flow가 비어있는 경우
+        print("발견된 taint가 없습니다.")
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 현재 시각을 'YYYY-MM-DD HH:MM:SS' 형식으로 저장
 
-    make_md = MakeMD(output_folder + "/result.txt", output_folder + "/analysis_result.md")
-    make_md.make_md_file()
+        with open(output_folder + "/analysis_result.md", "w") as md_file:
+                md_file.write("# Taint Analysis Result\n")
+                md_file.write("## Summary\n")
+                md_file.write("No taint flows were detected during the analysis.\n\n")
+                md_file.write("## Details\n")
+                md_file.write("- **Analysis Time**: {}\n".format(current_time))  # 실제 시간 출력
+                md_file.write("- **Output Folder**: {}\n\n".format(output_folder))
+                md_file.write("The taint analysis did not identify any potential issues or vulnerabilities in the given codebase.\n")
+                md_file.write("If you believe there should be taint flows detected, please review the input code or adjust the analysis parameters.\n")
+                md_file.write("\n---\n")
+    else:
+        print_result(priority_flow)
+        create_result(output_folder, tainted.flows)
+        __analyze_method(output_folder, tainted)
 
-    LevelObfuscation(output_folder)
-
-    ob_identifier(output_folder,output_folder)
+        make_md = MakeMD(output_folder + "/result.txt", output_folder + "/analysis_result.md")
+        make_md.make_md_file()
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        print(len(sys.argv))
-        for i in range(len(sys.argv)):
-            print("arg : ", i)
-            print(sys.argv[i])
-            print(sys.argv[i])
-        print("Usage: python main.py <output_folder> <keyDecryptJava> <stringDecryptJava>")
-        exit(1)
-
+    import sys
+    
     output_folder = sys.argv[1]
-    keyDecryptJava = sys.argv[2]
-    stringDecryptJava = sys.argv[3]
-
-    main(output_folder, keyDecryptJava, stringDecryptJava)
+    main(output_folder)
