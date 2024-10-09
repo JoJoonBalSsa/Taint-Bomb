@@ -19,16 +19,16 @@ class TaintBombFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val taintBomb = TaintBomb(toolWindow)
 
+
+
         var content = ContentFactory.getInstance().createContent(taintBomb.getContent(), "Execute Tab", false)
         toolWindow.contentManager.addContent(content)
 
         val consolePanel = JTextArea()
         val scrollPane = JBScrollPane(consolePanel)
-
         content = ContentFactory.getInstance().createContent(scrollPane, "Log", false)
-
-        toolWindow.contentManager.addContent(content)
         MyConsoleLogger.setConsole(consolePanel)
+        toolWindow.contentManager.addContent(content)
     }
 
     override fun shouldBeAvailable(project: Project) = true
@@ -38,13 +38,22 @@ class TaintBombFactory : ToolWindowFactory {
         private val service = toolWindow.project.service<TaintBombService>()
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
-            val label = JBLabel(MyBundle.message("obfuscateLabel"))
-            add(label)
+            val label1 = JBLabel(MyBundle.message("obfuscateLabel1"))
+            val label2 = JBLabel(MyBundle.message("obfuscateLabel2"))
+            val consolePanel = JTextArea()
+            val scrollPane = JBScrollPane(consolePanel)
+
+            add(label1)
+            add(label2)
             add(JButton(MyBundle.message("obfuscate")).apply {
                 addActionListener {
-                    label.text = MyBundle.message("obfuscateLabel", service.startTaintBomb())
+                    label1.text = MyBundle.message("obfuscateLabel1", service.startTaintBomb())
+                    label2.text = MyBundle.message("obfuscateLabel2", service.startTaintBomb())
                 }
             })
+
+            add(scrollPane)
+            MyConsoleViewer.setConsole(consolePanel)
         }
     }
 }

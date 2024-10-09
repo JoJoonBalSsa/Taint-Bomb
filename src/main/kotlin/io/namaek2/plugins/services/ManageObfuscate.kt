@@ -1,7 +1,9 @@
 package io.namaek2.plugins.services
 
 import com.intellij.openapi.progress.ProgressIndicator
+import com.jetbrains.rd.util.string.print
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
+import io.namaek2.plugins.toolWindow.MyConsoleViewer
 import java.io.*
 
 class ManageObfuscate(
@@ -31,22 +33,27 @@ class ManageObfuscate(
 
     private fun executePythonScript(venvPath : String, osName : String) {
         indicator.text = "Removing comments..."
+        MyConsoleViewer.println("Removing comments...")
         runPythonScript(venvPath, "removeComments", outputFolder, 0.35)
         checkJavaSyntax(venvPath, outputFolder, 0.4)
 
         indicator.text = "Encrypting strings..."
+        MyConsoleViewer.println("Encrypting strings...")
         runStringObfuscate(venvPath, "stringObfuscate", outputFolder, osName, 0.45)
         checkJavaSyntax(venvPath, outputFolder, 0.5)
 
         indicator.text = "Analysing code..."
+        MyConsoleViewer.println("Analysing code...")
         runPythonScript(venvPath, "main", outputFolder, 0.55)
         checkJavaSyntax(venvPath, outputFolder, 0.6)
 
         indicator.text = "Level obfuscation activated..."
+        MyConsoleViewer.println("Level obfuscation activated...")
         runPythonScript(venvPath, "levelObfuscate", outputFolder, 0.65)
         checkJavaSyntax(venvPath, outputFolder, 0.7)
 
         indicator.text = "Identifier obfuscating..."
+        MyConsoleViewer.println("Identifier obfuscating...")
         runPythonScript(venvPath, "identifierObfuscate", outputFolder, 0.75)
         checkJavaSyntax(venvPath, outputFolder, 0.8)
     }
@@ -57,7 +64,8 @@ class ManageObfuscate(
         val exitCode = runScript(venvPath, "checkJavaSyntax", javaFilesPath)
 
         if (exitCode != 0) {
-            MyConsoleLogger.println("obfuscation syntax error occurred.")
+            MyConsoleViewer.println("ObfuscationSyntaxError.")
+            MyConsoleLogger.logPrint("obfuscation syntax error occurred.")
             throw IOException("obfuscation syntax error occurred.")
         }
     }
@@ -68,12 +76,15 @@ class ManageObfuscate(
         val exitCode = runScript(venvPath, "checkJavaSyntax", javaFilesPath)
 
         if (exitCode == 0) {
-            MyConsoleLogger.println("This code is supported")
+            MyConsoleViewer.println("This code is supported")
+            MyConsoleLogger.logPrint("This code is supported")
         } else {
-            MyConsoleLogger.println("JavaSyntaxError.")
-            MyConsoleLogger.println("\n!!!!!!   CODE SYNTAX IS NOT SUPPORTED   !!!!!!")
-            MyConsoleLogger.println("The code must be based on the Java language spec available at : ")
-            MyConsoleLogger.println("http://docs.oracle.com/javase/specs/jls/se8/html/.")
+            MyConsoleViewer.println("JavaSyntaxError.")
+            MyConsoleViewer.println("\n!!!!!!   CODE SYNTAX IS NOT SUPPORTED   !!!!!!")
+            MyConsoleViewer.println("The code must be based on the Java language spec available at : ")
+            MyConsoleViewer.println("http://docs.oracle.com/javase/specs/jls/se8/html/.")
+
+            MyConsoleLogger.logPrint("java syntax error occurred.")
             throw IOException("syntax error occurred.")
         }
     }
@@ -98,15 +109,17 @@ class ManageObfuscate(
             val reader = BufferedReader(InputStreamReader(pythonProcess.inputStream))
             var line: String?
             while (reader.readLine().also { line = it } != null) {
-                MyConsoleLogger.println("$scriptName output: $line")
+                MyConsoleLogger.logPrint("$scriptName output: $line")
             }
 
             return pythonProcess.waitFor()
         } catch (e: InterruptedException) {
-            MyConsoleLogger.println("Canceled by user")
+            MyConsoleViewer.println("Canceled by user")
+            MyConsoleLogger.logPrint("Canceled by user")
             throw e
         } catch (e: IOException) {
-            MyConsoleLogger.println("An error occurred: ${e.message}")
+            MyConsoleViewer.println("An error occurred: ${e.message}")
+            MyConsoleLogger.logPrint("An error occurred: ${e.message}")
             throw e
         }
     }
@@ -116,10 +129,12 @@ class ManageObfuscate(
         try{
             return runScript(venvPath, scriptName, outFolder)
         } catch (e: InterruptedException) {
-            MyConsoleLogger.println("Canceled by user")
+            MyConsoleViewer.println("Canceled by user")
+            MyConsoleLogger.logPrint("Canceled by user")
             throw e
         } catch (e: IOException) {
-            MyConsoleLogger.println("An error occurred: ${e.message}")
+            MyConsoleViewer.println("An error occurred: ${e.message}")
+            MyConsoleLogger.logPrint("An error occurred: ${e.message}")
             throw e
         }
     }
@@ -132,7 +147,7 @@ class ManageObfuscate(
         val reader = BufferedReader(InputStreamReader(pythonProcess.inputStream))
         var line: String?
         while (reader.readLine().also { line = it } != null) {
-            MyConsoleLogger.println("$scriptName output: $line")
+            MyConsoleLogger.logPrint("$scriptName output: $line")
         }
 
         return pythonProcess.waitFor()

@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import io.namaek2.plugins.MyBundle
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
+import io.namaek2.plugins.toolWindow.MyConsoleViewer
 
 
 @Service(Service.Level.PROJECT)
@@ -23,6 +24,7 @@ class TaintBombService(private val project: Project) {
         val outFolder = "$projectFolder/obfuscated_project_folder"
         val tempFolder = "$projectFolder/temp"
         MyConsoleLogger.clearConsole()
+        MyConsoleViewer.clearConsole()
 
         if (javaFilesPath != null) {
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Running tasks...") {
