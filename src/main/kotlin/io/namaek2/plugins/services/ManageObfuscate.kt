@@ -1,7 +1,6 @@
 package io.namaek2.plugins.services
 
 import com.intellij.openapi.progress.ProgressIndicator
-import com.jetbrains.rd.util.string.print
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
 import io.namaek2.plugins.toolWindow.MyConsoleViewer
 import java.io.*
