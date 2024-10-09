@@ -145,14 +145,19 @@ class StringInsert:
 
                             line = lines[line_index]
                             l_len = 0
+
                             for char in literal:
                                 if ord(char) > 127: #유니코드일 경우
-                                    l_len+=6
+                                    l_len += 6
                                 else:
-                                    l_len+=1
+                                    l_len += 1
 
                             end_column_index = column_index + l_len
+                            print(column_index)
+                            print(l_len)
+                            print(line)
                             new_line = line[:column_index] + f'STRING_LITERALS[{index}]' + line[end_column_index:]
+                            print(new_line)
                             lines[line_index] = new_line
         code = '\n'.join(lines)
 
