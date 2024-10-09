@@ -2,14 +2,14 @@ package io.namaek2.plugins.toolWindow
 
 import javax.swing.JTextArea
 
-object MyConsoleLogger {
+object MyConsoleViewer {
     private var console: JTextArea? = null
 
     fun setConsole(console: JTextArea) {
         this.console = console
     }
 
-    fun logPrint(message: String) {
+    fun println(message: String) {
         console?.append("$message\n")
     }
 
