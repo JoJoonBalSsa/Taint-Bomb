@@ -2,6 +2,7 @@ package io.namaek2.plugins.services
 
 import com.intellij.openapi.progress.ProgressIndicator
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
+import io.namaek2.plugins.toolWindow.MyConsoleViewer
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -17,11 +18,11 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
         return scripts
     }
 
-    fun compareFileHashes(fractionValue: Double): Boolean {
+    fun compareFileHashes(fractionValue: Double) {
         indicator.text = "Comparing file hashes..."
         indicator.fraction = fractionValue
-
-        MyConsoleLogger.println("Comparing file hashes...")
+        MyConsoleViewer.println("Comparing file hashes...")
+        MyConsoleLogger.logPrint("Comparing file hashes...")
 
         for (i in 0..scriptNames.size - 1) {
             val fileName = scriptNames[i] + ".py"
@@ -32,22 +33,24 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
                 try {
                     val actualHash = calculateSHA256(file)
                     if (actualHash == expectedHash) {
-                        MyConsoleLogger.println("File $fileName matches the expected hash.")
+                        // MyConsoleLogger.println("File $fileName matches the expected hash.")
                     } else {
-                        MyConsoleLogger.println("File $fileName does not match the expected hash.")
-                        return false
+                        MyConsoleViewer.println("File $fileName does not match the expected hash.")
+                        MyConsoleLogger.logPrint("File $fileName does not match the expected hash.")
+                        throw IllegalArgumentException("File $fileName does not match the expected hash.")
                     }
                 }
                 catch (e: IOException) {
-                    MyConsoleLogger.println("File doesn't exist: ${e.message}")
-                    return false
+                    MyConsoleViewer.println("Error reading file: ${e.message}")
+                    MyConsoleLogger.logPrint("Error reading file: ${e.message}")
+                    throw IllegalArgumentException("Error reading file: ${e.message}")
                 }
             } else {
-                MyConsoleLogger.println("File $fileName does not exist.")
-                return false
+                MyConsoleViewer.println("File $fileName does not exist.")
+                MyConsoleLogger.logPrint("File $fileName does not exist.")
+                throw IllegalArgumentException("File $fileName does not exist.")
             }
         }
-        return true
     }
 
     private fun calculateSHA256(file: File): String {
@@ -66,7 +69,7 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
     fun parseHashInfo(fractionValue : Double){
         indicator.text = "Reading python check_hash file..."
         indicator.fraction = fractionValue
-        MyConsoleLogger.println("Reading python check_hash file...")
+        MyConsoleLogger.logPrint("Reading python check_hash file...")
 
         val hashFileListPath = javaClass.getResourceAsStream("/pyscripts/check_hash")
         readHash(hashFileListPath)
@@ -82,7 +85,7 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
                 scriptNames.add(parts[0])
                 scriptHashes.add(parts[1])
             } else {
-                MyConsoleLogger.println("Invalid line: $fileList")
+                MyConsoleLogger.logPrint("Invalid line: $fileList")
             }
         }
     }

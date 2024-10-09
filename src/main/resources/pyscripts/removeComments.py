@@ -38,3 +38,11 @@ class RemoveComments:
         code = '\n'.join(line for line in code.splitlines() if line.strip())
 
         return code
+
+
+if __name__ == '__main__':
+    import sys
+
+    RemoveComments(sys.argv[1])
+
+

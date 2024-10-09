@@ -79,3 +79,9 @@ class LevelObfuscation:
 
                     if obfuscated_code is not None:
                         ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+
+
+if __name__ == '__main__':
+    import sys
+
+    LevelObfuscation(sys.argv[1])
