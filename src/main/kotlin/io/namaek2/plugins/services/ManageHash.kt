@@ -13,7 +13,8 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
     private var scriptHashes = mutableListOf<String>()
 
     fun getScriptNames(): MutableList<String> {
-        return scriptNames
+        val scripts = scriptNames
+        return scripts
     }
 
     fun compareFileHashes(fractionValue: Double): Boolean {
