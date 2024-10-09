@@ -17,3 +17,13 @@ class StringObfuscate:
         StringInsert(searched_strings.Literals, encrypted_strings.encrypted_Literals, random_classes, output_folder,
                      keyDecryptJava, stringDecryptJava)
         print("string insert complete")
+
+
+if __name__ == '__main__':
+    import sys
+
+    output_folder = sys.argv[1]
+    keyDecryptJava = sys.argv[2]
+    stringDecryptJava = sys.argv[3]
+
+    StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)

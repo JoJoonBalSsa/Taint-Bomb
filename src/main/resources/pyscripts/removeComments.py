@@ -1,4 +1,5 @@
 from re import sub
+import sys
 
 from obfuscateTool import ObfuscateTool
 
@@ -38,3 +39,9 @@ class RemoveComments:
         code = '\n'.join(line for line in code.splitlines() if line.strip())
 
         return code
+
+
+if __name__ == '__main__':
+    RemoveComments(sys.argv[1])
+
+
