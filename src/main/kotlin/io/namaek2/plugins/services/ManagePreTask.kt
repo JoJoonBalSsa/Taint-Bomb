@@ -4,6 +4,7 @@ import kotlin.io.path.Path
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProgressIndicator
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
+import io.namaek2.plugins.toolWindow.MyConsoleViewer
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -17,17 +18,25 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
     private var osName = ""
     init {
         indicator.text = "Preparing obfuscation..."
+        MyConsoleViewer.println("Preparing obfuscation...")
         osName = checkOS()
 
+        indicator.text = "Deleting past directory..."
         deleteDirectory(File(outFolder), 0.0)
+
+        indicator.text = "Copying project directory..."
         copyDirectory(Path(javaFilesPath), Path(outFolder), 0.05)
 
-
+        indicator.text = "Parsing hash info..."
         manageHash.parseHashInfo(0.15)
+
+        indicator.text = "Copying scripts..."
         copyScripts(manageHash.getScriptNames(), 0.2)
 
-
+        indicator.text = "Preparing Python venv..."
         venvPath = prepareVenv(tempFolder, 0.22)
+
+        indicator.text = "Installing Python libraries..."
         prepareLibraries(venvPath, 0.24)
     }
 
@@ -53,7 +62,8 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
             "linux" in osName -> "Lin"
             // "mac" in osName -> "mac"
             else -> {
-                MyConsoleLogger.println("Unsupported OS: $osName")
+                MyConsoleViewer.println("Unsupported OS: $osName")
+                MyConsoleLogger.logPrint("Unsupported OS: $osName")
                 throw IllegalArgumentException("Unsupported OS: $osName")
             }
         }
@@ -76,11 +86,13 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
                 reader.lines().forEach(::println)
             }
             if (createVenvProcess.waitFor() != 0) {
+                MyConsoleViewer.println("Failed to create virtual environment")
                 throw IOException("Failed to create virtual environment")
             }
 
         } catch (e: IOException) {
-            MyConsoleLogger.println("An error occurred: ${e.message}")
+            MyConsoleViewer.println("An error occurred: ${e.message}")
+            MyConsoleLogger.logPrint("An error occurred: ${e.message}")
             throw e
         }
 
@@ -90,7 +102,7 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
     private fun prepareLibraries(venvPath: String, fractionValue: Double) {
         indicator.fraction = fractionValue
         // Install pycryptodome using the venv's pip
-        MyConsoleLogger.println("Installing libraries...")
+        MyConsoleLogger.logPrint("Installing libraries...")
         val installScript = "$tempFolder/installScripts.py"
 
         val installProcess = ProcessBuilder(venvPath, installScript)
@@ -99,10 +111,11 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
         val reader = BufferedReader(InputStreamReader(installProcess.inputStream))
         var line: String?
         while (reader.readLine().also { line = it } != null) {
-            MyConsoleLogger.println("installing output: $line")
+            MyConsoleLogger.logPrint("installing output: $line")
         }
 
         if (installProcess.waitFor() != 0) {
+            MyConsoleLogger.logPrint("Failed to installing python libraries. Is the network connected?")
             throw IOException("Failed to installing python libraries")
         }
     }
@@ -119,7 +132,7 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
                     Files.createDirectories(targetPath)
                 } else {
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
-                    // MyConsoleLogger.println("Copied: $sourcePath")
+                    MyConsoleLogger.logPrint("Copied: $sourcePath")
 
                     copiedFiles++
                     indicator.fraction = fractionValue * (copiedFiles.toDouble() / totalFiles)
@@ -155,13 +168,13 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
     private fun copyScripts(scriptNames : MutableList<String>, fractionValue: Double) {
         indicator.text = "Copying scripts..."
         indicator.fraction = fractionValue
-        // MyConsoleLogger.println("Copying scripts...")
+        MyConsoleLogger.logPrint("Copying scripts...")
 
         val result = File(tempFolder).mkdir()
         if (result) {
-            // MyConsoleLogger.println("Directory created successfully")
+            MyConsoleLogger.logPrint("Directory created successfully")
         } else {
-            // MyConsoleLogger.println("Directory already exists")
+            MyConsoleLogger.logPrint("Directory already exists")
         }
 
         for (scriptName in scriptNames) {
@@ -175,9 +188,9 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
             ?: throw IllegalArgumentException("Script not found: $scriptName")
 
         val scriptFile = File(tempFolder, "$scriptName.py").apply { createNewFile() }.toPath()
-        // MyConsoleLogger.println(scriptFile.toString())
+        MyConsoleLogger.logPrint(scriptFile.toString())
 
         scriptContent.toByteArray().let { Files.write(scriptFile, it, StandardOpenOption.WRITE) }
-        // MyConsoleLogger.println("$scriptName created successfully")
+        MyConsoleLogger.logPrint("$scriptName created successfully")
     }
 }
