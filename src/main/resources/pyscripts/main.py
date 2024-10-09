@@ -53,8 +53,7 @@ def __analyze_method(output_folder, tainted):
 
     result.save_to_json()  # 결과를 JSON 파일로 저장
 
-
-def main(output_folder):
+def main(output_folder)
     tainted = TaintAnalysis(output_folder)
     priority_flow = tainted._priority_flow()
 
@@ -83,5 +82,6 @@ def main(output_folder):
 
 if __name__ == '__main__':
     import sys
+    
     output_folder = sys.argv[1]
     main(output_folder)

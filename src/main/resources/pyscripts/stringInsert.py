@@ -145,12 +145,10 @@ class StringInsert:
 
                             line = lines[line_index]
                             l_len = 0
+
                             for char in literal:
                                 if ord(char) > 127: #유니코드일 경우
-                                    if (0x1100 <= ord(char) <= 0x11FF) or (0x3130 <= ord(char) <= 0x318F) or (0xAC00 <= ord(char) <= 0xD7A3):
-                                        l_len += 1 # 한글
-                                    else:
-                                        l_len += 6
+                                    l_len += 6
                                 else:
                                     l_len += 1
 

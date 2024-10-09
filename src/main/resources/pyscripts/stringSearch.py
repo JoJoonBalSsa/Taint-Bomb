@@ -1,8 +1,9 @@
 import javalang
 
 from obfuscateTool import ObfuscateTool
-from collections import defaultdict
+from collections import defaultdict,namedtuple
 
+Position = namedtuple("Position", ["line", "column"]) # Postion 정의
 
 class StringSearch:
     def __init__(self, java_folder_path):
@@ -10,6 +11,8 @@ class StringSearch:
         self.ban_list = []
         self.value_map = {}
 
+        print("converting unicode...")
+        ObfuscateTool.convert_unicode_literals(java_folder_path)
         print("parsing strings...")
         trees = ObfuscateTool.parse_java_files(java_folder_path)
         print("extracting strings...")
@@ -90,7 +93,9 @@ class StringSearch:
         string_literals = []
         self.ban_list = []
         class_name = node.name
-
+        is_next = False
+        next = 0 # 유니코드 발견시 그다음 문자열에 더할 pos
+        before_line = 0
         for sub_path, sub_node in node:
             self.__check_and_remove_annotation_literals(sub_node)
 
@@ -98,7 +103,18 @@ class StringSearch:
 
             if isinstance(sub_node, javalang.tree.Literal) and isinstance(sub_node.value, str) and sub_node.value.startswith('"') and sub_node.value.endswith('"'):
                 if not any(pos == sub_node.position for _, pos in string_literals):
-                    string_literals.append((sub_node.value, sub_node.position))
+                    pos = sub_node.position
+                    if is_next and pos.line == before_line:
+                        pos = Position(pos.line, pos.column + next)
+                    string_literals.append((sub_node.value, pos))
+                    is_next = False
+                    next = 0
+                    for char in sub_node.value:
+                        if ord(char) > 127: #유니코드일 경우
+                            next += 5
+                            before_line = pos.line
+                            is_next = True
+
 
         string_literals = [(value, pos) for value, pos in string_literals if value not in self.ban_list]
 
