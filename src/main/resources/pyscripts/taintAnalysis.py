@@ -99,6 +99,9 @@ class TaintAnalysis:
                         self.source_codes[file_path] = source_code  # 파일 경로와 소스 코드를 딕셔너리에 저장
                         success_files.append(file_path)
                         logger.info(f"파싱 성공: {file_path}")
+                    except SyntaxError as e:  # 문법 오류는 파이썬의 SyntaxError로 처리
+                        print(f"Syntax error in file {file_path}: {e}")
+
                     except javalang.parser.JavaSyntaxError as e:
                         error_message = f"문법 오류 발생 in {file_path}: {str(e)}"
                         logger.error(error_message)
