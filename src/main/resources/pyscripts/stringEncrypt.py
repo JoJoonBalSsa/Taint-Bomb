@@ -11,6 +11,7 @@ class StringEncrypt:
 
     def encrypt_string(self, plain_text, key):
         cipher = AES.new(key, AES.MODE_ECB)
+
         padded_text = pad(plain_text.encode('utf-8'), AES.block_size)
         encrypted_text = cipher.encrypt(padded_text)
         return base64.b64encode(encrypted_text).decode('utf-8')
