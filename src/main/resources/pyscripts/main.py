@@ -60,9 +60,8 @@ def __analyze_method(output_folder, tainted):
     result.save_to_json()  # 결과를 JSON 파일로 저장
 
 
-def main(output_folder, keyDecryptJava, stringDecryptJava):
-
-    RemoveComments(output_folder)
+def main(output_folder):
+    # RemoveComments(output_folder)
     # StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
 
     tainted = TaintAnalysis(output_folder)
@@ -91,23 +90,23 @@ def main(output_folder, keyDecryptJava, stringDecryptJava):
         make_md = MakeMD(output_folder + "/result.txt", output_folder + "/analysis_result.md")
         make_md.make_md_file()
 
-        LevelObfuscation(output_folder)
+        # LevelObfuscation(output_folder)
 
-    ob_identifier(output_folder,output_folder)
+    # ob_identifier(output_folder,output_folder)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        print(len(sys.argv))
-        for i in range(len(sys.argv)):
-            print("arg : ", i)
-            print(sys.argv[i])
-            print(sys.argv[i])
-        print("Usage: python main.py <output_folder> <keyDecryptJava> <stringDecryptJava>")
-        exit(1)
+    # if len(sys.argv) != 4:
+    #     print(len(sys.argv))
+    #     for i in range(len(sys.argv)):
+    #         print("arg : ", i)
+    #         print(sys.argv[i])
+    #         print(sys.argv[i])
+    #     print("Usage: python main.py <output_folder> <keyDecryptJava> <stringDecryptJava>")
+    #     exit(1)
 
     output_folder = sys.argv[1]
-    keyDecryptJava = sys.argv[2]
-    stringDecryptJava = sys.argv[3]
+    #keyDecryptJava = sys.argv[2]
+    #stringDecryptJava = sys.argv[3]
 
-    main(output_folder, keyDecryptJava, stringDecryptJava)
+    main(output_folder) #, keyDecryptJava, stringDecryptJava)

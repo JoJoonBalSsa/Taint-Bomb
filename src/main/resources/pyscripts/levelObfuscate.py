@@ -1,3 +1,5 @@
+import sys
+
 from operationObfuscate import ObfuscateOperations
 from applyObfuscated import ApplyObfuscated
 from dumbDB import DumbDB
@@ -79,3 +81,7 @@ class LevelObfuscation:
 
                     if obfuscated_code is not None:
                         ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+
+
+if __name__ == '__main__':
+    LevelObfuscation(sys.argv[1])
