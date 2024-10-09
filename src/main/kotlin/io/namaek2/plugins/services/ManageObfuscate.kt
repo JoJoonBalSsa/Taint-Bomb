@@ -34,7 +34,7 @@ class ManageObfuscate(
         runPythonScript(venvPath, "removeComments", outputFolder, 0.35)
         checkJavaSyntax(venvPath, outputFolder, 0.4)
 
-        indicator.text = "Encrypting scripts..."
+        indicator.text = "Encrypting strings..."
         runStringObfuscate(venvPath, "stringObfuscate", outputFolder, osName, 0.45)
         checkJavaSyntax(venvPath, outputFolder, 0.5)
 

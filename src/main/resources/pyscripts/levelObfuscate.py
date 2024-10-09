@@ -1,5 +1,3 @@
-import sys
-
 from operationObfuscate import ObfuscateOperations
 from applyObfuscated import ApplyObfuscated
 from dumbDB import DumbDB
@@ -84,4 +82,6 @@ class LevelObfuscation:
 
 
 if __name__ == '__main__':
+    import sys
+
     LevelObfuscation(sys.argv[1])

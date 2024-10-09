@@ -1,5 +1,4 @@
 from re import sub
-import sys
 
 from obfuscateTool import ObfuscateTool
 
@@ -42,6 +41,8 @@ class RemoveComments:
 
 
 if __name__ == '__main__':
+    import sys
+
     RemoveComments(sys.argv[1])
 
 

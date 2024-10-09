@@ -1,11 +1,5 @@
-import sys
-
 from taintAnalysis import TaintAnalysis
-from removeComments import RemoveComments
-from stringObfuscate import StringObfuscate
 from analysisResultManager import AnalysisResultManager
-from levelObfuscate import LevelObfuscation
-from identifierObfuscate import ob_identifier
 from makeMD import MakeMD
 from datetime import datetime
 
@@ -61,9 +55,6 @@ def __analyze_method(output_folder, tainted):
 
 
 def main(output_folder):
-    # RemoveComments(output_folder)
-    # StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
-
     tainted = TaintAnalysis(output_folder)
     priority_flow = tainted._priority_flow()
 
@@ -86,27 +77,11 @@ def main(output_folder):
         create_result(output_folder, tainted.flows)
         __analyze_method(output_folder, tainted)
 
-
         make_md = MakeMD(output_folder + "/result.txt", output_folder + "/analysis_result.md")
         make_md.make_md_file()
 
-        # LevelObfuscation(output_folder)
-
-    # ob_identifier(output_folder,output_folder)
-
 
 if __name__ == '__main__':
-    # if len(sys.argv) != 4:
-    #     print(len(sys.argv))
-    #     for i in range(len(sys.argv)):
-    #         print("arg : ", i)
-    #         print(sys.argv[i])
-    #         print(sys.argv[i])
-    #     print("Usage: python main.py <output_folder> <keyDecryptJava> <stringDecryptJava>")
-    #     exit(1)
-
+    import sys
     output_folder = sys.argv[1]
-    #keyDecryptJava = sys.argv[2]
-    #stringDecryptJava = sys.argv[3]
-
-    main(output_folder) #, keyDecryptJava, stringDecryptJava)
+    main(output_folder)
