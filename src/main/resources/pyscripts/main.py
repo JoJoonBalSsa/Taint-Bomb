@@ -63,7 +63,7 @@ def __analyze_method(output_folder, tainted):
 def main(output_folder, keyDecryptJava, stringDecryptJava):
 
     RemoveComments(output_folder)
-    # StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
+    StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
 
     tainted = TaintAnalysis(output_folder)
     priority_flow = tainted._priority_flow()

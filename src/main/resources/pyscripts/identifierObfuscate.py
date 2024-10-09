@@ -13,6 +13,7 @@ class ob_identifier:
         self.main_class = None
         self.ann_list = []
         self.class_list = []
+
         self.not_ob_list = ['Class','get','main','accept','getName',
                             'Runnable','run','Callable','call','Comparable','compareTo','Cloneable','clone',#자바에서 자주 사용하는 인터페이스 및 메서드
                             'toObservable','map','toString'
@@ -104,6 +105,7 @@ class ob_identifier:
             elif isinstance(node, javalang.tree.MethodDeclaration):
                 if node.name == 'main':
                     self.main_class = current_class
+
                 if any(ann.name == "Override" for ann in node.annotations):
 
                     self.not_ob_list.append(node.name)
@@ -349,7 +351,6 @@ class ob_identifier:
             for j, part in enumerate(parts):
                 # 문자열 리터럴은 그대로 두고, 리터럴이 아닌 코드 부분만 난독화 처리
                 if not part.startswith('"'):  # 큰따옴표로 시작하지 않으면 코드 부분
-                    print(part)
                     for original, obfuscated in self.identifier_map.items():
 
                         # 일반적인 식별자 패턴
