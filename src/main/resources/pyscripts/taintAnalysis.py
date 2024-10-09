@@ -327,7 +327,7 @@ class TaintAnalysis:
 
     def __track_variable_flow(self, class_method, var_name, count=0): #변수 흐름 추적. (계속 추가 가능)
 
-        MAX_RECURSION_DEPTH = 10  # 재귀 호출 최대 깊이 설정
+        MAX_RECURSION_DEPTH = 20  # 재귀 호출 최대 깊이 설정
 
         # 현재 재귀 깊이를 가져옴
         current_recursion_depth = len(inspect.stack())

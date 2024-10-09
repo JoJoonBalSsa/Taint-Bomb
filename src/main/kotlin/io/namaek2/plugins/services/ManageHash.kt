@@ -7,6 +7,7 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.security.MessageDigest
+import kotlin.system.exitProcess
 
 class ManageHash(private val scriptFolder : String, private val indicator: ProgressIndicator) {
     private var scriptNames = mutableListOf<String>()
@@ -17,7 +18,7 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
         return scripts
     }
 
-    fun compareFileHashes(fractionValue: Double): Boolean {
+    fun compareFileHashes(fractionValue: Double) {
         indicator.text = "Comparing file hashes..."
         indicator.fraction = fractionValue
 
@@ -32,22 +33,21 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
                 try {
                     val actualHash = calculateSHA256(file)
                     if (actualHash == expectedHash) {
-                        MyConsoleLogger.println("File $fileName matches the expected hash.")
+                        // MyConsoleLogger.println("File $fileName matches the expected hash.")
                     } else {
                         MyConsoleLogger.println("File $fileName does not match the expected hash.")
-                        return false
+                        exitProcess(1)
                     }
                 }
                 catch (e: IOException) {
                     MyConsoleLogger.println("File doesn't exist: ${e.message}")
-                    return false
+                    exitProcess(1)
                 }
             } else {
                 MyConsoleLogger.println("File $fileName does not exist.")
-                return false
+                exitProcess(1)
             }
         }
-        return true
     }
 
     private fun calculateSHA256(file: File): String {

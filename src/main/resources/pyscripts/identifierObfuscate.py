@@ -365,3 +365,9 @@ class ob_identifier:
         # 난독화된 코드를 반환
         obfuscated_code = '\n'.join(lines)
         return obfuscated_code
+
+
+if __name__ == '__main__':
+    import sys
+
+    ob_identifier(sys.argv[1], sys.argv[1])

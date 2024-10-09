@@ -1,4 +1,5 @@
 from re import sub
+import sys
 
 from obfuscateTool import ObfuscateTool
 
@@ -9,7 +10,7 @@ class RemoveComments:
 
         java_files = ObfuscateTool.parse_java_files(project_path)
         self.__process_file(java_files)
-
+        
         print("주석 제거 완료.")
 
 
@@ -18,7 +19,7 @@ class RemoveComments:
             cleaned_code = self.__remove_comments(source_code)
             ObfuscateTool.overwrite_file(path, cleaned_code)
             print(f"comment removed: {path}")
-
+    
 
     def __remove_comments(self, java_code):
         # 문자열 내부의 주석 기호를 임시로 대체
@@ -38,3 +39,9 @@ class RemoveComments:
         code = '\n'.join(line for line in code.splitlines() if line.strip())
 
         return code
+
+
+if __name__ == '__main__':
+    RemoveComments(sys.argv[1])
+
+
