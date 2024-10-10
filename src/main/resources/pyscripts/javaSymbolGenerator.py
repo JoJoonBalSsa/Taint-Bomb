@@ -3,6 +3,7 @@ from collections import defaultdict
 import json
 import javalang.tree
 
+
 class PseudoReflection:
     def __init__(self):
         # 표준 라이브러리 클래스와 메서드 정보를 저장
@@ -238,5 +239,8 @@ class JavaSymbolGenerator:
         return output
 
     def save_to_json(self, data, output_file):
-        with open(output_file, 'w') as f:
-            json.dump(data, f, indent=2)
+        try :
+            with open(output_file, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"Error saving JSON to {output_file}: {e}")

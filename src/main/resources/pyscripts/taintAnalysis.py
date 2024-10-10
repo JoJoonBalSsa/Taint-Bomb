@@ -35,7 +35,7 @@ class TaintAnalysis:
         trees = self.__parse_java_files(java_folder_path)
 
         # Step 2: Extract methods and find tainted variables
-        self.__taint_analysis(trees)
+        self.__taint_analysis(trees, java_folder_path)
 
         # Step 3: Append flow
         self.__append_flow()
@@ -115,7 +115,7 @@ class TaintAnalysis:
                         logger.error(error_message)
                         error_files.append((file_path, str(e)))
 
-        generator.save_to_json(all_symbols, "JavaSymbolOutput.json")
+        generator.save_to_json(all_symbols, folder_path + "/JavaSymbolOutput.json")
 
 
         logger.info(f"총 {total_files}개의 파일 중 {len(success_files)}개 파싱 성공, {len(error_files)}개 파싱 실패")
@@ -128,8 +128,8 @@ class TaintAnalysis:
         return trees  # 소스 코드와 AST를 함께 반환
 
 
-    def __taint_analysis(self, trees):
-        with open("JavaSymbolOutput.json", 'r') as file:
+    def __taint_analysis(self, trees, folder_path):
+        with open(folder_path + "/JavaSymbolOutput.json", 'r') as file:
             js = json.load(file)
         for file_path, tree in trees:
             current_json = js[file_path]
@@ -343,7 +343,7 @@ class TaintAnalysis:
 
     def __track_variable_flow(self, class_method, var_name, count=0): #변수 흐름 추적. (계속 추가 가능)
 
-        MAX_RECURSION_DEPTH = 20  # 재귀 호출 최대 깊이 설정
+        MAX_RECURSION_DEPTH =20  # 재귀 호출 최대 깊이 설정
 
         # 현재 재귀 깊이를 가져옴
         current_recursion_depth = len(inspect.stack())
@@ -450,6 +450,7 @@ class TaintAnalysis:
                 if new_key not in self.flows:
                     self.flows[new_key] = []
                 # flows에 __flow 복사
+                print("is this tatined?")
                 self.flows[new_key].append(self.__flow[:])
                 self.__flow.pop()
 
