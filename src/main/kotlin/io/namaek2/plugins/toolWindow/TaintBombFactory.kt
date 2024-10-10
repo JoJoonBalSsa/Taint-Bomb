@@ -40,6 +40,8 @@ class TaintBombFactory : ToolWindowFactory {
         fun getContent() = JBPanel<JBPanel<*>>().apply {
             val label1 = JBLabel(MyBundle.message("obfuscateLabel1"))
             val label2 = JBLabel(MyBundle.message("obfuscateLabel2"))
+            val label3 = JBLabel(MyBundle.message("obfuscateLabel3"))
+
             val consolePanel = JTextArea()
             val scrollPane = JBScrollPane(consolePanel)
 
@@ -49,6 +51,7 @@ class TaintBombFactory : ToolWindowFactory {
                 addActionListener {
                     label1.text = MyBundle.message("obfuscateLabel1", service.startTaintBomb())
                     label2.text = MyBundle.message("obfuscateLabel2", service.startTaintBomb())
+                    label3.test = MyBundle.message("obfuscateLabel3", service.startTaintBomb())
                 }
             })
 
