@@ -16,7 +16,9 @@ class ob_identifier:
 
         self.not_ob_list = ['Class','get','main','accept','getName',
                             'Runnable','run','Callable','call','Comparable','compareTo','Cloneable','clone',#자바에서 자주 사용하는 인터페이스 및 메서드
-                            'toObservable','map','toString'
+                            'toObservable','map','toString',
+                            'String','StringBuilder',#내장 클래스들
+                            'create','replace'#JobF
                             ] #난독화 하면 안되는 식별자들
         self.identifier_map = {}  # 난독화 맵
         self.files = []  # 파일 경로 저장
@@ -87,67 +89,40 @@ class ob_identifier:
 
 
     def collect_identifiers_from_ast(self, tree, file_path):
-        current_class = None
-        for path, node in tree: # 패키지 선언
-            if isinstance(node, javalang.tree.PackageDeclaration):
-                self.package_map.append(node.name)  # 패키지 이름 저장
+        for path, node in tree:
+            if isinstance(node, (javalang.tree.PackageDeclaration, javalang.tree.ClassDeclaration, javalang.tree.EnumDeclaration, javalang.tree.InterfaceDeclaration, javalang.tree.AnnotationDeclaration, javalang.tree.MethodDeclaration, javalang.tree.VariableDeclarator, javalang.tree.LocalVariableDeclaration, javalang.tree.TryStatement)):
+                # 패키지, 클래스, Enum, 인터페이스, 어노테이션, 메서드, 변수, Try 문 등을 여기서 처리
+                if isinstance(node, javalang.tree.PackageDeclaration):
+                    self.package_map.append(node.name)
+                elif isinstance(node, (javalang.tree.ClassDeclaration, javalang.tree.EnumDeclaration, javalang.tree.InterfaceDeclaration)):
+                    self.class_list.append(node.name)
+                    self.generate_obfuscated_name(node.name)
+                elif isinstance(node, javalang.tree.AnnotationDeclaration):
+                    self.ann_list.append(node.name)
+                    self.generate_obfuscated_name(node.name)
+                elif isinstance(node, javalang.tree.MethodDeclaration):
+                    if node.name == 'main':
+                        self.main_class = node.name
+                    if any(ann.name == "Override" for ann in node.annotations):
+                        self.not_ob_list.append(node.name)
+                        self.identifier_map.pop(node.name, None)
+                    self.generate_obfuscated_name(node.name)
+                    for param in node.parameters:
+                        self.generate_obfuscated_name(param.name)
+                elif isinstance(node, javalang.tree.VariableDeclarator):
+                    self.generate_obfuscated_name(node.name)
+                elif isinstance(node, javalang.tree.LocalVariableDeclaration):
+                    for declarator in node.declarators:
+                        self.generate_obfuscated_name(declarator.name)
+                elif isinstance(node, javalang.tree.TryStatement):
+                    if node.resources:
+                        for resource in node.resources:
+                            self.generate_obfuscated_name(resource.name)
+                    for statement in node.block:
+                        if isinstance(statement, javalang.tree.LocalVariableDeclaration):
+                            for declarator in statement.declarators:
+                                self.generate_obfuscated_name(declarator.name)
 
-
-            # 클래스나 Enum 선언 (+ Interface)
-            elif isinstance(node, javalang.tree.ClassDeclaration) or isinstance(node, javalang.tree.EnumDeclaration) or isinstance(node, javalang.tree.InterfaceDeclaration):
-                current_class = node.name
-                self.class_list.append(node.name)
-                self.generate_obfuscated_name(node.name)
-
-            elif isinstance(node, javalang.tree.AnnotationDeclaration): # 여기서 어노테이션들 이름 기록해 놔야함 (어노테이션 난독화)
-                self.ann_list.append(node.name)
-                self.generate_obfuscated_name(node.name)
-
-            # 메서드 선언
-            elif isinstance(node, javalang.tree.MethodDeclaration):
-                if node.name == 'main':
-                    self.main_class = current_class
-
-                if any(ann.name == "Override" for ann in node.annotations):
-
-                    self.not_ob_list.append(node.name)
-                    self.identifier_map.pop(node.name, None)
-
-                self.generate_obfuscated_name(node.name)
-
-                # 메서드 매개변수 처리
-                for param in node.parameters:
-                    self.generate_obfuscated_name(param.name)
-
-            # 변수 선언
-            elif isinstance(node, javalang.tree.VariableDeclarator):
-                self.generate_obfuscated_name(node.name)
-
-            # 객체 생성 및 변수 선언
-            elif isinstance(node, javalang.tree.LocalVariableDeclaration):
-
-                for declarator in node.declarators: # 변수 이름
-
-                    self.generate_obfuscated_name(declarator.name)
-
-            # Try 문과 그 안에 있는 리소스, 변수, 메서드 호출 처리
-            elif isinstance(node, javalang.tree.TryStatement):
-                # Try-with-resources: 리소스 변수 난독화 (리소스가 있는 경우만)
-                if node.resources is not None:
-                    for resource in node.resources:
-                        self.generate_obfuscated_name(resource.name)
-
-                # Try 블록 안의 명령문 처리
-                for statement in node.block:
-                    if isinstance(statement, javalang.tree.LocalVariableDeclaration):
-                        for declarator in statement.declarators:
-                            self.generate_obfuscated_name(declarator.name)
-                    # elif isinstance(statement, javalang.tree.StatementExpression):
-                    #     # MethodInvocation의 변수나 메서드 식별자 처리
-                    #     if isinstance(statement.expression, javalang.tree.MethodInvocation):
-                    #         if statement.expression.qualifier:
-                    #             self.generate_obfuscated_name(statement.expression.qualifier)
-                    #         self.generate_obfuscated_name(statement.expression.member)
 
 
     def apply_obfuscation_to_files(self):
@@ -330,10 +305,11 @@ class ob_identifier:
                     line = line.replace(method_name_literal, obfuscated_method_name)
                     
             match = self.find_variable_declarations(line)
-            if match:
-                for var_type, var_name in match:
-                    if (var_type in external_class) or ("<" in var_type) or (var_type not in self.class_list):
-                        imp_var_list.append(var_name)
+            if not line.startswith("import"): # import부분은 식별 X
+                if match:
+                    for var_type, var_name in match:
+                        if (var_type in external_class) or ("<" in var_type) or (var_type not in self.class_list):
+                            imp_var_list.append(var_name)
 
             # 함수 호출 패턴 (외부 함수 난독화에서 제외)
             if not line.startswith("import"): # import부분은 식별 X
