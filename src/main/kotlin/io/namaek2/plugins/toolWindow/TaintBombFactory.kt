@@ -49,9 +49,10 @@ class TaintBombFactory : ToolWindowFactory {
             add(label2)
             add(JButton(MyBundle.message("obfuscate")).apply {
                 addActionListener {
-                    label1.text = MyBundle.message("obfuscateLabel1", service.startTaintBomb())
-                    label2.text = MyBundle.message("obfuscateLabel2", service.startTaintBomb())
-                    label3.text = MyBundle.message("obfuscateLabel3", service.startTaintBomb())
+                    label1.text = MyBundle.message("obfuscateLabel1")
+                    label2.text = MyBundle.message("obfuscateLabel2")
+                    label3.text = MyBundle.message("obfuscateLabel3")
+                    service.startTaintBomb()
                 }
             })
 
