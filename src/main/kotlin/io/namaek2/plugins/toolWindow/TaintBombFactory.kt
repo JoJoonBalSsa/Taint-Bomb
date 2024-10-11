@@ -56,8 +56,8 @@ class TaintBombFactory : ToolWindowFactory {
                 }
             })
 
-            add(scrollPane)
             MyConsoleViewer.setConsole(consolePanel)
+            add(scrollPane)
         }
     }
 }

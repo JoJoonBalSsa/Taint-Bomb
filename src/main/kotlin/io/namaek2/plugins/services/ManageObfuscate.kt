@@ -17,7 +17,7 @@ class ManageObfuscate(
     init {
         indicator.text = "Checking Java code syntax..."
         manageHash.compareFileHashes(0.25)
-        //initCheckJavaSyntax(venvPath, javaFilesPath, 0.3)
+        initCheckJavaSyntax(venvPath, javaFilesPath, 0.3)
 
         executePythonScript(venvPath, osName)
     }
@@ -81,9 +81,9 @@ class ManageObfuscate(
             MyConsoleViewer.println("\n!!!!!!   CODE SYNTAX IS NOT SUPPORTED   !!!!!!")
             MyConsoleViewer.println("The code must be based on the Java language spec available at : ")
             MyConsoleViewer.println("http://docs.oracle.com/javase/specs/jls/se8/html/.")
+            MyConsoleViewer.println("\nthe process will be continued but it might be go wrong\n")
 
             MyConsoleLogger.logPrint("java syntax error occurred.")
-            throw IOException("syntax error occurred.")
         }
     }
 
