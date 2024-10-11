@@ -121,19 +121,46 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
     }
 
     private fun copyDirectory(source: Path, destination: Path, fractionValue: Double) {
-        val totalFiles = Files.walk(source).count()
+        // 제외할 디렉토리 목록 정의
+        val excludedDirs = listOf(
+            "obfuscated_project_folder",
+            "build",
+            "temp",
+            ".git",
+            "test",
+            "docs"
+        )
+
+        // 경로가 제외된 디렉토리인지 확인하는 함수
+        fun isExcludedDirectory(path: Path): Boolean {
+            return excludedDirs.any { excluded ->
+                // 현재 경로의 모든 상위 디렉토리를 확인
+                path.nameCount > 0 && path.any { pathPart ->
+                    pathPart.toString() == excluded
+                }
+            }
+        }
+
+        val totalFiles = Files.walk(source)
+            .filter { path ->
+                !isExcludedDirectory(source.relativize(path))
+            }
+            .count()
+
         var copiedFiles = 0
 
         Files.walk(source).forEach { sourcePath ->
-            if (!sourcePath.toString().contains("obfuscated_project_folder")) {
-                val targetPath = destination.resolve(source.relativize(sourcePath))
+            // 상대 경로를 구하고 해당 경로가 제외 디렉토리에 속하는지 확인
+            val relativePath = source.relativize(sourcePath)
+            val shouldCopy = !isExcludedDirectory(relativePath)
 
+            if (shouldCopy) {
+                val targetPath = destination.resolve(relativePath)
                 if (Files.isDirectory(sourcePath)) {
                     Files.createDirectories(targetPath)
                 } else {
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
                     MyConsoleLogger.logPrint("Copied: $sourcePath")
-
                     copiedFiles++
                     indicator.fraction = fractionValue * (copiedFiles.toDouble() / totalFiles)
                     indicator.text = "Copying files... (${copiedFiles}/${totalFiles})"
@@ -141,6 +168,7 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
             }
         }
     }
+
 
     fun deleteDirectory(directory: File, fractionValue: Double) {
         indicator.fraction = fractionValue

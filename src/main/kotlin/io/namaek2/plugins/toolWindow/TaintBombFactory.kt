@@ -51,7 +51,7 @@ class TaintBombFactory : ToolWindowFactory {
                 addActionListener {
                     label1.text = MyBundle.message("obfuscateLabel1", service.startTaintBomb())
                     label2.text = MyBundle.message("obfuscateLabel2", service.startTaintBomb())
-                    label3.test = MyBundle.message("obfuscateLabel3", service.startTaintBomb())
+                    label3.text = MyBundle.message("obfuscateLabel3", service.startTaintBomb())
                 }
             })
 
