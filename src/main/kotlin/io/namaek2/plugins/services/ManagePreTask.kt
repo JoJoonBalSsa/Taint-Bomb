@@ -23,6 +23,7 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
 
         indicator.text = "Deleting past directory..."
         deleteDirectory(File(outFolder), 0.0)
+        deleteDirectory(File(tempFolder), 0.02)
 
         indicator.text = "Copying project directory..."
         copyDirectory(Path(javaFilesPath), Path(outFolder), 0.05)

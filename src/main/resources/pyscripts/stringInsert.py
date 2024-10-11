@@ -1,7 +1,6 @@
 import javalang
 
 from obfuscateTool import ObfuscateTool
-import re
 
 class StringInsert:
     def __init__(self, Literals, enc_Literals, class_names, foler_path, keyDecryptJava, stringDecryptJava):

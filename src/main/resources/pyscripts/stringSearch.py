@@ -47,6 +47,52 @@ class StringSearch:
 
         return unique_literals_by_path
 
+    # Switch-case 구문에서 case에 있는 문자열 리터럴을 ban_list에 추가하는 함수
+    def __check_and_remove_switch_case_literals(self, node):
+        # SwitchStatement를 탐색하고 그 안의 각 SwitchStatementCase를 확인
+        if isinstance(node, javalang.tree.SwitchStatement):
+            for case in node.cases:
+                if isinstance(case, javalang.tree.SwitchStatementCase):
+                    for case_value in case.case:
+                        if isinstance(case_value, javalang.tree.Literal) and isinstance(case_value.value, str):
+                            # case 구문에서 문자열 리터럴을 발견한 경우 ban_list에 추가
+                            if case_value.value.startswith('"') and case_value.value.endswith('"'):
+                                self.ban_list.append(case_value.value)
+
+    # 기존 문자열 추출 함수에 switch-case 처리 추가
+    def __extract_strings(self, node, package_name):
+        string_literals = []
+        self.ban_list = []
+        class_name = node.name
+        is_next = False
+        next = 0
+        before_line = 0
+
+        for sub_path, sub_node in node:
+            self.__check_and_remove_annotation_literals(sub_node)
+            self.__track_variable_declarations(sub_node)  # 변수 선언도 확인
+            self.__check_and_remove_switch_case_literals(sub_node)  # switch-case 처리 추가
+
+            if isinstance(sub_node, javalang.tree.Literal) and isinstance(sub_node.value, str) and sub_node.value.startswith('"') and sub_node.value.endswith('"'):
+                if not any(pos == sub_node.position for _, pos in string_literals):
+                    pos = sub_node.position
+                    if is_next and pos.line == before_line:
+                        pos = Position(pos.line, pos.column + next)
+                    string_literals.append((sub_node.value, pos))
+                    is_next = False
+                    next = 0
+                    for char in sub_node.value:
+                        if ord(char) > 127:  # 유니코드 처리
+                            next += 5
+                            before_line = pos.line
+                            is_next = True
+
+        # ban_list에 있는 문자열 제거
+        string_literals = [(value, pos) for value, pos in string_literals if value not in self.ban_list]
+
+        Literal = [package_name, class_name, string_literals]
+        return Literal
+
     def remove_duplicate_positions(self, literals):
         package, class_name, literals_list, path = literals
         seen_positions = set()
@@ -87,36 +133,3 @@ class StringSearch:
         if isinstance(node, javalang.tree.VariableDeclarator) and isinstance(node.initializer, javalang.tree.Literal):
             if node.initializer.value.startswith('"') and node.initializer.value.endswith('"'):
                 self.value_map[node.name] = node.initializer.value
-
-    # 클래스 별로 문자열 추출
-    def __extract_strings(self, node, package_name):
-        string_literals = []
-        self.ban_list = []
-        class_name = node.name
-        is_next = False
-        next = 0 # 유니코드 발견시 그다음 문자열에 더할 pos
-        before_line = 0
-        for sub_path, sub_node in node:
-            self.__check_and_remove_annotation_literals(sub_node)
-
-            self.__track_variable_declarations(sub_node) # 동시에 변수선언도 확인
-
-            if isinstance(sub_node, javalang.tree.Literal) and isinstance(sub_node.value, str) and sub_node.value.startswith('"') and sub_node.value.endswith('"'):
-                if not any(pos == sub_node.position for _, pos in string_literals):
-                    pos = sub_node.position
-                    if is_next and pos.line == before_line:
-                        pos = Position(pos.line, pos.column + next)
-                    string_literals.append((sub_node.value, pos))
-                    is_next = False
-                    next = 0
-                    for char in sub_node.value:
-                        if ord(char) > 127: #유니코드일 경우
-                            next += 5
-                            before_line = pos.line
-                            is_next = True
-
-
-        string_literals = [(value, pos) for value, pos in string_literals if value not in self.ban_list]
-
-        Literal = [package_name, class_name, string_literals]
-        return Literal
