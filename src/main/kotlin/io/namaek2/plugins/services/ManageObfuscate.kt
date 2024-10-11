@@ -44,7 +44,6 @@ class ManageObfuscate(
         indicator.text = "Analysing code..."
         MyConsoleViewer.println("Analysing code...")
         runPythonScript(venvPath, "main", outputFolder, 0.55)
-        //checkJavaSyntax(venvPath, outputFolder, 0.6)
 
         indicator.text = "Level obfuscation activated..."
         MyConsoleViewer.println("Level obfuscation activated...")
