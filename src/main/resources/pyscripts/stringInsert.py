@@ -196,7 +196,6 @@ class StringInsert:
 
         lines = code.split('\n')
         classes_pos = sorted(classes_pos, key=lambda x: (x, -x))  # 아래 클래스부터 추가
-        print("classes_pos : ", classes_pos)
 
         array_declaration = list(reversed(array_declaration)) if len(array_declaration) > 1 else array_declaration
         key_declaration_list = list(reversed(key_declaration_list))if len(key_declaration_list) > 1 else key_declaration_list

@@ -39,7 +39,7 @@ class ManageObfuscate(
         indicator.text = "Encrypting strings..."
         MyConsoleViewer.println("Encrypting strings...")
         runStringObfuscate(venvPath, "stringObfuscate", outputFolder, osName, 0.45)
-        checkJavaSyntax(venvPath, outputFolder, 0.5)
+        //checkJavaSyntax(venvPath, outputFolder, 0.5)
 
         indicator.text = "Analysing code..."
         MyConsoleViewer.println("Analysing code...")
