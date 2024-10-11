@@ -30,6 +30,7 @@ class ob_identifier:
         # 난독화 적용
         self.apply_obfuscation_to_files()
         print(self.identifier_map)
+        print(self.package_map)
 
 
     def generate_obfuscated_name(self, name, length=8):
@@ -90,6 +91,7 @@ class ob_identifier:
         for path, node in tree: # 패키지 선언
             if isinstance(node, javalang.tree.PackageDeclaration):
                 self.package_map.append(node.name)  # 패키지 이름 저장
+
 
             # 클래스나 Enum 선언 (+ Interface)
             elif isinstance(node, javalang.tree.ClassDeclaration) or isinstance(node, javalang.tree.EnumDeclaration) or isinstance(node, javalang.tree.InterfaceDeclaration):
@@ -345,6 +347,15 @@ class ob_identifier:
                             line = line.replace(var+"."+fun+"(",var+"."+fun+"_DO_NOT_OBFUSCATE(")
                         else :
                             line = line.replace(var+"."+fun,var+"."+fun+"_DO_NOT_OBFUSCATE")
+
+            pattern = r'<(.*?)>'
+            matches = re.findall(pattern, line)
+
+            for ii in range(len(matches)):
+                iden = matches[ii]
+
+                if (iden in external_class):
+                    line = line.replace(iden,iden+"_DO_NOT_OBFUSCATE")
 
             # 문자열 리터럴 ("...")을 분리하여 처리
             parts = re.split(r'(".*?")', line)  # 큰따옴표로 묶인 문자열은 분리
