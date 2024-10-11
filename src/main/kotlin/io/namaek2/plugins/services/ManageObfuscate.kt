@@ -17,7 +17,7 @@ class ManageObfuscate(
     init {
         indicator.text = "Checking Java code syntax..."
         manageHash.compareFileHashes(0.25)
-        initCheckJavaSyntax(venvPath, javaFilesPath, 0.3)
+        //initCheckJavaSyntax(venvPath, javaFilesPath, 0.3)
 
         executePythonScript(venvPath, osName)
     }
@@ -34,27 +34,27 @@ class ManageObfuscate(
         indicator.text = "Removing comments..."
         MyConsoleViewer.println("Removing comments...")
         runPythonScript(venvPath, "removeComments", outputFolder, 0.35)
-        checkJavaSyntax(venvPath, outputFolder, 0.4)
+        //checkJavaSyntax(venvPath, outputFolder, 0.4)
 
         indicator.text = "Encrypting strings..."
         MyConsoleViewer.println("Encrypting strings...")
         runStringObfuscate(venvPath, "stringObfuscate", outputFolder, osName, 0.45)
-        checkJavaSyntax(venvPath, outputFolder, 0.5)
+        //checkJavaSyntax(venvPath, outputFolder, 0.5)
 
         indicator.text = "Analysing code..."
         MyConsoleViewer.println("Analysing code...")
         runPythonScript(venvPath, "main", outputFolder, 0.55)
-        checkJavaSyntax(venvPath, outputFolder, 0.6)
+        //checkJavaSyntax(venvPath, outputFolder, 0.6)
 
         indicator.text = "Level obfuscation activated..."
         MyConsoleViewer.println("Level obfuscation activated...")
         runPythonScript(venvPath, "levelObfuscate", outputFolder, 0.65)
-        checkJavaSyntax(venvPath, outputFolder, 0.7)
+        //checkJavaSyntax(venvPath, outputFolder, 0.7)
 
         indicator.text = "Identifier obfuscating..."
         MyConsoleViewer.println("Identifier obfuscating...")
         runPythonScript(venvPath, "identifierObfuscate", outputFolder, 0.75)
-        checkJavaSyntax(venvPath, outputFolder, 0.8)
+        //checkJavaSyntax(venvPath, outputFolder, 0.8)
     }
 
     private fun checkJavaSyntax(venvPath:String, javaFilesPath: String, fractionValue: Double) {
