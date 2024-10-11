@@ -22,7 +22,7 @@ class TaintBombService(private val project: Project) {
     fun startTaintBomb() {
         val javaFilesPath = projectFolder
         val outFolder = "$projectFolder/obfuscated_project_folder"
-        val tempFolder = "$projectFolder/temp"
+        val tempFolder = "$projectFolder/temp_asdf_qwer"
         MyConsoleLogger.clearConsole()
         MyConsoleViewer.clearConsole()
 
