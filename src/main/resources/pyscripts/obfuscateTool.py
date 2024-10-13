@@ -72,6 +72,16 @@ class ObfuscateTool:
                     for original, modified in zip(string_literals, modified_strings):
                         content = content.replace(f'"{original}"', f'"{modified}"')
 
+
+                    pattern = r'\\u([0-9A-Fa-f]{4})'
+                    matches = re.findall(pattern, content)
+
+                    # ASCII 범위 확인 (0x00부터 0x7F까지가 ASCII 범위)
+                    for match in matches:
+                        hex_value = int(match, 16)  # 16진수를 정수로 변환
+                        if 0x00 <= hex_value <= 0x7F:
+                            content = content.replace(f'\\u{hex_value:04X}',chr(hex_value))
+                            content = content.replace(f'\\u{hex_value:04x}',chr(hex_value))
                     # 변환된 내용을 파일에 덮어쓰기 (선택 사항)
                     with open(file_path, 'w', encoding='utf-8') as file:
                         file.write(content)
