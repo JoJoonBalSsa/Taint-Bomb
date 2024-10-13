@@ -517,8 +517,8 @@ class MethodSplit:
         for method in method_data:
             sum = self.__extract_conditionals_loops(method['if_content'])
             if sum:
-                modified_code = self.__sub(java_code)
-                method_name = "handleCondition1"
+                modified_code, new_function_name = self.__sub(java_code)
+                method_name = new_function_name
                 extracted_method, code_without_handle = self.__extract_method_by_name(modified_code,method_name)
                 result_after_if_catch = self.__if_if_catch(code_without_handle)
                 # 처리된 코드 뒤에 handleCondition1 메서드를 다시 붙임
@@ -639,16 +639,16 @@ class MethodSplit:
         # 첫 번째 if 블록을 찾아서 처리
         match = if_pattern.search(java_code)
         if match:
-            function_definitions, modified_if_block = self.__replace_first_if_block(match, available_vars)
-
+            function_definitions, modified_if_block, new_function_name = self.__replace_first_if_block(match, available_vars)
+            
             # 원래 코드에서 첫 번째 if 블록을 수정된 if 블록으로 대체
             modified_code = java_code[:match.start()] + modified_if_block + java_code[match.end():]
-
+            
             # 추출된 함수 정의를 코드 마지막에 추가
             modified_code += '\n' + function_definitions
-
+            
             # 최종 결과 출력
-            return modified_code
+            return modified_code, new_function_name
         else:
             return java_code
 
@@ -660,61 +660,64 @@ class MethodSplit:
     def __replace_first_if_block(self, match, available_vars):
         condition = match.group(1)  # 첫 번째 if 조건
         code_block = match.group(2).strip()  # 첫 번째 if 블록 내부 코드
-
+        
         # 내부 조건문 또는 반복문을 함수로 분리
-        new_functions, modified_code_block = self.__extract_internal_conditions(code_block, available_vars)
-
+        new_functions, modified_code_block, new_function_name = self.__extract_internal_conditions(code_block, available_vars)
+        
         # 추출된 함수들 모음 (if 블록 외부에 정의)
         function_definitions = '\n'.join(new_functions)
-
+        
         # 수정된 if 블록 반환 (원래 위치에서 함수 호출로 대체)
         modified_if_block = f'if ({condition}) {{\n    {modified_code_block}\n}}'
-
-        return function_definitions, modified_if_block
+        
+        return function_definitions, modified_if_block, new_function_name
 
     def __extract_internal_conditions(self, code_block, available_vars):
         functions = []
         modified_code_block = code_block
         match_num = 1
-
+        new_function_name = None  # 변수 선언 위치를 여기로 이동하여 함수 외부에서 접근 가능하도록
+        
         def replace_nested_block(match):
-            nonlocal match_num
+            nonlocal match_num, new_function_name
             keyword = match.group(1)  # 조건문 또는 반복문 종류 (if, for, while)
             condition = match.group(2)  # 조건
             body = match.group(3).strip()  # 블록 내부 코드
-
+            
             # 조건식에서 사용된 변수와 내부 코드에서 사용된 변수 모두 추출
             variable_pattern = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b')
             condition_vars = set(variable_pattern.findall(condition))
             body_vars = set(variable_pattern.findall(body))
             all_vars = condition_vars.union(body_vars).intersection(available_vars.keys())
-
+            
             # 각 변수의 자료형과 함께 파라미터 문자열 생성
             variables_string = ', '.join([f'{available_vars[var]} {var}' for var in all_vars])
-
+            
+            # 반환 타입 동적으로 추출 (available_vars에서 할당된 변수 타입으로 결정)
+            return_type = self.__determine_return_type(body, available_vars)
+            
             # 새 함수 이름 생성
-            new_function_name = f'handleCondition{match_num}'
-            match_num += 1
-
+            new_function_name = self.__generate_random_string()
+            
             # 새로운 함수 생성
             new_function = f'''
-    public void {new_function_name}({variables_string}) {{
+    public {return_type} {new_function_name}({variables_string}) {{
         {keyword} ({condition}) {{
             {body}
         }}
     }}
     '''
             functions.append(new_function)
-
+            
             # 함수 호출로 대체
             return f'{new_function_name}({", ".join(all_vars)});'
-
+        
         # 내부 조건문이나 반복문을 찾아 함수로 변환
         # 조건문이나 반복문을 추출하는 정규식 (if, for, while)
         nested_pattern = re.compile(r'(if|for|while)\s*\((.*?)\)\s*\{((?:[^\{\}]|(?R))*)\}', re.MULTILINE | re.DOTALL)
         modified_code_block = nested_pattern.sub(replace_nested_block, code_block)
-
-        return functions, modified_code_block
+        
+        return functions, modified_code_block, new_function_name
 
     def __extract_method_by_name(self, java_code, method_name):
         # 중첩된 중괄호를 처리하여 메서드 전체를 추출하는 정규식 패턴
