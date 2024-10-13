@@ -160,6 +160,7 @@ class ob_identifier:
     def replace_gradle(self):
         # build.gradle 파일 수정
         build_gradle_path = os.path.join(self.folder_path, 'build.gradle')
+        build_gradle_path2 = os.path.join(self.folder_path, 'build.gradle.kts')
         if os.path.exists(build_gradle_path):
             with open(build_gradle_path, 'r', encoding='utf-8') as file:
                 build_gradle_content = file.read()
@@ -175,9 +176,8 @@ class ob_identifier:
             # 수정된 내용을 다시 build.gradle에 씀
             with open(build_gradle_path, 'w', encoding='utf-8') as file:
                 file.write(build_gradle_content)
-        elif os.path.exists(build_gradle_path+".kts"):
-            build_gradle_path = os.path.join(self.folder_path, 'build.gradle.kts')
-            with open(build_gradle_path, 'r', encoding='utf-8') as file:
+        elif os.path.exists(build_gradle_path2):
+            with open(build_gradle_path2, 'r', encoding='utf-8') as file:
                 build_gradle_content = file.read()
 
                 build_gradle_content = build_gradle_content.replace(self.main_class,self.identifier_map.get(self.main_class,self.main_class))
