@@ -4,14 +4,22 @@ import json
 class OperationDB:
     def __init__(self):
         self.__op = {
-            "+": "{a}-(~{b}+1)",
-            "-": "{a}+(~{b} + 1)",
+            "+": "(78+{a})+123-(~{b}+1)-110-91",
+            "-": "(45+{b})+75+(~{a} + 1)-58-62",
+
             "*": "int resultObfuscated = 0; for(int i = 0; i < {b}; i++) {{ resultObfuscated -= ~{a}+1; }}",
             "/": "int resultObfuscated = 0; int temp = {a}; int bInverted = ~(~{b} + 1) + 1; while (temp >= bInverted) {{ temp -= bInverted; resultObfuscated++;}}",
             "%": "{a} - (int temp = {a}; int bInverted = ~(~{b} + 1) + 1; while (temp >= bInverted) {{ temp -= bInverted; }} temp * {b})",
             "!":"{a} ? ({b} ? false : (true ? false : false)) : (true  ? true : true)",
-            "==":"({a} != {b}) ? (true ? false : (true ? false : false)) : (false ? true : true)",
-            "!=":"({a} == {b}) ? (true ? false : (true ? false : false)) : (true ? true : true)",
+
+
+
+            "==":"(({a}*100 + ({a} - {b} + 1 - 1) == {b}*100) && ({a} != {b}) ? ((true && !false) ? false : (true || false)) : ((false || true) && !false)) && (({a} * 1 + 0) / 1 == {b})",
+            "!=":"(({a}*100 + ({b} - {a} + 1) != {b}*100)&& ({a} != {b}) ? ((true || false) && !false) : (false && true || false)) && (({a} * 1 + 1) / 1 != {b})",
+
+
+
+
             ">":"~{b} + 1 > ~{a} + 1",
             "<":"~{b} + 1 < ~{a} + 1",
             ">=":"(~{b} + 1 > ~{a} + 1)",

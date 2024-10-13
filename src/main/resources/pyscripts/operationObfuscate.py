@@ -32,36 +32,40 @@ class ObfuscateOperations:
         self.op_json = O.op_db()
 
         self.obfuscated = None
+        temp_result = ''
 
         self.obfuscation_map = {}  # 난독화된 부분을 임시 저장할 맵
         self.counter = 0  # 난독화 넘버링에 사용
 
         e = ExtractOperations(self.source_code)
+
         expressions = e.expressions
 
         if expressions is not None:
-            for expression in expressions:
-                if len(expression) > 0:
-                    obfuscated = self.obfuscate_expression(expression)
+            for expression_list in expressions:
+                if len(expression_list) > 0:
+                    obfuscate_list = self.obfuscate_expression(expression_list)
 
-                    # list to string
-                    expression = ''.join(expression)
+                    # 변환된 표현식으로 소스 코드를 교체
+                    self.obfuscated = self.replace_expression(self.source_code, expression_list, obfuscate_list)
 
-                    self.obfuscated = self.replace_expression(self.source_code, expression, obfuscated)
 
 
     def return_obfuscated_code(self):
         return self.obfuscated
 
-    def obfuscate_expression(self, expression):
+    def obfuscate_expression(self, expression_list):
         # 괄호 안의 내용을 먼저 처리
-        expression = self.apply_operator_priority(expression)
+        result_list=[]
+        for expression in expression_list:
+            expression = self.apply_operator_priority(expression)
 
-        # 임시 기호를 원래의 난독화된 표현으로 대체
-        for key, value in sorted(self.obfuscation_map.items(), reverse=True):
-            expression = expression.replace(key, f"{value}")  # 괄호를 추가하지 않고 원래 표현으로 대체
+            # 임시 기호를 원래의 난독화된 표현으로 대체
+            for key, value in sorted(self.obfuscation_map.items(), reverse=True):
+                expression = expression.replace(key, f"{value}")  # 괄호를 추가하지 않고 원래 표현으로
+            result_list.append(expression)
 
-        return expression
+        return result_list
 
 
     def apply_operator_priority(self, expression):
@@ -86,7 +90,6 @@ class ObfuscateOperations:
 
                 # 식별된 연산자를 적용하여 난독화된 표현으로 변경
                 obfuscated = self.op_json[operator].format(a=operand1, b=operand2)
-
                 # 임시 기호로 대체, 괄호를 제외한 부분만 대체
                 temp_key = f"__OBFUSCATED_{self.counter}__"
                 self.obfuscation_map[temp_key] = f"{obfuscated}"
@@ -99,23 +102,31 @@ class ObfuscateOperations:
         return expression
 
 
-    def replace_expression(self, source_code, original, obfuscated):
-        result = ""
-        index = 0
-        while index < len(source_code):
-            # 원본 표현식 찾기
-            found_index = source_code.find(original, index)
-            if found_index == -1:
-                # 더 이상 찾을 수 없으면 남은 부분을 결과에 추가하고 종료
-                result += source_code[index:]
-                break
+    def replace_expression(self, source_code, original_list, obfuscate_list):
+        result = source_code
 
-            # 찾은 위치 이전까지의 코드를 결과에 추가
-            result += source_code[index:found_index]
+        for original, obfuscated in zip(original_list, obfuscate_list):
+            print("오리지널:",original)
+            print("난독화: ",obfuscated)
+            # 임시 변수 초기화
+            temp_result = ""
+            index = 0
 
-            # 원본 표현식을 난독화된 표현식으로 대체
-            result += obfuscated
+            while index < len(result):
+                # 원본 표현식 찾기
+                found_index = result.find(original, index)
+                if found_index == -1:
+                    # 더 이상 찾을 수 없으면 남은 부분을 결과에 추가하고 종료
+                    temp_result += result[index:]
+                    break
+                # 찾은 위치 이전까지의 코드를 임시 결과에 추가
+                temp_result += result[index:found_index]
+                # 원본 표현식을 난독화된 표현식으로 대체
+                temp_result += obfuscated
+                # 다음 검색 위치 갱신
+                index = found_index + len(original)
 
-            # 다음 검색 위치 갱신
-            index = found_index + len(original)
+            # 현재 단계의 난독화된 결과로 업데이트
+            result = temp_result
+
         return result
