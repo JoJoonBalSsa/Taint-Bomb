@@ -18,17 +18,25 @@ class DumbDB:
             if rand not in self.generated_numbers:
                 self.generated_numbers.add(rand)
                 return rand
+            if len(self.dummy_list) == len(self.generated_numbers):
+                return None
 
     dummy_list = [
         """
-    private List<byte[]> unusedFunction0(byte[] key = {0x66}, int rounds = 7) {
+    private byte[] unusedFunction0() {
+         byte[] key = {0x66};
+         int rounds = 7;
+         
+         return unusedFunction0(key, rounds);
+    }
+    
+    private byte[] unusedFunction0(byte[] key, int rounds) {
         try{ 
             int keyLength = key.length;
-            List<byte[]> schedule = new ArrayList<>();
-            schedule.add(key);
+            byte[] backKey = new byte[keyLength];
     
             for (int i = 1; i < rounds; i++) {
-                byte[] prevKey = schedule.get(schedule.size() - 1);
+                byte[] prevKey = key;
                 byte[] newKey = new byte[keyLength];
         
                 for (int j = 0; j < keyLength; j++) {
@@ -42,11 +50,10 @@ class DumbDB:
                         newKey[j] = (byte) (~newKey[j] & 0xFF);
                     }
                 }
-        
-                schedule.add(newKey);
+                backKey = newKey;
             }
         
-            return schedule;
+            return backKey;
         }
         catch (Exception e){
             throw new RuntimeException("Decryption failed", e);
@@ -54,8 +61,14 @@ class DumbDB:
     }
     """,
         """
-    private byte[] unusedFunction1(byte[] a = {0x99, 0x108, 0x103, 0x111}, byte[] b = {0x66, 0x88, 0x69}) {
-        try { 
+    private byte[] unusedFunction1() {
+                 byte[] key = {99, 18, 57, 17};
+                 byte[] key2 =  {66, 88, 69};
+                 return unusedFunction1(key, key2);
+    }
+
+    private byte[] unusedFunction1(byte[] a , byte[] b) {
+        try {
             byte[] result = new byte[a.length + b.length];
             System.arraycopy(a, 0, result, 0, a.length);
             System.arraycopy(b, 0, result, a.length, b.length);
@@ -67,13 +80,19 @@ class DumbDB:
     }
     """,
         """
-    public byte[] unusedFunction2(byte[] data = {0x66, 0x67, 0x68, 0x69}) {
+    public byte[] unusedFunction2() {
+
+                 byte[] data = {66, 123, 87, 88};
+                 return unusedFunction2(data);
+    }
+
+    public byte[] unusedFunction2(byte[] data) {
         try {
             int i = data.length - 1;
             while (i >= 0 && data[i] == 0) {
                 i--;
             }
-            return Arrays.copyOf(data, i + 1);
+            return data;
         }
         catch (Exception e){
             throw new RuntimeException("Decryption failed", e);
@@ -81,7 +100,12 @@ class DumbDB:
     }
     """,
         """
-    private byte[] unusedFunction3(byte[] a = {0x78, 0x87}, byte[] b = {0x88}) {
+    private byte[] unusedFunction3() {
+                 byte[] data = {29, 31};
+                 byte[] data2 = {1, 95};
+        return unusedFunction3(data, data2);
+    }
+    private byte[] unusedFunction3(byte[] a, byte[] b) {
         try {
             byte[] result = new byte[a.length];
             for (int i = 0; i < a.length; i++) {
@@ -95,7 +119,11 @@ class DumbDB:
     }
     """,
         """
-    private byte[] unusedFunction4(byte[] block = {0x88}) {
+        private byte[] unusedFunction4() {
+        byte[] block = {0x66, 0x67, 0x68, 0x69};
+                 return unusedFunction4(block);
+    }
+    private byte[] unusedFunction4(byte[] block) {
         try {
             byte[] result = block;
             

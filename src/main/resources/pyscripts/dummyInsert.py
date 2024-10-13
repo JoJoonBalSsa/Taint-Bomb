@@ -21,49 +21,60 @@ class InsertDummyCode:
             is_static = 'static' in method_declaration
 
             if not is_static:
+                print()
                 return self.__insert_dummy_code(self.java_code[method_start:])
             else:
                 return None
 
 
+    # def __insert_dummy_code(self, method_body):
+    #
+    #     # 자바 메서드의 본문 시작을 찾는 패턴: { 뒤에 공백 또는 줄바꿈이 가능
+    #     pattern = re.compile(r'({\s*)')
+    #
+    #     # 자바 메서드에서 본문을 찾고 그 위치에 더미 코드를 삽입
+    #     obfuscated_code, count = pattern.subn(r'\1' + self.__add_dummy_if() + '\n', method_body)
+    #
+    #     # 자바 본문을 찾지 못한 경우
+    #     if count == 0:
+    #         return None
+    #     else:
+    #         obfuscated_code += self.dummy
+    #         print("dummy code inserted : ")
+    #         print(obfuscated_code)
+    #
+    #         return obfuscated_code
     def __insert_dummy_code(self, method_body):
-        pattern = re.compile(r'if\s*\((.*?)\)\s*{')
+        # 자바 메서드의 시작 부분을 찾는 패턴: 메서드 선언부 끝에 있는 { 를 찾습니다.
+        pattern = re.compile(r'(.*?{)(\s*)', re.DOTALL)
 
-        obfuscated_code, count = pattern.subn(self.__replace_condition, self.java_code)
+        # 메서드 선언부와 본문 시작 부분을 찾아 더미 코드를 삽입합니다.
+        match = pattern.match(method_body)
+        if match:
+            method_start = match.group(1)
+            whitespace = match.group(2)
+            method_body_rest = method_body[match.end():]
 
-        # if 문을 찾지 못했을 경우의 처리
-        if count == 0:
-            return None
-        else:
+            obfuscated_code = method_start + whitespace + self.__add_dummy_if() + '\n' + method_body_rest
+
             obfuscated_code += self.dummy
-            print("dummy code inserted : ")
-            print(obfuscated_code)
-
+            print("dummy code inserted : ", obfuscated_code)
             return obfuscated_code
+        else:
+            return None
 
 
 
-    def __replace_condition(self, match):
-        condition = match.group(1)
-        obfuscated_condition = self.__obfuscate_condition(condition)
-        dummy_condition = self.__generate_dummy_condition()
-        return self.__obfuscate_condition_with_dummy_if(obfuscated_condition, dummy_condition)
-
-    def __obfuscate_condition_with_dummy_if(self, condition, dummy_condition):
+    def __add_dummy_if(self):
         # 의미 없는 중첩 if 문을 추가합니다.
-        return f"""if ({condition}) {{
-        if ({dummy_condition}) 
+        return f"""
+        Random random = new Random();
+        int randomValue = random.nextInt();
+        int randomValue2 = random.nextInt(101) + 101;
+        if (randomValue == randomValue2) 
             unusedFunction{self.rand}();
-        
 """
 
-    def __obfuscate_condition(self, condition):
-        # 기존 조건에 의미 없는 조건을 추가합니다.
-        return f"(({condition}) && (1 == 1)) || (false && {condition})"
-
-    def __generate_dummy_condition(self):
-        # 간단한 더미 조건을 생성합니다.
-        return f"{random.randint(1, 100)} == {random.randint(103, 300)}"
 
     def get_obfuscated_code(self):
         return self.obfuscated_code

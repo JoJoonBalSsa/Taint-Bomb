@@ -60,6 +60,27 @@ class MethodSplit:
             return None  # 메소드 패턴이 일치하지 않을 경우
 
 
+    def __extract_method_parts(self, new_func):
+        # 메소드 시그니처 추출
+        signature_pattern = r'^.*?\{'
+        method_signature = re.match(signature_pattern, new_func, re.DOTALL).group(0).strip()
+
+        # try-catch 블록 추출
+        try_catch_pattern = r'try\s*\{.*?\}\s*catch.*?\{.*?\}'
+        try_catch_match = re.search(try_catch_pattern, new_func, re.DOTALL)
+
+        if try_catch_match:
+            try_catch = try_catch_match.group(0)
+            before_try = new_func[len(method_signature):try_catch_match.start()].strip()
+            after_catch = new_func[try_catch_match.end():].strip()
+        else:
+            try_catch = ""
+            before_try = ""
+            after_catch = new_func[len(method_signature):].strip()
+
+        return method_signature, before_try, try_catch, after_catch
+
+
     def __extract_try_block_content(self, java_code):
         # try 블록의 시작을 찾는 정규식 패턴
         pattern = r'(public|private)\s+(\w+)\s+\w+\s*\([^)]*\)\s*\{.*?try\s*\{'
@@ -218,20 +239,14 @@ class MethodSplit:
 
 
     def __if_try_catch(self, new_func):
+        # 메소드 시그니처, try-catch 전후 구문, try 블록, catch 블록을 추출
+        method_signature, before_try, try_catch, after_catch = self.__extract_method_parts(new_func)
+
         # try 블록의 내용과 반환값, 반환 타입을 추출
-        try_content, return_value, return_type = self.__extract_try_block_content(new_func)
+        try_content, return_value, return_type = self.__extract_try_block_content(try_catch)
 
-        # catch 블록의 반환값을 추출하는 함수 추가
-        def extract_catch_return_value(func_content):
-            catch_return_value = None
-            if "catch" in func_content:
-                catch_block = func_content.split("catch")[1]  # catch 이후 블록 추출
-                if "return" in catch_block:
-                    catch_return_value = catch_block.split("return")[1].split(";")[0].strip()  # return 값 추출
-            return catch_return_value
-
-        # catch 블록에서 반환값 추출
-        catch_return_value = extract_catch_return_value(new_func)
+        # catch 블록의 반환값을 추출
+        catch_return_value = self.__extract_catch_return_value(try_catch)
 
         # 기본적으로 반환할 값 설정 (catch 블록의 return 값이 없으면 try 블록의 return 값 사용)
         final_return_value = catch_return_value if catch_return_value else return_value
@@ -242,33 +257,42 @@ class MethodSplit:
 
             # 새로운 try 메서드
             new_try_func = f"""
-            public {return_type} {new_func_name}({new_func.split('(')[1].split(')')[0]}) {{
-                {try_content}
-            }}
-        """
-        #     new_try_func = f"""
-        #     public {return_type} {new_func_name}({new_func.split('(')[1].split(')')[0]}) {{
-        #         {try_content}
-        #         return {return_value};
-        #     }}
-        # """
+                private {return_type} {new_func_name}({method_signature.split('(')[1].split(')')[0]}) {{
+                    {before_try}
+                    {try_content}
+                    {after_catch}
+                }}
+                """
+
+            # 매개변수 처리
+            method_params = method_signature.split('(')[1].split(')')[0].strip()
+            params_pass = method_params.split()[-1] if method_params else ""
 
             # 수정된 메서드, catch 블록에서의 return 값을 처리
             modified_new_func = f"""
-            public {new_func.split()[1]} {new_func.split()[2].split('(')[0]}({new_func.split('(')[1].split(')')[0]}) {{
-                try {{
-                    return {new_func_name}({new_func.split('(')[1].split(')')[0].split()[-1]});
-                }} catch (IllegalArgumentException e) {{
-                    return {final_return_value};
+                {method_signature} {{
+                    try {{
+                        return {new_func_name}({params_pass});
+                    }} catch (Exception e) {{
+                        {catch_return_value if catch_return_value else f"return {final_return_value};"}
+                    }}
                 }}
-            }}
-        """
+                """
 
             new_method_content = f"\n{modified_new_func}\n{new_try_func}\n"
         else:
             new_method_content = f"\n{new_func}\n"
 
         return new_method_content
+
+
+    def __extract_catch_return_value(self, func_content):
+        catch_return_value = None
+        if "catch" in func_content:
+            catch_block = func_content.split("catch")[1]  # catch 이후 블록 추출
+            if "return" in catch_block:
+                catch_return_value = catch_block.split("return")[1].split(";")[0].strip()  # return 값 추출
+        return catch_return_value
 
 
     def __if_while_catch(self, new_func):

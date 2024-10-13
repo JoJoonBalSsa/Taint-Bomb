@@ -39,27 +39,30 @@ class LevelObfuscation:
                     O = ObfuscateOperations(tainted)
                     obfuscated_code = O.return_obfuscated_code()
 
-                    # # 더미 코드 추가
-                    # rand = ddb.get_unique_random_number()
-                    # if rand is not None:
-                    #     if obfuscated_code is None:
-                    #         obfuscated_code = tainted["source_code"]
-                    #
-                    #         print("dummy code insertion started...")
-                    #         dummy_code = ddb.get_dumb(rand)
-                    #         idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
-                    #         obfuscated_code = idc.get_obfuscated_code()
-                    #
-                    #     else:
-                    #         print("dummy code insertion started...")
-                    #         dummy_code = ddb.get_dumb(rand)
-                    #         idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
-                    #         temp_ob = idc.get_obfuscated_code()
-                    #         if temp_ob is not None:
-                    #             obfuscated_code = temp_ob
-                    #
-                    # else:
-                    #     continue
+                    # 더미 코드 추가
+                    rand = ddb.get_unique_random_number()
+                    if rand is not None:
+                        if obfuscated_code is None:
+                            obfuscated_code = tainted["source_code"]
+
+                            print("dummy code insertion started...")
+                            dummy_code = ddb.get_dumb(rand)
+                            idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
+                            obfuscated_code = idc.get_obfuscated_code()
+
+                        else:
+                            print("dummy code insertion started...")
+                            dummy_code = ddb.get_dumb(rand)
+                            idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
+                            temp_ob = idc.get_obfuscated_code()
+                            if temp_ob is not None:
+                                obfuscated_code = temp_ob
+
+                    else:
+                        continue
+
+                    print("!!!!!!!!!!!dummy code inserted...")
+                    print(obfuscated_code)
 
                     print("function spliting... ", )
                     if obfuscated_code is None:
