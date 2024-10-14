@@ -69,14 +69,36 @@ class ObfuscateOperations:
 
 
     def apply_operator_priority(self, expression):
+        # 함수 호출과 일반 괄호를 구분하기 위한 패턴
+        function_call_pattern = re.compile(r'\b\w+\s*\(([^()]*)\)')
+
+        # 함수 호출의 괄호는 건드리지 않도록 미리 찾아둠
+        def preserve_function_calls(match):
+            inner = match.group(0)
+            temp_key = f"__FUNC_CALL_{self.counter}__"
+            self.obfuscation_map[temp_key] = inner  # 함수 호출 저장
+            self.counter += 1
+            return temp_key
+
+        # 모든 함수 호출을 임시 키로 치환
+        expression = function_call_pattern.sub(preserve_function_calls, expression)
+
+        # 괄호 내부를 재귀적으로 처리 (단, 함수 호출은 제외)
         while '(' in expression:
-            expression = re.sub(r'\(([^()]+)\)', lambda x: self.apply_operator_priority(x.group(1)), expression)
+            expression = re.sub(
+                r'\(([^()]+)\)',
+                lambda x: self.apply_operator_priority(x.group(1)),
+                expression
+            )
 
         # 연산자 우선순위에 따라 처리
         for operator_pattern in self.op_json.keys():
-            # 피연산자가 단항 연산자를 포함할 수 있도록 정규식 수정
+            # 단항 연산자까지 포함한 정규식
             pattern = re.compile(
-                rf'(\([^()]+\)|\b-?\w+\b|-?\d+|[!~]\s*\([^()]+\)|[!~]\s*\b-?\w+\b|-?\d+)\s*({re.escape(operator_pattern)})\s*(\([^()]+\)|\b-?\w+\b|-?\d+|[!~]\s*\([^()]+\)|[!~]\s*\b-?\w+\b|-?\d+)')
+                rf'(\([^()]+\)|\b-?\w+\b|-?\d+|[!~]\s*\([^()]+\)|[!~]\s*\b-?\w+\b|-?\d+)\s*'
+                rf'({re.escape(operator_pattern)})\s*'
+                rf'(\([^()]+\)|\b-?\w+\b|-?\d+|[!~]\s*\([^()]+\)|[!~]\s*\b-?\w+\b|-?\d+)'
+            )
 
             expression = ''.join(expression)
             match = pattern.search(expression)
@@ -88,18 +110,27 @@ class ObfuscateOperations:
                 # 디버깅용 출력
                 print(f"Identified operator: {operator} between '{operand1}' and '{operand2}'")
 
-                # 식별된 연산자를 적용하여 난독화된 표현으로 변경
+                # 난독화된 표현으로 변경
                 obfuscated = self.op_json[operator].format(a=operand1, b=operand2)
-                # 임시 기호로 대체, 괄호를 제외한 부분만 대체
                 temp_key = f"__OBFUSCATED_{self.counter}__"
                 self.obfuscation_map[temp_key] = f"{obfuscated}"
-                expression = expression[:match.start()] + temp_key + expression[match.end():]
+                expression = (
+                        expression[:match.start()]
+                        + temp_key
+                        + expression[match.end():]
+                )
                 self.counter += 1
 
-                # 다시 연산자를 찾아서 처리
+                # 다음 연산자 처리
                 match = pattern.search(expression)
 
+        # 임시로 치환한 함수 호출을 원래대로 복원
+        for key, value in self.obfuscation_map.items():
+            if key.startswith("__FUNC_CALL_"):
+                expression = expression.replace(key, value)
+
         return expression
+
 
 
     def replace_expression(self, source_code, original_list,obfuscate_list):
