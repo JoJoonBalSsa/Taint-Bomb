@@ -225,9 +225,9 @@ class MethodSplit:
             new_method_content = self.__if_while_catch(new_func)
         elif self.__has_for_in_body(new_func):
             new_method_content = self.__if_for_catch(new_func)
-        elif self.__has_if_in_body(new_func):
-            new_method_content = self.__if_main(new_func)
-            print(new_method_content)
+        # elif self.__has_if_in_body(new_func):
+        #     new_method_content = self.__if_main(new_func)
+        #    print(new_method_content)
         else:
             new_method_content = f"\n{new_func}\n"
 
