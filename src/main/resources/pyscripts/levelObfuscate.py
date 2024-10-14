@@ -80,6 +80,7 @@ class LevelObfuscation:
                     #print(f"\n{tainted["method_name"]} level obfuscation")
                     print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
+
                     obfuscated_code = O.return_obfuscated_code()
 
                     if obfuscated_code is not None:
