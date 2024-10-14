@@ -588,10 +588,11 @@ class ob_identifier:
 
                             flag -= 1
                             if is_fun:
-                                # 함수 호출 식별자에 "_DO_NOT_OBFUSCATE" 추가
-                                line = line.replace(f").{fun[0]}", f").{fun[0]}_DO_NOT_OBFUSCATE")
-                                before_iden = f"{fun[0]}_DO_NOT_OBFUSCATE"
-                                flag = 1
+                                pass
+                                # # 함수 호출 식별자에 "_DO_NOT_OBFUSCATE" 추가
+                                # line = line.replace(f").{fun[0]}", f").{fun[0]}_DO_NOT_OBFUSCATE")
+                                # before_iden = f"{fun[0]}_DO_NOT_OBFUSCATE"
+                                # flag = 1
 
                             elif (var[0] in self.imp_var_list) or (var[0] in external_class): #or (var[0] in self.not_ob_list):
                                 # 직전 식별자가 존재할 경우 그 다음 호출자에도 "_DO_NOT_OBFUSCATE" 추가
