@@ -61,7 +61,8 @@ class StringInsert:
                         "import java.util.ArrayList;",
                         "import java.util.Arrays;",
                         "import java.util.Base64;",
-                        "import java.util.List;"
+                        "import java.util.List;",
+                        "import java.util.Random;"
                     ]
 
                     for import_statement in import_statements:
@@ -109,6 +110,7 @@ class StringInsert:
                         "import javax.crypto.spec.SecretKeySpec;",
                         "import java.util.Base64;",
                         "import java.lang.reflect.Method;"
+                        "import java.util.Random;"
                     ]
 
                     for import_statement in import_statements:
@@ -220,7 +222,7 @@ class StringInsert:
             lines.insert(pos+1,key_declaration_list[i])
             lines.insert(pos+2,decrypt_code)
 
-        reflection = 'import java.lang.reflect.Method;'
+        reflection = 'import java.lang.reflect.Method; import java.util.Random;'
         if reflection not in lines:
             lines.insert(1, reflection)
 
