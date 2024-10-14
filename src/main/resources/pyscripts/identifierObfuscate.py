@@ -15,14 +15,16 @@ class ob_identifier:
         self.class_list = []
         self.external_pkg = ['org.objectweb.asm']
         self.not_type_list = ['return','instanceof']
-        self.imp_var_list = ['get','Math','class',
-                             "System"]
+        self.imp_var_list = ['class','Thread']#'get' 은 보류
 
         self.not_ob_list = ['Object','Class','String','StringBuilder','Integer','System',#내장 클래스들
                             'remove','length','add','get','main','accept','getName','Runnable','run','Callable','call','Comparable','compareTo','Cloneable','clone',#자바에서 자주 사용하는 인터페이스 및 메서드
                             'toObservable','map','toString','class',
-                            'startsWith','endsWith','name','create','replace','getJson',#JobF
-                            ] #난독화 하면 안되는 식별자들
+                            'startsWith','endsWith','name','create','replace','getJson','end','getInternalName','compare',#JobF
+                            ] #난독화 하면 안되는 식별자들 (한번 다지워보고 다시 만들어봐야함)
+        self.return_type = [] # 메서드의 리턴타입 확인
+        self.variable_in_file = {}
+
         self.identifier_map = {}  # 난독화 맵
         self.files = []  # 파일 경로 저장
         self.package_map = []  # 패키지 이름 저장 or set으로 해야할지도
@@ -35,12 +37,13 @@ class ob_identifier:
         # 난독화 적용
         self.apply_obfuscation_to_files()
         print(self.identifier_map)
+        print(self.imp_var_list)
 
 
     def generate_obfuscated_name(self, name, length=8):
         """난독화된 이름을 생성합니다."""
 
-        if name not in self.identifier_map and (name not in self.not_ob_list):
+        if (name not in self.identifier_map) and (name not in self.not_ob_list):
             obfuscated_name = None
             ran = self.ran
 
@@ -94,6 +97,8 @@ class ob_identifier:
     def collect_identifiers_from_ast(self, tree, file_path):
         is_external = False
         curr_class = None
+        variables = []
+
         for path, node in tree:
             if isinstance(node, (javalang.tree.PackageDeclaration, javalang.tree.ClassDeclaration, javalang.tree.EnumDeclaration, javalang.tree.InterfaceDeclaration, javalang.tree.AnnotationDeclaration, javalang.tree.MethodDeclaration, javalang.tree.VariableDeclarator, javalang.tree.LocalVariableDeclaration, javalang.tree.TryStatement)):
                 # 패키지, 클래스, Enum, 인터페이스, 어노테이션, 메서드, 변수, Try 문 등을 여기서 처리
@@ -113,20 +118,24 @@ class ob_identifier:
                 elif isinstance(node, javalang.tree.AnnotationDeclaration):
                     self.ann_list.append(node.name)
                     self.generate_obfuscated_name(node.name)
+
                 elif isinstance(node, javalang.tree.MethodDeclaration):
                     if node.name == 'main':
                         self.main_class =curr_class
                     if any(ann.name == "Override" for ann in node.annotations):
                         self.not_ob_list.append(node.name)
                         self.identifier_map.pop(node.name, None)
+
+                    self.return_type.append({node.name : node.return_type})
                     self.generate_obfuscated_name(node.name)
                     for param in node.parameters:
                         self.generate_obfuscated_name(param.name)
                 elif isinstance(node, javalang.tree.VariableDeclarator):
-
+                    variables.append(node.name)
                     self.generate_obfuscated_name(node.name)
                 elif isinstance(node, javalang.tree.LocalVariableDeclaration):
                     for declarator in node.declarators:
+                        variables.append(declarator.name)
                         self.generate_obfuscated_name(declarator.name)
                 elif isinstance(node, javalang.tree.TryStatement):
                     if node.resources:
@@ -135,15 +144,30 @@ class ob_identifier:
                     for statement in node.block:
                         if isinstance(statement, javalang.tree.LocalVariableDeclaration):
                             for declarator in statement.declarators:
+                                variables.append(declarator.name)
                                 self.generate_obfuscated_name(declarator.name)
+        self.variable_in_file[file_path] = variables
 
 
 
     def apply_obfuscation_to_files(self):
         """난독화된 맵을 사용하여 각 파일을 다시 처리하고 난독화된 파일로 저장합니다."""
+
+        # 외부 클래스가 리턴값인 함수 식별자 확인
+        # self.return_type 을 통해 내부 클래스가 리턴값이 아닌 함수들을 self.imp_var_list에 추가
+        for i in range(len(self.return_type)):
+            method_name = list(self.return_type[i].keys())[0]
+            type = self.return_type[i][method_name]
+            name = type.name if type is not None else None
+            if name is None or name not in self.class_list:
+                self.imp_var_list.append(method_name)
+
+
         for file_path in self.files:
-            #외부 클래스 또는 함수와 엮인 식별자들 확인(영웅 등장)
+            #외부 클래스 와 엮인 변수 식별자 확인
             self.check_external(file_path)
+
+        #위 두 과정을 통해 외부 클래스와 엮인 함수, 변수 식별자를 알아냄
 
         for file_path in self.files:
             #위에서 체크한 식별자들이 호출하는 변수 혹은 함수들 난독화 제외
@@ -311,13 +335,12 @@ class ob_identifier:
 
 
     def extract_identifiers_by_level(self, line):
-        java_keywords = {'if','for',"new", "private", "static", "public", "protected", "interface", "enum", "return"}
+        java_keywords = {'if', 'for', "new", "private", "static", "public", "protected", "interface", "enum", "return"}
         level = 1
         levels = {}
         current_identifier = ''
-        stack = []
+        sub_level_dict = {level: 1}  # 각 레벨별 sub_level을 저장
         in_string_literal = False  # 문자열 리터럴 내부 여부 플래그
-        sub_level_counter = 1  # 레벨 내 하위 레벨 번호
         is_start = False
 
         i = 0
@@ -358,47 +381,39 @@ class ob_identifier:
                 # 현재까지 쌓인 식별자가 자바 키워드가 아닌지 확인 후 추가
                 if current_identifier and current_identifier not in java_keywords:
                     if char == '.':
-                        levels.setdefault((level, -sub_level_counter), []).append((current_identifier, "variable"))
+                        levels.setdefault((level, -sub_level_dict[level]), []).append((current_identifier, "variable"))
                     else:
-                        levels.setdefault((level, -sub_level_counter), []).append((current_identifier, "function"))
+                        levels.setdefault((level, -sub_level_dict[level]), []).append((current_identifier, "function"))
                 current_identifier = ''
                 if char == '(':
-                    stack.append('(')
-                    level = len(stack) + 1  # 레벨 증가
-                    sub_level_counter = 1  # 하위 레벨 초기화
+                    level += 1  # 레벨 증가
+                    if level not in sub_level_dict:
+                        sub_level_dict[level] = 1  # 새로운 레벨이면 서브레벨 초기화
 
             # 함수 호출 끝
             elif char == ')':
                 if current_identifier and current_identifier not in java_keywords:
-                    levels.setdefault((level, -sub_level_counter), []).append((current_identifier, "variable"))
+                    levels.setdefault((level, -sub_level_dict[level]), []).append((current_identifier, "variable"))
                 current_identifier = ''
-                if stack:
-                    stack.pop()
-                level = len(stack) + 1  # 레벨 감소
-                sub_level_counter = 1  # 다음 그룹 시작 시 초기화
+                if level > 1:
+                    level -= 1  # 레벨 감소
+                    sub_level_dict[level+1] += 1  # 현재 레벨의 서브레벨 증가
 
             # 매개변수 구분 및 연산자에 따른 서브레벨 처리
-            elif char == ',' or char in '&|:?':
+            elif char == ',' or char in '&|:?;<>':
                 if current_identifier and current_identifier not in java_keywords:
-                    levels.setdefault((level, -sub_level_counter), []).append((current_identifier, "variable"))
+                    levels.setdefault((level, -sub_level_dict[level]), []).append((current_identifier, "variable"))
                 current_identifier = ''  # 다음 식별자 준비
-                sub_level_counter += 1  # 다음 서브레벨로 이동
+                sub_level_dict[level] += 1  # 현재 레벨의 서브레벨 증가
 
             i += 1
 
         # 마지막 식별자가 남아있는 경우 추가
         if current_identifier and current_identifier not in java_keywords:
-            levels.setdefault((level, -sub_level_counter), []).append((current_identifier, "variable"))
-
-        # for key, identifiers in levels.items():
-        #     main_level, sub_level = key if isinstance(key, tuple) else (key, 0)
-        #     for identifier in identifiers:
-        #         if sub_level:
-        #             print(f"Level {main_level} - {sub_level}: {identifier}")
-        #         else:
-        #             print(f"Level {main_level}: {identifier}")
+            levels.setdefault((level, -sub_level_dict[level]), []).append((current_identifier, "variable"))
 
         return levels
+
 
     def check_external(self,file_path):
 
@@ -418,17 +433,6 @@ class ob_identifier:
                 if start_package:
                     start_package = False
                     continue
-
-            if line.strip().startswith("@"): # 어노테이션 식별(사용자 정의인지 확인후 아니라면 난독화 제약 걸기)
-                ann = self.extract_annotation_identifier(line)
-                if ann and ann not in self.ann_list:
-                    line = line.replace("@"+ann,"@"+ann+"_DO_NOT_OBFUSCATE")
-                    variable_pattern = re.compile(r'(\w+)\s*=\s*(\w+\.class)')
-                    matches = variable_pattern.findall(line)
-
-                    for match in matches:
-                        variable_name = match[0]
-                        line = line.replace(variable_name, variable_name + "_DO_NOT_OBFUSCATE")
 
             if line.strip().startswith('import'):
                 package_name_match = re.match(r'import\s+(static\s+)?([\w\.]+(\*)?);', line)
@@ -450,11 +454,11 @@ class ob_identifier:
 
 
 
-            match = self.find_variable_declarations(line)
             if not line.startswith("import"): # import부분은 식별 X
+                match = self.find_variable_declarations(line)
                 if match:
                     for var_type, var_name in match:
-                        if (var_type in external_class) or ("<" in var_type) or (var_type not in self.class_list):
+                        if (var_type in external_class) or ("<" in var_type) or var_type not in self.class_list:
                             self.imp_var_list.append(var_name)
 
 
@@ -465,8 +469,27 @@ class ob_identifier:
 
         # 파일의 각 라인을 처리
         lines = source_code.splitlines()
+        external_class = set()
+        start_package = True
 
         for i, line in enumerate(lines):
+
+            if line.strip().startswith("package"):
+                if start_package:
+                    start_package = False
+                    continue
+
+            if line.strip().startswith('import'):
+                package_name_match = re.match(r'import\s+(static\s+)?([\w\.]+(\*)?);', line)
+                if package_name_match:
+                    package_name = package_name_match.group(2)
+
+                    # 패키지 맵에 있는 패키지이면 난독화 적용 (+ 외부 패키지 오버라이드 방지)
+                    if any(package_name.startswith(pkg) for pkg in self.package_map) and not any(package_name.startswith(pkg) for pkg in self.external_pkg):
+                        pass
+                    else:
+                        external_class.add(package_name.split('.')[-1])
+                        continue
 
             if not line.startswith("import"): # import부분은 식별 X
                 pattern = r'\b([a-zA-Z][\w]*)\b\.\b([a-zA-Z][\w]*)\b'
@@ -481,13 +504,19 @@ class ob_identifier:
                         for iii in range(1, len(identifiers)):
                             var = identifiers[iii - 1]  # 호출자
                             fun = identifiers[iii]  # 피호출자
+                            is_fun = var[1] == 'function'
 
                             # 호출자가 self.imp_var_list 안에 있는지 확인
-                            if var[0] in self.imp_var_list:
-                                self.not_ob_list.append(fun[0])
-                                self.identifier_map.pop(fun[0], None)
+                            if is_fun:
+                                if var[0] in self.imp_var_list or identifiers[0][0] in self.imp_var_list: # 제일 첫번째 호출자가 외부 클래스와 엮여있다면 난독화 X
+                                    self.not_ob_list.append(fun[0])
+                                    self.identifier_map.pop(fun[0], None)
                             else:
-                                pass
+                                if var[0] in self.imp_var_list or var[0] in external_class or (var[0] not in self.class_list and var[0] not in self.variable_in_file[file_path]) or identifiers[0][0] in self.imp_var_list :#세번째 경우는 import에 없는 내장 클래스 사용시
+
+                                    self.not_ob_list.append(fun[0])
+                                    self.identifier_map.pop(fun[0], None)
+
 
 
     def replace_identifiers_in_code(self, source_code,file_path):
@@ -564,52 +593,52 @@ class ob_identifier:
 
 
 
-            # 함수 호출 패턴 (외부 함수 난독화에서 제외)
-            if not line.startswith("import"): # import부분은 식별 X
-                pattern = r'\b([a-zA-Z][\w]*)\b\.\b([a-zA-Z][\w]*)\b'
+            # # 함수 호출 패턴 (외부 함수 난독화에서 제외)
+            # if not line.startswith("import"): # import부분은 식별 X
+            #     pattern = r'\b([a-zA-Z][\w]*)\b\.\b([a-zA-Z][\w]*)\b'
+            #
+            #     matches = re.findall(pattern, line)
+            #
+            #     if matches:
+            #         levels = self.extract_identifiers_by_level(line)
+            #         for key, identifiers in levels.items():
+            #             main_level, sub_level = key if isinstance(key, tuple) else (key, 0)
+            #             flag = 0
+            #             before_iden = None
+            #
+            #             for iii in range(1, len(identifiers)):
+            #                 var = identifiers[iii - 1]
+            #                 fun = identifiers[iii]
+            #                 is_fun = var[1] == 'function'
+            #
+            #                 # 서브레벨이 바뀔 때마다 `before_iden`을 초기화
+            #                 if sub_level and flag < 0:
+            #                     before_iden = None
+            #
+            #                 flag -= 1
+            #                 if is_fun:
+            #                     pass
+            #                     # # 함수 호출 식별자에 "_DO_NOT_OBFUSCATE" 추가
+            #                     # line = line.replace(f").{fun[0]}", f").{fun[0]}_DO_NOT_OBFUSCATE")
+            #                     # before_iden = f"{fun[0]}_DO_NOT_OBFUSCATE"
+            #                     # flag = 1
+            #
+            #                 elif (var[0] in self.imp_var_list) or (var[0] in external_class): #or (var[0] in self.not_ob_list):
+            #                     # 직전 식별자가 존재할 경우 그 다음 호출자에도 "_DO_NOT_OBFUSCATE" 추가
+            #                     if before_iden:
+            #                         line = line.replace(f"{before_iden}.{fun[0]}", f"{before_iden}.{fun[0]}_DO_NOT_OBFUSCATE")
+            #                         before_iden = f"{fun[0]}_DO_NOT_OBFUSCATE"
+            #                         flag = 1
+            #                     else:
+            #                         line = line.replace(f"{var[0]}.{fun[0]}", f"{var[0]}.{fun[0]}_DO_NOT_OBFUSCATE")
+            #                         before_iden = f"{fun[0]}_DO_NOT_OBFUSCATE"
+            #                         flag = 1
 
-                matches = re.findall(pattern, line)
-
-                if matches:
-                    levels = self.extract_identifiers_by_level(line)
-                    for key, identifiers in levels.items():
-                        main_level, sub_level = key if isinstance(key, tuple) else (key, 0)
-                        flag = 0
-                        before_iden = None
-
-                        for iii in range(1, len(identifiers)):
-                            var = identifiers[iii - 1]
-                            fun = identifiers[iii]
-                            is_fun = var[1] == 'function'
-
-                            # 서브레벨이 바뀔 때마다 `before_iden`을 초기화
-                            if sub_level and flag < 0:
-                                before_iden = None
-
-                            flag -= 1
-                            if is_fun:
-                                pass
-                                # # 함수 호출 식별자에 "_DO_NOT_OBFUSCATE" 추가
-                                # line = line.replace(f").{fun[0]}", f").{fun[0]}_DO_NOT_OBFUSCATE")
-                                # before_iden = f"{fun[0]}_DO_NOT_OBFUSCATE"
-                                # flag = 1
-
-                            elif (var[0] in self.imp_var_list) or (var[0] in external_class): #or (var[0] in self.not_ob_list):
-                                # 직전 식별자가 존재할 경우 그 다음 호출자에도 "_DO_NOT_OBFUSCATE" 추가
-                                if before_iden:
-                                    line = line.replace(f"{before_iden}.{fun[0]}", f"{before_iden}.{fun[0]}_DO_NOT_OBFUSCATE")
-                                    before_iden = f"{fun[0]}_DO_NOT_OBFUSCATE"
-                                    flag = 1
-                                else:
-                                    line = line.replace(f"{var[0]}.{fun[0]}", f"{var[0]}.{fun[0]}_DO_NOT_OBFUSCATE")
-                                    before_iden = f"{fun[0]}_DO_NOT_OBFUSCATE"
-                                    flag = 1
-
-                    # 매칭된 각 항목에 대해 처리
-                    for var, fun in matches:
-                        # 조건에 따른 난독화 제외 처리
-                        if (var in self.imp_var_list) or (var in external_class):# or (var in self.not_ob_list):
-                            line = line.replace(f"{var}.{fun}", f"{var}.{fun}_DO_NOT_OBFUSCATE")
+            # # 매칭된 각 항목에 대해 처리
+            # for var, fun in matches:
+            #     # 조건에 따른 난독화 제외 처리
+            #     if (var in self.imp_var_list) or (var in external_class):# or (var in self.not_ob_list):
+            #         line = line.replace(f"{var}.{fun}", f"{var}.{fun}_DO_NOT_OBFUSCATE")
 
 
             # 문자열 리터럴 ("...")을 분리하여 처리
