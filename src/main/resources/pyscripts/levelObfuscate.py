@@ -10,13 +10,19 @@ import json
 class LevelObfuscation:
     def __init__(self, output_folder):
         tainted_json = self.parse_json(output_folder + '/analysis_result.json')
+        if tainted_json is None:
+            return
 
         self.check_level(tainted_json)
 
     def parse_json(self, json_file_path):
-        with open(json_file_path, 'r', encoding='utf-8') as file:
-            ob_json = json.load(file)
-        return ob_json
+        try:
+            with open(json_file_path, 'r', encoding='utf-8') as file:
+                ob_json = json.load(file)
+            return ob_json
+        except FileNotFoundError:
+            print("No analysis result found.")
+            return None
 
     def check_level(self, json):
         for item in json:
@@ -25,10 +31,9 @@ class LevelObfuscation:
             if item["sensitivity"] == 1:
                 continue
 
-            if item["sensitivity"] == 3:
+            if item["sensitivity"] == 2:
                 ddb = DumbDB()
                 for tainted in item["tainted"]:
-                    #print(f"\n'{tainted[\"method_name\"]}' level obfuscation")
                     # 연산자 난독화
                     print("operation obfuscation started...")
                     O = ObfuscateOperations(tainted)
@@ -56,7 +61,7 @@ class LevelObfuscation:
                     else:
                         continue
 
-                    print("function spliting... ",)
+                    print("function spliting... ", )
                     if obfuscated_code is None:
                         obfuscated_code = tainted["source_code"]
 
@@ -70,7 +75,7 @@ class LevelObfuscation:
                     if obfuscated_code is not None:
                         ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
 
-            if item["sensitivity"] == 2:
+            if item["sensitivity"] == 3:
                 for tainted in item["tainted"]:
                     #print(f"\n{tainted["method_name"]} level obfuscation")
                     print("operation obfuscation started...")
