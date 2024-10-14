@@ -57,7 +57,6 @@ class ApplyObfuscated:
             if normalized_current_method == normalized_method_code:
                 content = content[:start] + obfuscated_code.strip() + content[end:]
                 print(f"메소드 '{method_name}'가 성공적으로 대체되었습니다.")
-                print("!!!this:",obfuscated_code.strip())
                 return content
 
         print(f"일치하는 내용의 메소드 '{method_name}'를 찾을 수 없습니다.")
