@@ -166,7 +166,7 @@ class TaintAnalysis:
             if isinstance(sub_node, javalang.tree.VariableDeclarator):
                 if isinstance(sub_node.initializer, javalang.tree.MethodInvocation):
                     try:
-                        if sub_node.initializer.member in S.source_functions.keys():
+                        if sub_node.initializer.member in S.source_functions.keys()[-1]:
                             self.__tainted_variables.append((f"{current_class}.{method_name}.{sub_node.initializer.member}", sub_node.name , count))
                             self.method_check.append(method_name)
                     except Exception:
@@ -178,7 +178,7 @@ class TaintAnalysis:
                             if isinstance(arg, javalang.tree.ClassCreator):
                                 for inner_arg in arg.arguments:
                                     if isinstance(inner_arg, javalang.tree.MethodInvocation):
-                                        if inner_arg.member in S.source_functions:
+                                        if inner_arg.member in S.source_functions[-1]:
                                             self.__tainted_variables.append((f"{current_class}.{method_name}.{inner_arg.member}", sub_node.name, count))
                                             self.method_check.append(method_name)
                     except Exception:
@@ -189,7 +189,7 @@ class TaintAnalysis:
                 try:
                     if isinstance(sub_node.value, javalang.tree.MethodInvocation):
                         # 직접 MethodInvocation의 member가 source_functions에 있는지 확인
-                        if sub_node.value.member in S.source_functions:
+                        if sub_node.value.member in S.source_functions[-1]:
                             try:
                                 # sub_node.expressionl이 MemberReference인지 확인
                                 if isinstance(sub_node.expressionl, javalang.tree.MemberReference):
@@ -208,7 +208,7 @@ class TaintAnalysis:
                             try:
                                 if isinstance(inner_arg, javalang.tree.MethodInvocation):
                                     # 인자의 member가 source_functions에 있는지 확인
-                                    if inner_arg.member in S.source_functions:
+                                    if inner_arg.member in S.source_functions[-1]:
                                         if isinstance(sub_node.expressionl, javalang.tree.MemberReference):
                                             self.__tainted_variables.append((f"{current_class}.{method_name}.{inner_arg.member}", sub_node.expressionl.member, count))
                                         elif isinstance(sub_node.expressionl, javalang.tree.This):
@@ -228,7 +228,7 @@ class TaintAnalysis:
                             if isinstance(arg, javalang.tree.ClassCreator):
                                 for inner_arg in arg.arguments:
                                     if isinstance(inner_arg, javalang.tree.MethodInvocation):
-                                        if inner_arg.member in S.source_functions:
+                                        if inner_arg.member in S.source_functions[-1]:
                                             self.__tainted_variables.append((f"{current_class}.{method_name}.{inner_arg.member}", sub_node.name, count))
                 except Exception:
                     pass
@@ -424,7 +424,7 @@ class TaintAnalysis:
         if current_count <= count:
             return
 
-        if node.member in S.sink_functions.keys() and node.arguments:
+        if node.member in S.sink_functions.keys()[-1] and node.arguments:
             flow_added = False
 
             for arg in node.arguments:
