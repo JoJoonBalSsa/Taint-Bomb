@@ -102,7 +102,7 @@ class ObfuscateOperations:
         return expression
 
 
-    def replace_expression(self, source_code, original_list, obfuscate_list):
+    def replace_expression(self, source_code, original_list,obfuscate_list):
         result = source_code
 
         for original, obfuscated in zip(original_list, obfuscate_list):
