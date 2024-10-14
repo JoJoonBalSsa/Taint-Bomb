@@ -61,9 +61,6 @@ class LevelObfuscation:
                     else:
                         continue
 
-                    print("!!!!!!!!!!!dummy code inserted...")
-                    print(obfuscated_code)
-
                     print("function spliting... ", )
                     if obfuscated_code is None:
                         obfuscated_code = tainted["source_code"]
