@@ -31,7 +31,7 @@ class TaintBombService(private val project: Project) {
                 override fun run(indicator: ProgressIndicator) {
                     indicator.isIndeterminate = false
 
-                    TasksManager(javaFilesPath, outFolder, tempFolder, indicator)
+                    TasksManager(project, javaFilesPath, outFolder, tempFolder, indicator)
                 }
             })
         } else {

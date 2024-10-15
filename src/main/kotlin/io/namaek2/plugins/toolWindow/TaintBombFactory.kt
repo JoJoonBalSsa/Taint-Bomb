@@ -55,9 +55,10 @@ class TaintBombFactory : ToolWindowFactory {
                     service.startTaintBomb()
                 }
             })
-
             MyConsoleViewer.setConsole(consolePanel)
             add(scrollPane)
         }
+
+
     }
 }
