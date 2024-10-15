@@ -4,6 +4,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import io.namaek2.plugins.toolWindow.MyConsoleLogger
 import io.namaek2.plugins.toolWindow.MyConsoleViewer
 import java.io.*
+import java.util.concurrent.TimeUnit
 
 class ManageObfuscate(
     private val javaFilesPath: String,
@@ -122,32 +123,52 @@ class ManageObfuscate(
         }
     }
 
-    private fun runPythonScript(venvPath: String, scriptName: String, outFolder: String, fractionValue: Double) : Int{
+    private fun runPythonScript(venvPath: String, scriptName: String, outFolder: String, fractionValue: Double) {
         indicator.fraction = fractionValue
-        try{
-            return runScript(venvPath, scriptName, outFolder)
-        } catch (e: InterruptedException) {
-            MyConsoleViewer.println("Canceled by user")
-            MyConsoleLogger.logPrint("Canceled by user")
-            throw e
-        } catch (e: IOException) {
-            MyConsoleViewer.println("An error occurred: ${e.message}")
-            MyConsoleLogger.logPrint("An error occurred: ${e.message}")
-            throw e
-        }
+
+        runScript(venvPath, scriptName, outFolder)
     }
 
-    private fun runScript(venvPath: String, scriptName: String, outFolder: String) : Int{
+    private fun runScript(venvPath: String, scriptName: String, outFolder: String) : Int {
         val installScript = "$tempFolder/$scriptName.py"
         val pythonProcess = ProcessBuilder(venvPath, installScript, outFolder)
             .redirectErrorStream(true)
             .start()
-        val reader = BufferedReader(InputStreamReader(pythonProcess.inputStream))
-        var line: String?
-        while (reader.readLine().also { line = it } != null) {
-            MyConsoleLogger.logPrint("$scriptName output: $line")
+
+        val outputThread = Thread {
+            try {
+                val reader = BufferedReader(InputStreamReader(pythonProcess.inputStream))
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    MyConsoleLogger.logPrint("$scriptName output: $line")
+                }
+            } catch (e: IOException) {
+                // Log the exception without throwing it
+                MyConsoleLogger.logPrint("Error reading output from $scriptName: ${e.message}")
+            }
         }
 
-        return pythonProcess.waitFor()
+        outputThread.start()
+
+        if(scriptName == "main") {
+            val completed = pythonProcess.waitFor(60, TimeUnit.SECONDS)
+
+            if (!completed) {
+                // If the process didn't complete within the timeout, destroy it
+                pythonProcess.destroy()
+                if (pythonProcess.isAlive) {
+                    // If it's still alive, force destroy
+                    pythonProcess.destroyForcibly()
+                }
+                MyConsoleLogger.logPrint("$scriptName execution timed out.")
+                return -1 // or any other error code to indicate timeout
+            }
+        }
+        else {
+            pythonProcess.waitFor()
+        }
+        outputThread.join()
+
+        return pythonProcess.exitValue()
     }
 }
