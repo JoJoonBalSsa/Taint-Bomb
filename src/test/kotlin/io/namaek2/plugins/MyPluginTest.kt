@@ -2,6 +2,7 @@ package io.namaek2.plugins
 
 
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.namaek2.plugins.services.TaintBombService
@@ -10,7 +11,7 @@ import io.namaek2.plugins.services.TaintBombService
 class MyPluginTest : BasePlatformTestCase() {
     fun testProjectService() {
         val projectService = project.service<TaintBombService>()
-        projectService.startTaintBomb()
+        projectService.startTaintBomb(Project)
       }
 
     override fun getTestDataPath() = "src/test/testData/rename"
