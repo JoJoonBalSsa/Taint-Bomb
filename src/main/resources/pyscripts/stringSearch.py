@@ -106,6 +106,7 @@ class StringSearch:
     def __check_and_remove_annotation_literals(self, node):
 
         if isinstance(node, javalang.tree.Annotation):
+
             if isinstance(node.element, javalang.tree.Literal):
                 if node.element.value.startswith('"') and node.element.value.endswith('"'):
                     self.ban_list.append(node.element.value)
@@ -120,7 +121,13 @@ class StringSearch:
     def __process_annotation_element(self, element):
         if isinstance(element, javalang.tree.ElementValuePair):
             value = element.value
-            if isinstance(value, javalang.tree.Literal) and isinstance(value.value, str):
+            if isinstance(value, javalang.tree.ElementArrayValue):
+                for literal in value.values:
+                    if isinstance(literal, javalang.tree.Literal) and isinstance(literal.value, str):
+                        if literal.value.startswith('"') and literal.value.endswith('"'):
+                            self.ban_list.append(literal.value)
+
+            elif isinstance(value, javalang.tree.Literal) and isinstance(value.value, str):
                 if value.value.startswith('"') and value.value.endswith('"'):
                     self.ban_list.append(value.value)
             # 변수 할당 처리
