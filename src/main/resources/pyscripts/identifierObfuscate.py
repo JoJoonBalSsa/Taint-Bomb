@@ -554,12 +554,19 @@ class ob_identifier:
 
                     # 패키지 맵에 있는 패키지이면 난독화 적용 (+ 외부 패키지 오버라이드 방지)
                     if any(package_name.startswith(pkg) for pkg in self.package_map) and not any(package_name.startswith(pkg) for pkg in self.external_pkg):
-                        for pkg in list(reversed(self.package_map)): #왜 reversed를 했느냐 그건 조준형에게 물어보면 된다
+                        pkg_len = 0
+                        res_pkg = None
+                        for pkg in list(reversed(self.package_map)):
                             if package_name.startswith(pkg):
-                                pkg = pkg+"." # 패키지 끝 . 추가
-                                ob_pkg = pkg.replace(".","_DO_NOT_OBFUSCATE.")
-                                ob_pkg_line = package_name.replace(pkg,ob_pkg) # ㅎㅎ;
-                                line = line.replace(package_name,ob_pkg_line)
+                                if pkg_len < len(pkg):
+                                    pkg_len = len(pkg)
+                                    res_pkg = pkg
+
+                        if res_pkg:
+                            pkg = res_pkg+"." # 패키지 끝 . 추가
+                            ob_pkg = pkg.replace(".","_DO_NOT_OBFUSCATE.")
+                            ob_pkg_line = package_name.replace(pkg,ob_pkg) # ㅎㅎ;
+                            line = line.replace(package_name,ob_pkg_line)
 
 
                     else:
