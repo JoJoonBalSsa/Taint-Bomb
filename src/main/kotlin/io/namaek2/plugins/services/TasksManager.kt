@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import io.namaek2.plugins.toolWindow.MyConsoleLogger
 import io.namaek2.plugins.toolWindow.MyConsoleViewer
 import java.io.*
 
@@ -41,15 +42,15 @@ class TasksManager(private val project : Project, private val javaFilesPath: Str
                             OpenFileDescriptor(project, file),
                             true // requestFocus
                         )
-                        println("File opened successfully: $filePath")
+                        MyConsoleLogger.logPrint("File opened successfully: $filePath")
                     } catch (e: Exception) {
-                        println("Error opening file: ${e.message}")
+                        MyConsoleLogger.logPrint("Error opening file: ${e.message}")
                     }
                 } else {
-                    println("File does not exist: $filePath")
+                    MyConsoleLogger.logPrint("File does not exist: $filePath")
                 }
             } else {
-                println("File not found: $filePath")
+                MyConsoleLogger.logPrint("File not found: $filePath")
             }
         }
     }
