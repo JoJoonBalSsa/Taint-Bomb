@@ -1,4 +1,4 @@
-# TaintBomb Obfuscator by GoForIt
+# Taint Bomb auto Java Obfuscator by GoForIt
 ![TaintBombLogo](./.idea/icon.png)
 
 <!-- Plugin description -->
