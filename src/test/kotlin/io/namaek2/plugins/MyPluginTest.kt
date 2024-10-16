@@ -11,7 +11,7 @@ import io.namaek2.plugins.services.TaintBombService
 class MyPluginTest : BasePlatformTestCase() {
     fun testProjectService() {
         val projectService = project.service<TaintBombService>()
-        projectService.startTaintBomb(Project)
+        projectService.startTaintBomb()
       }
 
     override fun getTestDataPath() = "src/test/testData/rename"
