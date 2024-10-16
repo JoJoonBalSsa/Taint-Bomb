@@ -66,11 +66,11 @@ class LevelObfuscation:
                         obfuscated_code = tainted["source_code"]
 
                     # 메소드 분할
-                    O = MethodSplit(obfuscated_code)
-                    temp_ob = O.get_new_method()
-
-                    if temp_ob is not None:
-                        obfuscated_code = temp_ob
+                    # O = MethodSplit(obfuscated_code)
+                    # temp_ob = O.get_new_method()
+                    #
+                    # if temp_ob is not None:
+                    #     obfuscated_code = temp_ob
 
                     if obfuscated_code is not None:
                         ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
