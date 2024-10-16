@@ -1,13 +1,13 @@
 import string
 import secrets
-import regex as re
+import re
 
 class MethodSplit:
     def __init__(self, method):
         self.method = method
 
         modified_method, functions = self.__dynamic_method_split(method)
-        merged_code = self.__merge_methods_and_functions(modified_method, functions)
+        self.merged_code = self.__merge_methods_and_functions(modified_method, functions)
     
     def __extract_java_method_info(self, method_code):
         method_pattern = re.compile(r'\b(public|protected|private)\s+(static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)\s*\{')
@@ -139,3 +139,6 @@ class MethodSplit:
         first_char = secrets.choice(letters)
         rest_chars = "".join(secrets.choice(letters_and_digits) for _ in range(length - 1))
         return first_char + rest_chars
+
+    def get_new_method(self):
+        return self.merged_code
