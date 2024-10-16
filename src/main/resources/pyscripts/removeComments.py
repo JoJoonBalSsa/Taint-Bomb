@@ -44,33 +44,40 @@ class RemoveComments:
     def __unify_brace_style(self, code):
         lines = code.splitlines()
         result = []
-        skip_next = False
+        in_declaration = False
+        declaration_lines = []
 
         for i in range(len(lines)):
-            if skip_next:
-                skip_next = False
-                continue
-
             current_line = lines[i].rstrip()
 
-            if i + 1 < len(lines):
-                next_line = lines[i + 1].strip()
-
-                # class 선언부 패턴 확인
-                if (('class ' in current_line or 'interface ' in current_line) and
-                        not current_line.endswith('{') and
-                        next_line == '{'):
-
-                    # 클래스 선언부에 중괄호 추가
-                    result.append(f"{current_line} {{")
-                    skip_next = True
+            if in_declaration:
+                if current_line.strip() == '{':
+                    # 선언부 끝에 중괄호 추가
+                    declaration_lines[-1] += ' {'
+                    result.extend(declaration_lines)
+                    in_declaration = False
+                    declaration_lines = []
+                elif '{' in current_line.strip():
+                    declaration_lines[-1] += current_line
+                    result.extend(declaration_lines)
+                    in_declaration = False
+                    declaration_lines = []
                 else:
-                    result.append(current_line)
+                    declaration_lines.append(current_line)
+            elif ('class ' in current_line or 'interface ' in current_line) and not current_line.endswith('{'):
+                # 새로운 선언부 시작
+                in_declaration = True
+                declaration_lines.append(current_line)
             else:
                 result.append(current_line)
 
-        return '\n'.join(result)
+        # 파일 끝에 미완성 선언부가 있는 경우 처리
+        if declaration_lines:
+            result.extend(declaration_lines)
 
+
+        result.append("\n\n\n")
+        return '\n'.join(result)
 
 if __name__ == '__main__':
     import sys
