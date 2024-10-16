@@ -29,8 +29,6 @@ class StringSearch:
                     package_name = node.name
 
                 if isinstance(node, javalang.tree.ClassDeclaration):
-                    # 클래스 밖에 있는 문자열도 처리해야 함.
-                    print(file_path)
                     class_name = node.name
                     if 'public' in node.modifiers:
                         self.class_names.append([package_name, class_name]) # static 있는 클래스만 기록
@@ -111,6 +109,10 @@ class StringSearch:
                 if node.element.value.startswith('"') and node.element.value.endswith('"'):
                     self.ban_list.append(node.element.value)
 
+            elif isinstance(node.element, javalang.tree.ElementArrayValue):
+                for element in node.element.values:
+                    self.__process_annotation_element(element)
+
             elif isinstance(node.element, list):
                 for element in node.element:
                     self.__process_annotation_element(element)
@@ -135,6 +137,9 @@ class StringSearch:
                 variable_name = value.member
                 if variable_name in self.value_map and self.value_map[variable_name]:
                     self.ban_list.append(self.value_map[variable_name])
+        elif isinstance(element, javalang.tree.Literal):
+            if element.value.startswith('"') and element.value.endswith('"'):
+                self.ban_list.append(element.value)
 
     def __track_variable_declarations(self, node):
         if isinstance(node, javalang.tree.VariableDeclarator) and isinstance(node.initializer, javalang.tree.Literal):
