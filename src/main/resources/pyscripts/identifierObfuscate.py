@@ -21,7 +21,7 @@ class ob_identifier:
                             'remove','length','add','get','main','accept','getName','Runnable','run','Callable','call','Comparable','compareTo','Cloneable','clone',#자바에서 자주 사용하는 인터페이스 및 메서드
                             'toObservable','map','toString','class',
                             'startsWith','endsWith','name','create','replace','getJson','end','getInternalName','compare',#JobF
-                            ] #난독화 하면 안되는 식별자들 (한번 다지워보고 다시 만들어봐야함)
+                            'Method','A']#jadx #난독화 하면 안되는 식별자들 (한번 다지워보고 다시 만들어봐야함)
         self.return_type = [] # 메서드의 리턴타입 확인
         self.variable_in_file = {}
 
@@ -208,7 +208,7 @@ class ob_identifier:
 
 
             # 수정된 내용을 다시 build.gradle에 씀
-            with open(build_gradle_path, 'w', encoding='utf-8') as file:
+            with open(build_gradle_path2, 'w', encoding='utf-8') as file:
                 file.write(build_gradle_content)
 
 
