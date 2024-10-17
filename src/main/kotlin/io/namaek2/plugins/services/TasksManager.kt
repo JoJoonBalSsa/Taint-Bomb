@@ -18,7 +18,7 @@ class TasksManager(private val project : Project, private val javaFilesPath: Str
         val manageHash = preTask.getManageHash()
 
         val manageBuild = ManageBuild(javaFilesPath, outFolder, indicator)
-        manageBuild.checkGradleVersion()
+        //manageBuild.checkGradleVersion()
 
         ManageObfuscate(javaFilesPath, outFolder, tempFolder, manageHash, venvPath, preTask.getOS(), indicator)
         manageBuild.runGradle(0.8)
