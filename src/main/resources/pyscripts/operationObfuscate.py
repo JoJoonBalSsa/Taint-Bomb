@@ -58,15 +58,11 @@ class ObfuscateOperations:
         # 괄호 안의 내용을 먼저 처리
         result_list=[]
         for expression in expression_list:
-            print("in  " + expression)
             expression = self.apply_operator_priority(expression)
             # 임시 기호를 원래의 난독화된 표현으로 대체
             for key, value in sorted(self.obfuscation_map.items(), reverse=True):
                 expression = expression.replace(key, f"{value}")  # 괄호를 추가하지 않고 원래 표현으로
-            print("out")
             result_list.append(expression)
-
-        print("난독화된 표현식: ",result_list)
 
         return result_list
 
