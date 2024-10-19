@@ -10,7 +10,7 @@ class MethodSplit:
         self.merged_code = self.__merge_methods_and_functions(modified_method, functions)
     
     def __extract_java_method_info(self, method_code):
-        method_pattern = re.compile(r'\b(public|protected|private)\s+(static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)\s*\{')
+        method_pattern = re.compile(r'(@\w+\s+)?(public|protected|private)?\s*(static\s+)?(\w+(\[\])?|List<\w+>|\w+)\s+(\w+)\s*\(([^)]*)\)\s*(throws\s+\w+)?\s*\{')
         match = method_pattern.search(method_code)
 
         if match:
