@@ -4,9 +4,10 @@ import datetime
 from collections import defaultdict, Counter
 
 class MakeMD:
-    def __init__(self, input_file='result.txt', output_file='analysis_result.md'):
+    def __init__(self, input_file='result.txt', output_file='analysis_result.md', sensitivity_flow=[]):
         self.input_file = input_file
         self.output_file = output_file
+        self.sensitivity_flow = sensitivity_flow
 
     def parse_result_file(self):
         tainted_variables = []
@@ -18,6 +19,7 @@ class MakeMD:
             lines = file.readlines()
 
         i = 0
+        f = 0
         while i < len(lines):
             line = lines[i].strip()
             if line is None == "":
@@ -34,11 +36,14 @@ class MakeMD:
                     except ValueError:
                         print(f"Warning: Unable to parse line: {lines[i].strip()}")
                     i += 1
-                tainted_variables.append({"variable": variable_name, "flow": flow})
+                tainted_variables.append({"variable": variable_name, "flow": flow, "sensitivity" : self.sensitivity_flow[f][0]})
+                f += 1
                 continue
             i += 1
 
-        return tainted_variables
+        sorted_results = sorted(tainted_variables, key=lambda x: x["sensitivity"], reverse=True)
+
+        return sorted_results
 
     def clean_flow(self, flow_string):
         # 대괄호 제거
@@ -152,6 +157,7 @@ class MakeMD:
 
     def make_md_file(self):
         tainted_variables = self.parse_result_file()
+        print(tainted_variables)
         if not tainted_variables:
             print("Error: No tainted variables found. The markdown file will not be created.")
             return
@@ -174,7 +180,12 @@ class MakeMD:
             md_file.write("- [개요](#개요)\n")
             for i, var_info in enumerate(tainted_variables, 1):
                 anchor = create_anchor(f"흐름 {i} {var_info['variable']}")
-                md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor})\n")
+                if var_info['sensitivity'] == 3:
+                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor}) - 상\n")
+                elif var_info['sensitivity'] == 2:
+                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor}) - 중\n")
+                else:
+                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor}) - 하\n")
             md_file.write("\n")
 
             # 개요 작성
@@ -188,7 +199,12 @@ class MakeMD:
 
             # 각 흐름에 대한 콜 그래프와 상세 정보 작성
             for i, var_info in enumerate(tainted_variables, 1):
-                md_file.write(f"## 흐름 {i}: `{var_info['variable']}`\n\n")
+                if var_info['sensitivity'] == 3:
+                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}` - 상\n\n")
+                elif var_info['sensitivity'] == 2:
+                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}` - 중\n\n")
+                else:
+                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}` - 하\n\n")
 
                 # SVG 콜 그래프 생성 및 삽입
                 svg_content = self.create_call_graph_svg(var_info['flow'])
