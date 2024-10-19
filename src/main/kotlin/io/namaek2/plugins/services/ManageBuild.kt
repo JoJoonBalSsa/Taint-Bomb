@@ -8,9 +8,68 @@ import java.util.*
 
 
 class ManageBuild (private val javaFilesPath: String, private var outFolder : String, private val indicator: ProgressIndicator) {
-    fun runGradle(fractionValue : Double) {
-        indicator.text = "Building with Gradle..."
+    fun runBuildManager(fractionValue: Double, buildManager: String) {
         indicator.fraction = fractionValue
+
+        if (buildManager == "gradle") {
+            runGradle()
+        }
+        else if (buildManager == "maven") {
+            runMaven()
+        }
+        indicator.fraction = fractionValue + 0.1
+    }
+
+    private fun runMaven(){
+        indicator.text = "Building with Maven..."
+
+        try {
+            // 프로세스 빌더를 생성합니다.
+            val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+
+            val processBuilder = when {
+                "windows" in osName -> ProcessBuilder("mvn", "-f", "$outFolder/pom.xml", "package")
+                "linux" in osName-> ProcessBuilder("mvn", "-f", "$outFolder/pom.xml", "package")
+                // "mac" in osName -> ProcessBuilder("./gradlew", "jar")
+                else -> throw IllegalArgumentException("Unsupported OS: $osName")
+            }
+
+            processBuilder.directory(File(javaFilesPath))
+            processBuilder.redirectErrorStream(true)
+
+            try {
+                // 프로세스를 시작합니다.
+                val process = processBuilder.start()
+                MyConsoleViewer.println("jar build started")
+                MyConsoleLogger.logPrint("jar build started")
+                // 프로세스의 출력을 읽습니다.
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    MyConsoleLogger.logPrint("maven output: $line")
+                }
+
+                // 프로세스가 종료될 때까지 대기합니다.
+                val exitCode = process.waitFor()
+                if (exitCode == 0) {
+                    MyConsoleViewer.println("obfuscated jar built successfully in obfuscated_project_folder")
+                    MyConsoleLogger.logPrint("obfuscated jar built successfully in obfuscated_project_folder")
+                } else {
+                    MyConsoleViewer.println("Error in jar building : $exitCode")
+                    MyConsoleLogger.logPrint("Error in jar building : $exitCode")
+                }
+            } catch (e: InterruptedException) {
+                MyConsoleViewer.println("Canceled by user")
+                MyConsoleLogger.logPrint("Canceled by user")
+            }
+        } catch (e: IOException) {
+            MyConsoleViewer.println("Error in jar building process: ${e.message}")
+            MyConsoleLogger.logPrint("Error in jar building process: ${e.message}")
+        }
+    }
+
+    private fun runGradle() {
+        indicator.text = "Building with Gradle..."
 
         try {
             // 프로세스 빌더를 생성합니다.
@@ -24,8 +83,6 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             }
 
             processBuilder.directory(File(outFolder))
-
-            // 프로세스의 출력을 캡처할 수 있도록 리디렉션합니다.
             processBuilder.redirectErrorStream(true)
 
             try {
@@ -57,24 +114,33 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             MyConsoleViewer.println("Error in jar building process: ${e.message}")
             MyConsoleLogger.logPrint("Error in jar building process: ${e.message}")
         }
-        indicator.fraction = fractionValue + 0.1
     }
 
-    fun checkGradleVersion(){
-        isGradleProject().let {
-            if(!it) {
-                MyConsoleViewer.println("Not a gradle project")
-                MyConsoleLogger.logPrint("Not a gradle project")
-                throw IllegalArgumentException("Not a gradle project")
-            }
+    fun checkBuildManager() : String {
+        var buildManager: String? = null
+        if (isGradleProject()) {
+            checkGradleVersion()
+            buildManager = "gradle"
+        }
+        else if (isMavenProject()) {
+            buildManager = "maven"
+        }
+        else {
+            MyConsoleViewer.println("Build manager not found\n")
+            MyConsoleLogger.logPrint("Check project has build.gradle or pom.xml or something else.\n")
+            MyConsoleLogger.logPrint("Build manager not found")
+            throw IllegalArgumentException("Build manager not found")
         }
 
+        return buildManager
+    }
+
+    private fun checkGradleVersion(){
         findGradleVersion(File(javaFilesPath))?.let {
             MyConsoleLogger.logPrint("Gradle version: $it")
             if (it < "8.0.0") {
-                MyConsoleViewer.println("Build is not supported cause Gradle version is lower than 8.0")
+                MyConsoleViewer.println("Build might not be supported cause Gradle version is lower than 8.0")
                 MyConsoleLogger.logPrint("Build is not supported cause Gradle version is lower than 8.0")
-                throw IllegalArgumentException("Build is not supported cause Gradle version is lower than 8.0")
             }
         }
     }
@@ -94,6 +160,18 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
         }
 
         return isGradle
+    }
+
+    private fun isMavenProject() : Boolean {
+        val mavenFiles = listOf(
+            "pom.xml"
+        )
+
+        val isMaven = mavenFiles.any { fileName ->
+            File(javaFilesPath, fileName).exists()
+        }
+
+        return isMaven
     }
 
     private fun findGradleVersion(projectDir: File): String? {
