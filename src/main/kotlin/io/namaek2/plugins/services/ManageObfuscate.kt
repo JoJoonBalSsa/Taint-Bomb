@@ -102,7 +102,7 @@ class ManageObfuscate(
             val keyDecryptJava = readJavaCode("keyDecrypt$osName.java")
 
             val installScript = "$tempFolder/$scriptName.py"
-            val pythonProcess = ProcessBuilder(venvPath, installScript, outFolder, keyDecryptJava, stringDecryptJava)
+            val pythonProcess = ProcessBuilder(venvPath, "-u", installScript, outFolder, keyDecryptJava, stringDecryptJava)
                 .redirectErrorStream(true)
                 .start()
             val reader = BufferedReader(InputStreamReader(pythonProcess.inputStream))
