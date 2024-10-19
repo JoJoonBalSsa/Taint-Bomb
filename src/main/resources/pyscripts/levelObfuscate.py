@@ -39,13 +39,12 @@ class LevelObfuscation:
                     O = ObfuscateOperations(tainted)
                     obfuscated_code = O.return_obfuscated_code()
 
-
-
                     print("function spliting... ", )
                     if obfuscated_code is None:
                         obfuscated_code = tainted["source_code"]
 
                     # 메소드 분할
+                    # O = MethodSplit(tainted)
                     O = MethodSplit(obfuscated_code)
                     temp_ob = O.get_new_method()
 
