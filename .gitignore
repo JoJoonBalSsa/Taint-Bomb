@@ -1,6 +1,19 @@
-.gradle
-.idea
-.intellijPlatform
-.qodana
-build
-src/main/resources/pyscripts/__pycache__
+/*
+# Un-ignore all of subtree
+!/src/
+!/gradle/
+!/.idea/gradle.xml
+!/.idea/icon.png
+!/.idea/workspace.xml
+!/.run/
+!/.docs/
+!.gitignore
+!build.gradle.kts
+!CHANGELOG.md
+!CODE_OF_CONDUCT.md
+!gradle.properties
+!gradlew
+!gradlew.bat
+!qodana.yml
+!README.md
+!settings.gradle.kts
