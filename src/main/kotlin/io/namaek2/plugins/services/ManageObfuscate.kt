@@ -131,12 +131,9 @@ class ManageObfuscate(
 
     private fun runScript(venvPath: String, scriptName: String, outFolder: String) : Int{
         val installScript = "$tempFolder/$scriptName.py"
-        print("installScript 1: $installScript\n")
         val pythonProcess = ProcessBuilder(venvPath, "-u", installScript, outFolder)
             .redirectErrorStream(true)
             .start()
-
-        print("installScript 2: $installScript\n")
 
         val outputThread = Thread {
             try {
@@ -149,7 +146,6 @@ class ManageObfuscate(
                 MyConsoleLogger.logPrint("Error reading output from $scriptName: ${e.message}")
             }
         }
-        print("installScript 3: $installScript\n")
 
         outputThread.start()
 
@@ -157,7 +153,6 @@ class ManageObfuscate(
             var completed = false
             try {
                 completed = pythonProcess.waitFor(60, TimeUnit.SECONDS)
-                print("exitValue: ${pythonProcess.exitValue()}\n")
             } catch (e: InterruptedException) {
                 MyConsoleViewer.println("Canceled by user")
                 MyConsoleLogger.logPrint("Canceled by user")
@@ -183,9 +178,7 @@ class ManageObfuscate(
             }
         } else {
             try {
-                println("installScript 4: $installScript\n")
                 pythonProcess.waitFor()
-                println("installScript 5: $installScript\n")
             } catch (e: InterruptedException) {
                 MyConsoleViewer.println("Canceled by user")
                 MyConsoleLogger.logPrint("Canceled by user")
@@ -215,8 +208,6 @@ class ManageObfuscate(
         } catch (e: InterruptedException) {
             MyConsoleLogger.logPrint("Interrupted while waiting for output thread to finish: ${e.message}")
         }
-        print("normal exit: ${scriptName}\n")
-        outputThread.interrupt()
         return pythonProcess.exitValue()
     }
 }
