@@ -133,14 +133,29 @@ class MethodSplit:
         return modified_method, extracted_functions
 
     def __merge_methods_and_functions(self, modified_method, extracted_functions):
-        # Modified Method 마지막 중괄호 제거
-        if modified_method.endswith("}\n"):
-            modified_method = modified_method[:-2]  # 마지막 중괄호 제거
+        try:
+            # modified_method가 None인 경우 예외 발생
+            if modified_method is None:
+                raise ValueError("Modified method is None. The input method code might not match the expected Java method pattern.")
+            
+            # Modified Method 마지막 중괄호 제거
+            if modified_method.endswith("}\n"):
+                modified_method = modified_method[:-2]  # 마지막 중괄호 제거
 
-        # Extracted Functions 추가
-        merged_code = modified_method + '\n}\n\n' + '\n'.join(extracted_functions) + '\n'
-        
-        return merged_code
+            # Extracted Functions 추가
+            merged_code = modified_method + '\n}\n\n' + '\n'.join(extracted_functions) + '\n'
+            
+            return merged_code
+
+        except AttributeError as e:
+            # AttributeError 발생 시 처리 (NoneType에서 .endswith() 호출하는 경우)
+            print(f"An error occurred: {e}")
+            return "// Error: Invalid method code."
+
+        except ValueError as e:
+            # ValueError 발생 시 처리 (None 값이 반환된 경우)
+            print(f"An error occurred: {e}")
+            return "// Error: Method pattern did not match the expected format."
 
     def __generate_random_string(self, length=8):
         if length < 1:
