@@ -76,7 +76,7 @@ def main(output_folder) :
         create_result(output_folder, tainted.flows)
         __analyze_method(output_folder, tainted)
 
-        make_md = MakeMD(output_folder + "/result.txt", output_folder + "/analysis_result.md")
+        make_md = MakeMD(output_folder + "/result.txt", output_folder + "/analysis_result.md", priority_flow)
         make_md.make_md_file()
 
 
