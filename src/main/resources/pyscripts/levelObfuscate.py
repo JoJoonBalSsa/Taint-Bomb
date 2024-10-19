@@ -31,7 +31,7 @@ class LevelObfuscation:
             if item["sensitivity"] == 1:
                 continue
 
-            if item["sensitivity"] == 2:
+            if item["sensitivity"] == 3:
                 ddb = DumbDB()
                 for tainted in item["tainted"]:
                     # 연산자 난독화
@@ -44,7 +44,6 @@ class LevelObfuscation:
                         obfuscated_code = tainted["source_code"]
 
                     # 메소드 분할
-                    # O = MethodSplit(tainted)
                     O = MethodSplit(obfuscated_code)
                     temp_ob = O.get_new_method()
 
@@ -76,7 +75,7 @@ class LevelObfuscation:
                     if obfuscated_code is not None:
                         ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
 
-            if item["sensitivity"] == 3:
+            if item["sensitivity"] == 2:
                 for tainted in item["tainted"]:
                     #print(f"\n{tainted["method_name"]} level obfuscation")
                     print("operation obfuscation started...")
