@@ -31,7 +31,7 @@ class LevelObfuscation:
             if item["sensitivity"] == 1:
                 continue
 
-            if item["sensitivity"] == 3:
+            if item["sensitivity"] == 2:
                 ddb = DumbDB()
                 for tainted in item["tainted"]:
                     # 연산자 난독화
@@ -39,8 +39,20 @@ class LevelObfuscation:
                     O = ObfuscateOperations(tainted)
                     obfuscated_code = O.return_obfuscated_code()
 
+                    print("function spliting... ", )
+                    if obfuscated_code is None:
+                        obfuscated_code = tainted["source_code"]
+
+                    # 메소드 분할
+                    # O = MethodSplit(tainted)
+                    O = MethodSplit(obfuscated_code)
+                    temp_ob = O.get_new_method()
+
+                    if temp_ob is not None:
+                        obfuscated_code = temp_ob
                     # 더미 코드 추가
                     rand = ddb.get_unique_random_number()
+
                     if rand is not None:
                         if obfuscated_code is None:
                             obfuscated_code = tainted["source_code"]
@@ -61,21 +73,10 @@ class LevelObfuscation:
                     else:
                         continue
 
-                    print("function spliting... ", )
-                    if obfuscated_code is None:
-                        obfuscated_code = tainted["source_code"]
-
-                    # 메소드 분할
-                    # O = MethodSplit(obfuscated_code)
-                    # temp_ob = O.get_new_method()
-                    #
-                    # if temp_ob is not None:
-                    #     obfuscated_code = temp_ob
-
                     if obfuscated_code is not None:
                         ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
 
-            if item["sensitivity"] == 2:
+            if item["sensitivity"] == 3:
                 for tainted in item["tainted"]:
                     #print(f"\n{tainted["method_name"]} level obfuscation")
                     print("operation obfuscation started...")

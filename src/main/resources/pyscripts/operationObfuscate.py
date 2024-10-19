@@ -59,7 +59,6 @@ class ObfuscateOperations:
         result_list=[]
         for expression in expression_list:
             expression = self.apply_operator_priority(expression)
-
             # 임시 기호를 원래의 난독화된 표현으로 대체
             for key, value in sorted(self.obfuscation_map.items(), reverse=True):
                 expression = expression.replace(key, f"{value}")  # 괄호를 추가하지 않고 원래 표현으로
@@ -70,7 +69,7 @@ class ObfuscateOperations:
 
     def apply_operator_priority(self, expression):
         # 함수 호출과 일반 괄호를 구분하기 위한 패턴
-        function_call_pattern = re.compile(r'\b\w+\s*\(([^()]*)\)')
+        function_call_pattern = re.compile(r'\b[\w\.]+\s*\([^()]*\)')
 
         # 함수 호출의 괄호는 건드리지 않도록 미리 찾아둠
         def preserve_function_calls(match):
