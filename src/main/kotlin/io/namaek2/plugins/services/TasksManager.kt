@@ -18,10 +18,10 @@ class TasksManager(private val project : Project, private val javaFilesPath: Str
         val manageHash = preTask.getManageHash()
 
         val manageBuild = ManageBuild(javaFilesPath, outFolder, indicator)
-        //manageBuild.checkGradleVersion()
+        val buildManager = manageBuild.checkBuildManager()
 
         ManageObfuscate(javaFilesPath, outFolder, tempFolder, manageHash, venvPath, preTask.getOS(), indicator)
-        manageBuild.runGradle(0.8)
+        manageBuild.runBuildManager(0.8, buildManager)
 
         openFileInEditorAsync(project, outFolder)
 
