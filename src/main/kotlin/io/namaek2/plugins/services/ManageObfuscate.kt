@@ -49,12 +49,12 @@ class ManageObfuscate(
         indicator.text = "Level obfuscation activated..."
         MyConsoleViewer.println("Level obfuscation activated...")
         runPythonScript(venvPath, "levelObfuscate", outputFolder, 0.65)
-        //checkJavaSyntax(venvPath, outputFolder, 0.7)
+        // checkJavaSyntax(venvPath, outputFolder, 0.7)
 
-        indicator.text = "Identifier obfuscating..."
-        MyConsoleViewer.println("Identifier obfuscating...")
-        runPythonScript(venvPath, "identifierObfuscate", outputFolder, 0.75)
-        //checkJavaSyntax(venvPath, outputFolder, 0.8)
+//        indicator.text = "Identifier obfuscating..."
+//        MyConsoleViewer.println("Identifier obfuscating...")
+//        runPythonScript(venvPath, "identifierObfuscate", outputFolder, 0.75)
+//        //checkJavaSyntax(venvPath, outputFolder, 0.8)
     }
 
     private fun checkJavaSyntax(venvPath:String, javaFilesPath: String, fractionValue: Double) {
@@ -125,13 +125,13 @@ class ManageObfuscate(
 
     private fun runPythonScript(venvPath: String, scriptName: String, outFolder: String, fractionValue: Double) {
         indicator.fraction = fractionValue
-
-        runScript(venvPath, scriptName, outFolder)
+            runScript(venvPath, scriptName, outFolder)
+        return
     }
 
-    private fun runScript(venvPath: String, scriptName: String, outFolder: String) : Int {
+    private fun runScript(venvPath: String, scriptName: String, outFolder: String) : Int{
         val installScript = "$tempFolder/$scriptName.py"
-        val pythonProcess = ProcessBuilder(venvPath, installScript, outFolder)
+        val pythonProcess = ProcessBuilder(venvPath, "-u", installScript, outFolder)
             .redirectErrorStream(true)
             .start()
 
@@ -143,32 +143,71 @@ class ManageObfuscate(
                     MyConsoleLogger.logPrint("$scriptName output: $line")
                 }
             } catch (e: IOException) {
-                // Log the exception without throwing it
                 MyConsoleLogger.logPrint("Error reading output from $scriptName: ${e.message}")
             }
         }
 
         outputThread.start()
 
-        if(scriptName == "main") {
-            val completed = pythonProcess.waitFor(60, TimeUnit.SECONDS)
+        if (scriptName == "main") {
+            var completed = false
+            try {
+                completed = pythonProcess.waitFor(60, TimeUnit.SECONDS)
+            } catch (e: InterruptedException) {
+                MyConsoleViewer.println("Canceled by user")
+                MyConsoleLogger.logPrint("Canceled by user")
+                pythonProcess.destroy()
+                outputThread.interrupt()
+                return -1
+            } catch (e: IOException) {
+                MyConsoleViewer.println("An error occurred: ${e.message}")
+                MyConsoleLogger.logPrint("An error occurred: ${e.message}")
+                pythonProcess.destroy()
+                outputThread.interrupt()
+                return -1
+            }
 
             if (!completed) {
-                // If the process didn't complete within the timeout, destroy it
                 pythonProcess.destroy()
                 if (pythonProcess.isAlive) {
-                    // If it's still alive, force destroy
                     pythonProcess.destroyForcibly()
                 }
                 MyConsoleLogger.logPrint("$scriptName execution timed out.")
-                return -1 // or any other error code to indicate timeout
+                outputThread.interrupt()
+                return -1
+            }
+        } else {
+            try {
+                pythonProcess.waitFor()
+            } catch (e: InterruptedException) {
+                MyConsoleViewer.println("Canceled by user")
+                MyConsoleLogger.logPrint("Canceled by user")
+                pythonProcess.destroy()
+                outputThread.interrupt()
+                return -1
+            } catch (e: IOException) {
+                MyConsoleViewer.println("An error occurred: ${e.message}")
+                MyConsoleLogger.logPrint("An error occurred: ${e.message}")
+                pythonProcess.destroy()
+                outputThread.interrupt()
+                return -1
             }
         }
-        else {
-            pythonProcess.waitFor()
-        }
-        outputThread.join()
 
+        // 프로세스 종료 후 outputThread를 최대 5초 동안 대기
+        try {
+            outputThread.join(5000) // 5초 동안 스레드 종료 대기
+            if (outputThread.isAlive) {
+                MyConsoleLogger.logPrint("Output thread is still running after 5 seconds. Interrupting...")
+                outputThread.interrupt()
+                outputThread.join(1000) // 인터럽트 후 1초 더 대기
+                if (outputThread.isAlive) {
+                    MyConsoleLogger.logPrint("Output thread could not be interrupted. It may be blocked.")
+                }
+            }
+        } catch (e: InterruptedException) {
+            MyConsoleLogger.logPrint("Interrupted while waiting for output thread to finish: ${e.message}")
+        }
         return pythonProcess.exitValue()
     }
 }
