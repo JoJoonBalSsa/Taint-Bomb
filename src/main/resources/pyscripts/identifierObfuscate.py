@@ -335,7 +335,7 @@ class ob_identifier:
 
 
     def extract_identifiers_by_level(self, line):
-        java_keywords = {'if', 'for', "new", "private", "static", "public", "protected", "interface", "enum", "return"}
+        java_keywords = {'if', 'for', "new", "private", "static", "public", "protected", "interface", "enum",'return'}
         level = 1
         levels = {}
         current_identifier = ''
@@ -411,6 +411,7 @@ class ob_identifier:
         # 마지막 식별자가 남아있는 경우 추가
         if current_identifier and current_identifier not in java_keywords:
             levels.setdefault((level, -sub_level_dict[level]), []).append((current_identifier, "variable"))
+
 
         return levels
 
@@ -508,11 +509,11 @@ class ob_identifier:
 
                             # 호출자가 self.imp_var_list 안에 있는지 확인
                             if is_fun:
-                                if var[0] in self.imp_var_list or identifiers[0][0] in self.imp_var_list: # 제일 첫번째 호출자가 외부 클래스와 엮여있다면 난독화 X
+                                if var[0] in self.imp_var_list or identifiers[0][0] in self.imp_var_list or identifiers[0][0] in external_class: # 제일 첫번째 호출자가 외부 클래스와 엮여있다면 난독화 X
                                     self.not_ob_list.append(fun[0])
                                     self.identifier_map.pop(fun[0], None)
                             else:
-                                if var[0] in self.imp_var_list or var[0] in external_class or (var[0] not in self.class_list and var[0] not in self.variable_in_file[file_path]) or identifiers[0][0] in self.imp_var_list :#세번째 경우는 import에 없는 내장 클래스 사용시
+                                if var[0] in self.imp_var_list or var[0] in external_class or (var[0] not in self.class_list and var[0] not in self.variable_in_file[file_path]) or identifiers[0][0] in self.imp_var_list or identifiers[0][0] in external_class :#세번째 경우는 import에 없는 내장 클래스 사용시
 
                                     self.not_ob_list.append(fun[0])
                                     self.identifier_map.pop(fun[0], None)
