@@ -30,7 +30,7 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             val processBuilder = when {
                 "windows" in osName -> ProcessBuilder("mvn", "-f", "$outFolder/pom.xml", "package")
                 "linux" in osName-> ProcessBuilder("mvn", "-f", "$outFolder/pom.xml", "package")
-                // "mac" in osName -> ProcessBuilder("./gradlew", "jar")
+                "mac" in osName -> ProcessBuilder("mvn", "-f", "$outFolder/pom.xml", "package")
                 else -> throw IllegalArgumentException("Unsupported OS: $osName")
             }
 
@@ -78,7 +78,7 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             val processBuilder = when {
                 "windows" in osName -> ProcessBuilder("gradle.bat", "jar")
                 "linux" in osName-> ProcessBuilder("gradle", "jar")
-                // "mac" in osName -> ProcessBuilder("./gradlew", "jar")
+                "mac" in osName -> ProcessBuilder("gradle", "jar")
                 else -> throw IllegalArgumentException("Unsupported OS: $osName")
             }
 
