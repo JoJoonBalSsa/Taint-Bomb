@@ -13,8 +13,15 @@ class OperationDB:
 
             "!": "{a} ? ({b} ? false : (true ? false : false)) : (true ? true : true)",
 
-            "==":"{b} == {a}",
-            "!=":"{b} != {a}",
+            "==_integer":"(({a}*100 + ({a} - {b} + 1 - 1) == {b}*100) && ({a} != {b}) ? ((true && !false) ? false : (true || false)) : ((false || true) && !false)) && (({a} * 1 + 0) / 1 == {b})",
+            "!=_integer":"(({a}*100 + ({b} - {a} + 1) != {b}*100)&& ({a} != {b}) ? ((true || false) && !false) : (false && true || false)) && (({a} * 1 + 1) / 1 != {b})",
+
+            "==_object":"{a} == {b}",
+            "!=_object":"{a} != {b}",
+
+            "null_check": "(({a} != null) ? ((127 + {a}.hashCode() - 72 != 0) ? true : false) : false)",
+            "not_null_check": "(({a} == null) ? true : (({a}.hashCode() + 88 != 0) ? false : true))",
+
             ">": "((127 + 28 + ~{a} + 42 > 88 + ~{b} + 28 + 81) && (({a} ^ {b}) != 0)) || (({a} & {b}) == 0)",
             "<": "((47 + ~{b} + 444 + 85 < 70 + ~{a} + 444 + 62) ? true : false) && (({a} | {b}) != 0)",
 
