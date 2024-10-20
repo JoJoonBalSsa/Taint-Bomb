@@ -51,9 +51,9 @@ class ManageObfuscate(
         runPythonScript(venvPath, "levelObfuscate", outputFolder, 0.65)
         // checkJavaSyntax(venvPath, outputFolder, 0.7)
 
-//        indicator.text = "Identifier obfuscating..."
-//        MyConsoleViewer.println("Identifier obfuscating...")
-//        runPythonScript(venvPath, "identifierObfuscate", outputFolder, 0.75)
+        indicator.text = "Identifier obfuscating..."
+        MyConsoleViewer.println("Identifier obfuscating...")
+        runPythonScript(venvPath, "identifierObfuscate", outputFolder, 0.75)
 //        //checkJavaSyntax(venvPath, outputFolder, 0.8)
     }
 
