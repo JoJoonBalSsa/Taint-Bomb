@@ -8,17 +8,17 @@ class ObfuscateOperations:
     def __init__(self, tainted):
         # 연산자 우선순위 리스트 (우선순위 높은 것부터 나열)
         self.operator_priority = [
-            r'\*\*',  # 거듭제곱 연산자 (Python 스타일)
-            r'\*', r'/', r'%',  # 곱셈, 나눗셈, 나머지
-            r'\+', r'-',  # 덧셈, 뺄셈
+            r'**',  # 거듭제곱 연산자 (Python 스타일)
+            r'*', r'/', r'%',  # 곱셈, 나눗셈, 나머지
+            r'+', r'-',  # 덧셈, 뺄셈
             r'<<', r'>>', r'>>>',  # 시프트 연산자
             r'<', r'<=', r'>', r'>=', r'instanceof',  # 비교 연산자
             r'==', r'!=',  # 동등 비교 연산자
             r'&',  # 비트 AND
-            r'\^',  # 비트 XOR
-            r'\|',  # 비트 OR
+            r'^',  # 비트 XOR
+            r'|',  # 비트 OR
             r'&&',  # 논리 AND
-            r'\|\|',  # 논리 OR
+            r'||',  # 논리 OR
             r'\?', r'\:',  # 삼항 연산자
             r'=', r'\+=', r'-=', r'\*=', r'/=', r'%=', r'<<=', r'>>=', r'>>>=', r'&=', r'\^=', r'\|=',  # 대입 연산자
         ]
@@ -91,28 +91,62 @@ class ObfuscateOperations:
                 expression
             )
 
-        # 연산자 우선순위에 따라 처리
-        for operator_pattern in self.op_json.keys():
+        # 숫자값 전용 연산자 리스트
+        integer_operators = {r'**', r'*', r'/', r'%', r'+', r'-', r'<<', r'>>', r'>>>'}
+
+        for operator_pattern in self.operator_priority:
             # 단항 연산자까지 포함한 정규식
             pattern = re.compile(
                 rf'(\([^()]+\)|\b-?\w+\b|-?\d+|[!~]\s*\([^()]+\)|[!~]\s*\b-?\w+\b|-?\d+)\s*'
                 rf'({re.escape(operator_pattern)})\s*'
                 rf'(\([^()]+\)|\b-?\w+\b|-?\d+|[!~]\s*\([^()]+\)|[!~]\s*\b-?\w+\b|-?\d+)'
             )
-
             expression = ''.join(expression)
             match = pattern.search(expression)
             while match:
-                operand1 = match.group(1)
-                operator = match.group(2)
-                operand2 = match.group(3)
+                operand1 = match.group(1) if match.group(1) else "q"
+                operator = match.group(2) if match.group(2) else "q"
+                operand2 = match.group(3) if match.group(3) else "q"
 
                 # 디버깅용 출력
                 print(f"Identified operator: {operator} between '{operand1}' and '{operand2}'")
 
-                # 난독화된 표현으로 변경
-                obfuscated = self.op_json[operator].format(a=operand1, b=operand2)
-                temp_key = f"__OBFUSCATED_{self.counter}__"
+                # == 또는 != 연산자 처리
+                if operator in ['==', '!=']:
+                    # null 체크: 하나의 피연산자만 null일 때 처리
+                    if operand1 == 'null' and operand2 != 'null':
+                        operand = operand2  # null이 아닌 피연산자를 operand로 사용
+                        if operator == '==':
+                            obfuscated = self.op_json["not_null_check"].format(a=operand)
+                        else:  # operator == '!='
+                            obfuscated = self.op_json["null_check"].format(a=operand)
+                    elif operand2 == 'null' and operand1 != 'null':
+                        operand = operand1  # null이 아닌 피연산자를 operand로 사용
+                        if operator == '==':
+                            obfuscated = self.op_json["not_null_check"].format(a=operand)
+                        else:  # operator == '!='
+                            obfuscated = self.op_json["null_check"].format(a=operand)
+                    else:
+                        # null이 둘 다 있거나 없을 때 기존 처리 유지
+                        is_integer_operand1 = operand1.isdigit() or '__INTEGER_' in operand1
+                        is_integer_operand2 = operand2.isdigit() or '__INTEGER_' in operand2
+
+                        # 숫자값이 포함된 경우
+                        if is_integer_operand1 or is_integer_operand2:
+                            obfuscated = self.op_json[f"{operator}_integer"].format(a=operand1, b=operand2)
+                        else:
+                            # 숫자값이 아닌 객체 비교
+                            obfuscated = self.op_json[f"{operator}_object"].format(a=operand1, b=operand2)
+                else:
+                    # 기존 난독화 규칙 적용
+                    obfuscated = self.op_json[operator].format(a=operand1, b=operand2)
+
+                # 숫자 값 전용 연산자일 경우 __INTEGER__로 변환
+                if operator_pattern in integer_operators:
+                    temp_key = f"__INTEGER_{self.counter}__"
+                else:
+                    temp_key = f"__OBFUSCATED_{self.counter}__"
+
                 self.obfuscation_map[temp_key] = f"{obfuscated}"
                 expression = (
                         expression[:match.start()]
@@ -130,6 +164,8 @@ class ObfuscateOperations:
                 expression = expression.replace(key, value)
 
         return expression
+
+
 
 
 
