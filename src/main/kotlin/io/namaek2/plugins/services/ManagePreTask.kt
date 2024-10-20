@@ -61,7 +61,7 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
         return when {
             "windows" in osName -> "Win"
             "linux" in osName -> "Lin"
-            // "mac" in osName -> "mac"
+            "mac" in osName -> "Lin"
             else -> {
                 MyConsoleViewer.println("Unsupported OS: $osName")
                 MyConsoleLogger.logPrint("Unsupported OS: $osName")
