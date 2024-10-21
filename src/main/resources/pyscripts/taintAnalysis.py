@@ -337,7 +337,6 @@ class TaintAnalysis:
 
         # 재귀 깊이가 MAX_RECURSION_DEPTH 이상이면 종료
         if current_recursion_depth >= MAX_RECURSION_DEPTH:
-            print(f"Recursion limit reached for variable: {var_name}, stopping further tracing.")
             return
 
 
