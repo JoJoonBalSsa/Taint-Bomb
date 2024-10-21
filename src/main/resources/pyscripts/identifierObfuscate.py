@@ -108,12 +108,15 @@ class ob_identifier:
                         is_external = True
                 elif isinstance(node, (javalang.tree.ClassDeclaration, javalang.tree.EnumDeclaration, javalang.tree.InterfaceDeclaration)):
                     curr_class = node.name
-                    if is_external:
-                        self.not_ob_list.append(node.name)
-                        self.identifier_map.pop(node.name, None)
-                    else:
-                        self.class_list.append(node.name)
-                        self.generate_obfuscated_name(node.name)
+                    self.not_ob_list.append(node.name)
+                    self.identifier_map.pop(node.name, None)
+
+                    # if is_external:
+                    #     self.not_ob_list.append(node.name)
+                    #     self.identifier_map.pop(node.name, None)
+                    # else:
+                    #     self.class_list.append(node.name)
+                    #     self.generate_obfuscated_name(node.name)
 
                 elif isinstance(node, javalang.tree.AnnotationDeclaration):
                     self.ann_list.append(node.name)
@@ -178,7 +181,7 @@ class ob_identifier:
             print(f"Identifier Obfuscating.. {file_path}")
             self.obfuscate_java_file(file_path, self.output_folder)
 
-        self.replace_gradle()
+        # self.replace_gradle()
 
 
     def replace_gradle(self):
@@ -189,13 +192,8 @@ class ob_identifier:
             with open(build_gradle_path, 'r', encoding='utf-8') as file:
                 build_gradle_content = file.read()
 
-            lines = build_gradle_content.split("\n")
-            for i,line in enumerate(lines):
-                if "Main-Class" in line:
-                    print(line)
-                    line = line.replace(self.main_class,self.identifier_map.get(self.main_class,self.main_class))
-                    lines[i] = line
-            build_gradle_content = '\n'.join(lines)
+            build_gradle_content = build_gradle_content.replace(self.main_class,self.identifier_map.get(self.main_class,self.main_class))
+
 
             # 수정된 내용을 다시 build.gradle에 씀
             with open(build_gradle_path, 'w', encoding='utf-8') as file:
@@ -204,7 +202,7 @@ class ob_identifier:
             with open(build_gradle_path2, 'r', encoding='utf-8') as file:
                 build_gradle_content = file.read()
 
-                build_gradle_content = build_gradle_content.replace(self.main_class,self.identifier_map.get(self.main_class,self.main_class))
+            build_gradle_content = build_gradle_content.replace(self.main_class,self.identifier_map.get(self.main_class,self.main_class))
 
 
             # 수정된 내용을 다시 build.gradle에 씀
@@ -577,12 +575,12 @@ class ob_identifier:
 
             # 복호화 코드 내 리터럴 문자 복호화
             # Class.forName("클래스명") 패턴 찾기
-            class_for_name_matches = re.finditer(r'Class\.forName\("([\w.]+)"\)', line)
-            for match in class_for_name_matches:
-                class_name_literal = match.group(1).split('.')[-1]
-                if class_name_literal in self.identifier_map:
-                    obfuscated_class_name = self.identifier_map.get(class_name_literal, class_name_literal)
-                    line = line.replace(class_name_literal, obfuscated_class_name)
+            # class_for_name_matches = re.finditer(r'Class\.forName\("([\w.]+)"\)', line)
+            # for match in class_for_name_matches:
+            #     class_name_literal = match.group(1).split('.')[-1]
+            #     if class_name_literal in self.identifier_map:
+            #         obfuscated_class_name = self.identifier_map.get(class_name_literal, class_name_literal)
+            #         line = line.replace(class_name_literal, obfuscated_class_name)
 
             # getMethod("메서드명") 패턴 찾기
             get_method_matches = re.finditer(r'getMethod\("([A-Za-z_]\w*)"', line)
