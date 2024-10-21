@@ -8,7 +8,7 @@ class MethodSplit:
 
         modified_method, functions = self.__dynamic_method_split(method)
         self.merged_code = self.__merge_methods_and_functions(modified_method, functions)
-    
+
     def __extract_java_method_info(self, method_code):
         method_pattern = re.compile(r'\b(public|protected|private)\s+(static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)\s*\{')
         match = method_pattern.search(method_code)
@@ -43,7 +43,7 @@ class MethodSplit:
 
         else:
             return None  # 메소드 패턴이 일치하지 않을 경우
-    
+
     def __dynamic_method_split(self, method_code):
         result = self.__extract_java_method_info(method_code)
         if not result:
@@ -54,7 +54,7 @@ class MethodSplit:
         # 새로운 함수들을 저장할 리스트
         extracted_functions = []
         modified_body = []
-        
+
         # body를 ';'로 나누어 각 구문을 처리
         statements = body.split(';')
         var_pattern = re.compile(r'(\w+)\s+(\w+)\s*=')
@@ -66,7 +66,7 @@ class MethodSplit:
         # 본문을 한 줄씩 처리하며 변수 선언 및 변수 업데이트를 함수로 분리
         for line in statements:
             line = line.strip()
-            
+
             # 중괄호 처리 (블록 안쪽인 경우 처리하지 않음)
             if '{' in line:
                 brace_count += 1
@@ -137,14 +137,14 @@ class MethodSplit:
             # modified_method가 None인 경우 예외 발생
             if modified_method is None:
                 raise ValueError("Modified method is None. The input method code might not match the expected Java method pattern.")
-            
+
             # Modified Method 마지막 중괄호 제거
             if modified_method.endswith("}\n"):
                 modified_method = modified_method[:-2]  # 마지막 중괄호 제거
 
             # Extracted Functions 추가
             merged_code = modified_method + '\n}\n\n' + '\n'.join(extracted_functions) + '\n'
-            
+
             return merged_code
 
         except AttributeError as e:

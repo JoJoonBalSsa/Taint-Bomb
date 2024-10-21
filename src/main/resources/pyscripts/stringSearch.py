@@ -11,6 +11,7 @@ class StringSearch:
         self.ban_list = []
         self.value_map = {}
 
+
         print("converting unicode...")
         ObfuscateTool.convert_unicode_literals(java_folder_path)
         print("parsing strings...")
@@ -57,6 +58,29 @@ class StringSearch:
                             if case_value.value.startswith('"') and case_value.value.endswith('"'):
                                 self.ban_list.append(case_value.value)
 
+    def __check_and_remove_get_instance_literals(self, node):
+        """
+        문자열이 getInstance 함수의 매개변수로 사용되는 경우 해당 문자열을 ban_list에 추가하는 함수
+        """
+        if isinstance(node, javalang.tree.MethodInvocation):
+            # 메서드 이름이 getInstance인지 확인
+            if node.member == 'getInstance':
+                # 메서드 호출에 전달된 인자들을 확인
+                for argument in node.arguments:
+                    if isinstance(argument, javalang.tree.Literal) and isinstance(argument.value, str):
+                        # 문자열 리터럴인 경우 ban_list에 추가
+                        if argument.value.startswith('"') and argument.value.endswith('"'):
+                            self.ban_list.append(argument.value)
+
+    def __check_and_add_specific_string(self, node):
+        """
+        특정 문자열이 포함된 경우 해당 문자열을 ban_list에 추가하는 함수
+        """
+        if isinstance(node, javalang.tree.Literal) and isinstance(node.value, str):
+            # 특정 문자열이 포함된 경우
+            if 'Cipher' in node.value:
+                self.ban_list.append(node.value)
+
     # 기존 문자열 추출 함수에 switch-case 처리 추가
     def __extract_strings(self, node, package_name):
         string_literals = []
@@ -70,6 +94,8 @@ class StringSearch:
             self.__check_and_remove_annotation_literals(sub_node)
             self.__track_variable_declarations(sub_node)  # 변수 선언도 확인
             self.__check_and_remove_switch_case_literals(sub_node)  # switch-case 처리 추가
+            self.__check_and_remove_get_instance_literals(sub_node)
+            self.__check_and_add_specific_string(sub_node)
 
             if isinstance(sub_node, javalang.tree.Literal) and isinstance(sub_node.value, str) and sub_node.value.startswith('"') and sub_node.value.endswith('"'):
                 if not any(pos == sub_node.position for _, pos in string_literals):
