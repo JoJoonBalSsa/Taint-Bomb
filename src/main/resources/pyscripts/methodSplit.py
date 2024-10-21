@@ -10,33 +10,23 @@ class MethodSplit:
         self.merged_code = self.__merge_methods_and_functions(modified_method, functions)
 
     def __extract_java_method_info(self, method_code):
-        method_pattern = re.compile(r'(@\w+\s+)?(public|protected|private)?\s*(static\s+)?(\w+(\[\])?|List<\w+>|\w+)\s+(\w+)\s*\(([^)]*)\)\s*(throws\s+\w+)?\s*\{')
-        
+        method_pattern = re.compile(r'\b(public|protected|private)\s+(static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)\s*\{')
         match = method_pattern.search(method_code)
-    
+
         if match:
-            access_modifier = match.group(2) or "package-private"  # 접근 제한자가 없으면 패키지-프라이빗으로 처리
-            is_static = bool(match.group(3))  # static 키워드가 있으면 True, 없으면 False
-            return_type = match.group(4)
-            method_name = match.group(6)
-            
-            # 매개변수 처리 (None이나 빈 문자열 처리)
-            parameters = match.group(7)
-            if parameters:
-                parameters = parameters.strip()
-            else:
-                parameters = ""
-    
-            # throws 구문 처리
-            throws_clause = match.group(8)  # throws 구문 (필요하면 처리 가능)
-    
+            access_modifier = match.group(1)
+            is_static = bool(match.group(2))  # static 키워드가 있으면 True, 없으면 False
+            return_type = match.group(3)
+            method_name = match.group(4)
+            parameters = match.group(5).strip()
+
             # 매개변수 리스트로 변환하고 변수와 자료형 추출
             param_list = []
             if parameters:
                 for param in parameters.split(','):
                     param_type, param_name = param.strip().split()
                     param_list.append((param_type, param_name))
-    
+
             start_index = match.end()
             body = ""
             brace_count = 1
@@ -48,13 +38,12 @@ class MethodSplit:
                     if brace_count == 0:
                         body = method_code[start_index:start_index + i].strip()
                         break
-                    
+
             return access_modifier, return_type, method_name, param_list, body, is_static
-    
+
         else:
             return None  # 메소드 패턴이 일치하지 않을 경우
-    
-    
+
     def __dynamic_method_split(self, method_code):
         result = self.__extract_java_method_info(method_code)
         if not result:
@@ -65,7 +54,7 @@ class MethodSplit:
         # 새로운 함수들을 저장할 리스트
         extracted_functions = []
         modified_body = []
-        
+
         # body를 ';'로 나누어 각 구문을 처리
         statements = body.split(';')
         var_pattern = re.compile(r'(\w+)\s+(\w+)\s*=')
@@ -77,7 +66,7 @@ class MethodSplit:
         # 본문을 한 줄씩 처리하며 변수 선언 및 변수 업데이트를 함수로 분리
         for line in statements:
             line = line.strip()
-            
+
             # 중괄호 처리 (블록 안쪽인 경우 처리하지 않음)
             if '{' in line:
                 brace_count += 1
@@ -148,14 +137,14 @@ class MethodSplit:
             # modified_method가 None인 경우 예외 발생
             if modified_method is None:
                 raise ValueError("Modified method is None. The input method code might not match the expected Java method pattern.")
-            
+
             # Modified Method 마지막 중괄호 제거
             if modified_method.endswith("}\n"):
                 modified_method = modified_method[:-2]  # 마지막 중괄호 제거
 
             # Extracted Functions 추가
             merged_code = modified_method + '\n}\n\n' + '\n'.join(extracted_functions) + '\n'
-            
+
             return merged_code
 
         except AttributeError as e:
