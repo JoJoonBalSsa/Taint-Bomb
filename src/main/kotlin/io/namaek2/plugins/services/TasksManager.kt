@@ -32,14 +32,23 @@ class TasksManager(private val project : Project, private val javaFilesPath: Str
     fun openFileInEditorAsync(project: Project, outFolder: String) {
         ApplicationManager.getApplication().invokeLater {
             val filePath = "$outFolder/analysis_result.md"
-            val file = LocalFileSystem.getInstance().findFileByPath(filePath)
+
+            var file = LocalFileSystem.getInstance().findFileByPath(filePath)
+
+            if (file == null) {
+                // 파일이 null인 경우 VFS를 새로고침하고 다시 시도합니다.
+                LocalFileSystem.getInstance().refreshAndFindFileByPath(filePath)?.let {
+                    file = it
+                    MyConsoleLogger.logPrint("File found after refresh: $filePath")
+                }
+            }
 
             if (file != null) {
-                file.refresh(false, false) // Refresh the VFS
-                if (file.exists()) {
+                file!!.refresh(false, false)
+                if (file!!.exists()) {
                     try {
                         FileEditorManager.getInstance(project).openTextEditor(
-                            OpenFileDescriptor(project, file),
+                            OpenFileDescriptor(project, file!!),
                             true // requestFocus
                         )
                         MyConsoleLogger.logPrint("File opened successfully: $filePath")
