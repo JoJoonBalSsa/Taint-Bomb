@@ -8,25 +8,35 @@ class MethodSplit:
 
         modified_method, functions = self.__dynamic_method_split(method)
         self.merged_code = self.__merge_methods_and_functions(modified_method, functions)
-    
+
     def __extract_java_method_info(self, method_code):
-        method_pattern = re.compile(r'\b(public|protected|private)\s+(static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)\s*\{')
+        method_pattern = re.compile(r'(@\w+\s+)?(public|protected|private)?\s*(static\s+)?(\w+(\[\])?|List<\w+>|\w+)\s+(\w+)\s*\(([^)]*)\)\s*(throws\s+\w+)?\s*\{')
+        
         match = method_pattern.search(method_code)
-
+    
         if match:
-            access_modifier = match.group(1)
-            is_static = bool(match.group(2))  # static 키워드가 있으면 True, 없으면 False
-            return_type = match.group(3)
-            method_name = match.group(4)
-            parameters = match.group(5).strip()
-
+            access_modifier = match.group(2) or "package-private"  # 접근 제한자가 없으면 패키지-프라이빗으로 처리
+            is_static = bool(match.group(3))  # static 키워드가 있으면 True, 없으면 False
+            return_type = match.group(4)
+            method_name = match.group(6)
+            
+            # 매개변수 처리 (None이나 빈 문자열 처리)
+            parameters = match.group(7)
+            if parameters:
+                parameters = parameters.strip()
+            else:
+                parameters = ""
+    
+            # throws 구문 처리
+            throws_clause = match.group(8)  # throws 구문 (필요하면 처리 가능)
+    
             # 매개변수 리스트로 변환하고 변수와 자료형 추출
             param_list = []
             if parameters:
                 for param in parameters.split(','):
                     param_type, param_name = param.strip().split()
                     param_list.append((param_type, param_name))
-
+    
             start_index = match.end()
             body = ""
             brace_count = 1
@@ -38,11 +48,12 @@ class MethodSplit:
                     if brace_count == 0:
                         body = method_code[start_index:start_index + i].strip()
                         break
-
+                    
             return access_modifier, return_type, method_name, param_list, body, is_static
-
+    
         else:
             return None  # 메소드 패턴이 일치하지 않을 경우
+    
     
     def __dynamic_method_split(self, method_code):
         result = self.__extract_java_method_info(method_code)
