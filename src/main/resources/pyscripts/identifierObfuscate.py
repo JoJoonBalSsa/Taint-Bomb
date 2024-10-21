@@ -28,7 +28,7 @@ class ob_identifier:
         self.identifier_map = {}  # 난독화 맵
         self.files = []  # 파일 경로 저장
         self.package_map = []  # 패키지 이름 저장 or set으로 해야할지도
-        self.ran = secrets.choice(range(3))
+        self.ran = secrets.choice(range(2))
 
         # 파일 수집 및 난독화 맵 구성
         self.collect_files()
@@ -51,12 +51,12 @@ class ob_identifier:
                 if ran == 0:
                     obfuscated_name = (''.join(secrets.choice(["l", "I"])) +
                                        ''.join(self.choose_chars(['l', '1', 'I'], length)))
+                # elif ran == 1:
+                #     obfuscated_name = (''.join(secrets.choice(['l', 'I', 'α', 'β', 'γ', 'δ', 'π'])) +
+                #                        ''.join(self.choose_chars(['l', '1', 'I', 'α', 'β', 'γ', 'δ', 'π'], length)))
                 elif ran == 1:
-                    obfuscated_name = (''.join(secrets.choice(['l', 'I', 'α', 'β', 'γ', 'δ', 'π'])) +
-                                       ''.join(self.choose_chars(['l', '1', 'I', 'α', 'β', 'γ', 'δ', 'π'], length)))
-                elif ran == 2:
                     obfuscated_name = (''.join(secrets.choice(['O', 'o'])) +
-                                       ''.join(self.choose_chars(['0', 'O', 'o', 'Ο', 'о'], length)))
+                                       ''.join(self.choose_chars(['0', 'O', 'o'], length)))
 
                 if obfuscated_name not in self.identifier_map.values():
                     self.identifier_map[name] = obfuscated_name
