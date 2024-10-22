@@ -13,6 +13,9 @@ import io.JoJoonBalSsa.TaintBomb.services.TaintBombService
 import javax.swing.JButton
 import javax.swing.JTextArea
 
+import javax.swing.BoxLayout
+import javax.swing.Box
+import java.awt.Component
 
 class TaintBombFactory : ToolWindowFactory {
     
@@ -38,24 +41,44 @@ class TaintBombFactory : ToolWindowFactory {
         private val service = toolWindow.project.service<TaintBombService>()
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
-            val label1 = JBLabel(MyBundle.message("obfuscateLabel1"))
-            val label2 = JBLabel(MyBundle.message("obfuscateLabel2"))
-            val label3 = JBLabel(MyBundle.message("obfuscateLabel3"))
+            layout = BoxLayout(this, BoxLayout.Y_AXIS) // 수직 방향 레이아웃 설정
+
+            val label1 = JBLabel(MyBundle.message("obfuscateLabel1")).apply {
+                alignmentX = Component.CENTER_ALIGNMENT  // 중앙 정렬
+            }
+            val label2 = JBLabel(MyBundle.message("obfuscateLabel2")).apply {
+                alignmentX = Component.CENTER_ALIGNMENT
+            }
+            val label3 = JBLabel(MyBundle.message("obfuscateLabel3")).apply {
+                alignmentX = Component.CENTER_ALIGNMENT
+            }
 
             val consolePanel = JTextArea()
-            val scrollPane = JBScrollPane(consolePanel)
+            val scrollPane = JBScrollPane(consolePanel).apply {
+                alignmentX = Component.CENTER_ALIGNMENT
+            }
 
-            add(label1)
-            add(label2)
-            add(label3)
-            add(JButton(MyBundle.message("obfuscate")).apply {
+            val button = JButton(MyBundle.message("obfuscate")).apply {
+                alignmentX = Component.CENTER_ALIGNMENT
                 addActionListener {
                     label1.text = MyBundle.message("obfuscateLabel1")
                     label2.text = MyBundle.message("obfuscateLabel2")
                     label3.text = MyBundle.message("obfuscateLabel3")
                     service.startTaintBomb()
                 }
-            })
+            }
+
+            // 컴포넌트들 사이에 간격 추가
+            add(Box.createVerticalStrut(10))
+            add(label1)
+            add(Box.createVerticalStrut(5))
+            add(label2)
+            add(Box.createVerticalStrut(5))
+            add(label3)
+            add(Box.createVerticalStrut(10))
+            add(button)
+            add(Box.createVerticalStrut(10))
+
             MyConsoleViewer.setConsole(consolePanel)
             add(scrollPane)
         }
