@@ -1,4 +1,4 @@
-package io.namaek2.plugins.listeners
+package io.JoJoonBalSsa.TaintBomb.listeners
 
 import com.intellij.openapi.application.ApplicationActivationListener
 import com.intellij.openapi.diagnostic.thisLogger

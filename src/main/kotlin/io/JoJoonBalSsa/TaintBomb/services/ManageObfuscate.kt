@@ -1,8 +1,8 @@
-package io.namaek2.plugins.services
+package io.JoJoonBalSsa.TaintBomb.services
 
 import com.intellij.openapi.progress.ProgressIndicator
-import io.namaek2.plugins.toolWindow.MyConsoleLogger
-import io.namaek2.plugins.toolWindow.MyConsoleViewer
+import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleLogger
+import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleViewer
 import java.io.*
 import java.util.concurrent.TimeUnit
 
