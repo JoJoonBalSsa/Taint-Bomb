@@ -1,18 +1,18 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>io.namaek2.plugins</id>
+    <id>io.JoJoonBalSsa.TaintBomb</id>
     <name>Taint Bomb auto Java Obfuscator</name>
-    <vendor>GO For It</vendor>
+    <vendor>조준발싸!(JoJoonBalSsa)</vendor>
 
     <depends>com.intellij.modules.platform</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="io.namaek2.plugins.toolWindow.TaintBombFactory" id="Taint-Bomb"/>
+        <toolWindow factoryClass="io.JoJoonBalSsa.TaintBomb.toolWindow.TaintBombFactory" id="Taint-Bomb" icon="/META-INF/pluginWindowIcon.svg"/>
     </extensions>
 
     <applicationListeners>
-        <listener class="io.namaek2.plugins.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
+        <listener class="io.JoJoonBalSsa.TaintBomb.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
     </applicationListeners>
 </idea-plugin>
