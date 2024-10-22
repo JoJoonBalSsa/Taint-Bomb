@@ -9,10 +9,10 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="io.namaek2.plugins.toolWindow.TaintBombFactory" id="Taint-Bomb"/>
+        <toolWindow factoryClass="io.JoJoonBalSsa.TaintBomb.toolWindow.TaintBombFactory" id="Taint-Bomb"/>
     </extensions>
 
     <applicationListeners>
-        <listener class="io.namaek2.plugins.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
+        <listener class="io.JoJoonBalSsa.TaintBomb.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
     </applicationListeners>
 </idea-plugin>

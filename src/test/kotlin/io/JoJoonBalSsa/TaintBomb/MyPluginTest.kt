@@ -1,11 +1,11 @@
-package io.namaek2.plugins
+package io.JoJoonBalSsa.TaintBomb
 
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import io.namaek2.plugins.services.TaintBombService
+import io.JoJoonBalSsa.TaintBomb.services.TaintBombService
 
 @TestDataPath("\$CONTENT_ROOT/src/test/testData")
 class MyPluginTest : BasePlatformTestCase() {

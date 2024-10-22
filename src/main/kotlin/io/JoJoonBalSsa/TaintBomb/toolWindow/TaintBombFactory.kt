@@ -1,4 +1,4 @@
-package io.namaek2.plugins.toolWindow
+package io.JoJoonBalSsa.TaintBomb.toolWindow
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -8,8 +8,8 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
-import io.namaek2.plugins.MyBundle
-import io.namaek2.plugins.services.TaintBombService
+import io.JoJoonBalSsa.TaintBomb.MyBundle
+import io.JoJoonBalSsa.TaintBomb.services.TaintBombService
 import javax.swing.JButton
 import javax.swing.JTextArea
 
@@ -47,6 +47,7 @@ class TaintBombFactory : ToolWindowFactory {
 
             add(label1)
             add(label2)
+            add(label3)
             add(JButton(MyBundle.message("obfuscate")).apply {
                 addActionListener {
                     label1.text = MyBundle.message("obfuscateLabel1")

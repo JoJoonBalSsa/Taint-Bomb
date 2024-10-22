@@ -1,4 +1,4 @@
-package io.namaek2.plugins.services
+package io.JoJoonBalSsa.TaintBomb.services
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -6,9 +6,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
-import io.namaek2.plugins.MyBundle
-import io.namaek2.plugins.toolWindow.MyConsoleLogger
-import io.namaek2.plugins.toolWindow.MyConsoleViewer
+import io.JoJoonBalSsa.TaintBomb.MyBundle
+import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleLogger
+import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleViewer
 
 
 @Service(Service.Level.PROJECT)
