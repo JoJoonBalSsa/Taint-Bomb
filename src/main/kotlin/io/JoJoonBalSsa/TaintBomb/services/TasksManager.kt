@@ -1,4 +1,4 @@
-package io.namaek2.plugins.services
+package io.JoJoonBalSsa.TaintBomb.services
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -6,8 +6,8 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
-import io.namaek2.plugins.toolWindow.MyConsoleLogger
-import io.namaek2.plugins.toolWindow.MyConsoleViewer
+import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleLogger
+import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleViewer
 import java.io.*
 
 

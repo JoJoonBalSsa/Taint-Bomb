@@ -1,4 +1,4 @@
-package io.namaek2.plugins
+package io.JoJoonBalSsa.TaintBomb
 
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.NonNls

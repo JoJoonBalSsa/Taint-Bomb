@@ -1,15 +1,15 @@
-package io.namaek2.plugins.toolWindow
+package io.JoJoonBalSsa.TaintBomb.toolWindow
 
 import javax.swing.JTextArea
 
-object MyConsoleViewer {
+object MyConsoleLogger {
     private var console: JTextArea? = null
 
     fun setConsole(console: JTextArea) {
-        this.console = console
+        MyConsoleLogger.console = console
     }
 
-    fun println(message: String) {
+    fun logPrint(message: String) {
         console?.append("$message\n")
     }
 
