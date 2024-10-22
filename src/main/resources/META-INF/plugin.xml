@@ -9,7 +9,7 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="io.JoJoonBalSsa.TaintBomb.toolWindow.TaintBombFactory" id="Taint-Bomb" icon="/META-INF/pluginWindowIcon.svg"/>
+        <toolWindow icon="/META-INF/pluginIcon.svg" factoryClass="io.JoJoonBalSsa.TaintBomb.toolWindow.TaintBombFactory" id="Taint-Bomb"/>
     </extensions>
 
     <applicationListeners>
