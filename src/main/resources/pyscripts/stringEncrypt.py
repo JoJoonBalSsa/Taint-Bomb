@@ -34,5 +34,3 @@ class StringEncrypt:
             encrypted_Literals.append([p, c, encrypted_aes_key, enc_aes_key,[(self.encrypt_string(literal, aes_key), _) for literal, _ in strings],_])
 
         return encrypted_Literals
-    
-
