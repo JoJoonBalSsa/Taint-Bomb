@@ -10,7 +10,6 @@ class ObfuscateTool:
         leng = len(class_list)
 
         random_indices = [secrets.randbelow(leng) for _ in range(random_count)]
-
         random_class = [class_list[i] for i in random_indices]
 
         return random_class
@@ -39,8 +38,6 @@ class ObfuscateTool:
                     except SyntaxError as e:  # 문법 오류는 파이썬의 SyntaxError로 처리
                          print(f"Syntax error in file {file_path}: {e}")
 
-
-                        java_files.append((file_path, tree, source_code))
         return java_files
 
     def convert_unicode_literals(folder_path):
