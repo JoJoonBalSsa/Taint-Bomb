@@ -9,7 +9,6 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 
 import com.intellij.ui.content.ContentFactory
-import com.intellij.util.ui.JBSwingUtilities
 import io.JoJoonBalSsa.TaintBomb.MyBundle
 import io.JoJoonBalSsa.TaintBomb.services.TaintBombService
 import javax.swing.JButton
