@@ -16,6 +16,8 @@ import javax.swing.JTextArea
 import javax.swing.BoxLayout
 import javax.swing.Box
 import java.awt.Component
+import java.awt.Dimension
+import javax.swing.JSeparator
 
 class TaintBombFactory : ToolWindowFactory {
     
@@ -43,14 +45,19 @@ class TaintBombFactory : ToolWindowFactory {
         fun getContent() = JBPanel<JBPanel<*>>().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS) // 수직 방향 레이아웃 설정
 
-            val label1 = JBLabel(MyBundle.message("obfuscateLabel1")).apply {
+            val label1 = JBLabel(MyBundle.message("warningTitle")).apply {
                 alignmentX = Component.CENTER_ALIGNMENT  // 중앙 정렬
             }
-            val label2 = JBLabel(MyBundle.message("obfuscateLabel2")).apply {
+            val label2 = JBLabel(MyBundle.message("warning1")).apply {
                 alignmentX = Component.CENTER_ALIGNMENT
             }
-            val label3 = JBLabel(MyBundle.message("obfuscateLabel3")).apply {
+            val label3 = JBLabel(MyBundle.message("warning2")).apply {
                 alignmentX = Component.CENTER_ALIGNMENT
+            }
+
+            val separator = JSeparator().apply {
+                alignmentX = Component.CENTER_ALIGNMENT
+                maximumSize = Dimension(200, 1)  // 구분선의 너비를 200픽셀로 제한
             }
 
             val consolePanel = JTextArea()
@@ -58,12 +65,9 @@ class TaintBombFactory : ToolWindowFactory {
                 alignmentX = Component.CENTER_ALIGNMENT
             }
 
-            val button = JButton(MyBundle.message("obfuscate")).apply {
+            val button = JButton(MyBundle.message("obfuscateButton")).apply {
                 alignmentX = Component.CENTER_ALIGNMENT
                 addActionListener {
-                    label1.text = MyBundle.message("obfuscateLabel1")
-                    label2.text = MyBundle.message("obfuscateLabel2")
-                    label3.text = MyBundle.message("obfuscateLabel3")
                     service.startTaintBomb()
                 }
             }
@@ -71,6 +75,7 @@ class TaintBombFactory : ToolWindowFactory {
             // 컴포넌트들 사이에 간격 추가
             add(Box.createVerticalStrut(10))
             add(label1)
+            add(separator)
             add(Box.createVerticalStrut(5))
             add(label2)
             add(Box.createVerticalStrut(5))
@@ -82,7 +87,5 @@ class TaintBombFactory : ToolWindowFactory {
             MyConsoleViewer.setConsole(consolePanel)
             add(scrollPane)
         }
-
-
     }
 }
