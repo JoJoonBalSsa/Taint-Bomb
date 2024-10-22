@@ -63,12 +63,12 @@ class KeyObfuscate:
                 block = self.__inverse_feistel_network(block, round_key)
             decrypted.extend(block)
         return bytes(decrypted).rstrip(b'\x00')
-    
-    
+
+
     def __key_encrypt(self, aes_key, key2):
-        enc2_aes_key = self.__encrypt(aes_key, key2)                  
-        return enc2_aes_key  
-    
+        enc2_aes_key = self.__encrypt(aes_key, key2)
+        return enc2_aes_key
+
 
     def __key_decrypt(self, enc2_aes_key, key2):
         enc_aes_key = self.__decrypt(enc2_aes_key, key2)

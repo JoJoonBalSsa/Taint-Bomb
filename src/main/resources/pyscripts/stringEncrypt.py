@@ -15,12 +15,12 @@ class StringEncrypt:
         padded_text = pad(plain_text.encode('utf-8'), AES.block_size)
         encrypted_text = cipher.encrypt(padded_text)
         return base64.b64encode(encrypted_text).decode('utf-8')
-    
+
 
     # 암호화
-    def encrypt_string_literals(self, string_literals): 
+    def encrypt_string_literals(self, string_literals):
         encrypted_Literals = []
-        
+
         for p, c, strings,_ in string_literals:
             aes_key = os.urandom(16)
             enc_aes_key = os.urandom(8)
@@ -35,4 +35,3 @@ class StringEncrypt:
 
         return encrypted_Literals
     
-

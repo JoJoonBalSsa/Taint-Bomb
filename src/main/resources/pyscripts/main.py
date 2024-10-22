@@ -62,15 +62,15 @@ def main(output_folder) :
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 현재 시각을 'YYYY-MM-DD HH:MM:SS' 형식으로 저장
 
         with open(output_folder + "/analysis_result.md", "w") as md_file:
-                md_file.write("# Taint Analysis Result\n")
-                md_file.write("## Summary\n")
-                md_file.write("No taint flows were detected during the analysis.\n\n")
-                md_file.write("## Details\n")
-                md_file.write("- **Analysis Time**: {}\n".format(current_time))  # 실제 시간 출력
-                md_file.write("- **Output Folder**: {}\n\n".format(output_folder))
-                md_file.write("The taint analysis did not identify any potential issues or vulnerabilities in the given codebase.\n")
-                md_file.write("If you believe there should be taint flows detected, please review the input code or adjust the analysis parameters.\n")
-                md_file.write("\n---\n")
+            md_file.write("# Taint Analysis Result\n")
+            md_file.write("## Summary\n")
+            md_file.write("No taint flows were detected during the analysis.\n\n")
+            md_file.write("## Details\n")
+            md_file.write("- **Analysis Time**: {}\n".format(current_time))  # 실제 시간 출력
+            md_file.write("- **Output Folder**: {}\n\n".format(output_folder))
+            md_file.write("The taint analysis did not identify any potential issues or vulnerabilities in the given codebase.\n")
+            md_file.write("If you believe there should be taint flows detected, please review the input code or adjust the analysis parameters.\n")
+            md_file.write("\n---\n")
     else:
         print_result(priority_flow)
         create_result(output_folder, tainted.flows)
@@ -82,6 +82,6 @@ def main(output_folder) :
 
 if __name__ == '__main__':
     import sys
-    
+
     output_folder = sys.argv[1]
     main(output_folder)

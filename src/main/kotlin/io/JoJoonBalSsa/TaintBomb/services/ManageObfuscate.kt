@@ -125,7 +125,7 @@ class ManageObfuscate(
 
     private fun runPythonScript(venvPath: String, scriptName: String, outFolder: String, fractionValue: Double) {
         indicator.fraction = fractionValue
-            runScript(venvPath, scriptName, outFolder)
+        runScript(venvPath, scriptName, outFolder)
         return
     }
 
