@@ -7,7 +7,9 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
+
 import com.intellij.ui.content.ContentFactory
+import com.intellij.util.ui.JBSwingUtilities
 import io.JoJoonBalSsa.TaintBomb.MyBundle
 import io.JoJoonBalSsa.TaintBomb.services.TaintBombService
 import javax.swing.JButton
@@ -18,8 +20,6 @@ class TaintBombFactory : ToolWindowFactory {
     
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val taintBomb = TaintBomb(toolWindow)
-
-
 
         var content = ContentFactory.getInstance().createContent(taintBomb.getContent(), "Execute Tab", false)
         toolWindow.contentManager.addContent(content)
@@ -34,8 +34,28 @@ class TaintBombFactory : ToolWindowFactory {
     override fun shouldBeAvailable(project: Project) = true
 
     class TaintBomb(toolWindow: ToolWindow) {
-
         private val service = toolWindow.project.service<TaintBombService>()
+
+//        private lateinit var mainJPanel: JPanel
+//        private lateinit var label1 : JLabel
+//        private lateinit var label2 : JLabel
+//        private lateinit var label3 : JLabel
+//
+//        private var jButton = JButton()
+//
+//        private val consolePanel = JTextArea()
+//        private var scrollPane = JScrollPane(consolePanel)
+//
+//
+//        fun getContent() = mainJPanel.apply {
+//            MyConsoleViewer.setConsole(consolePanel)
+//            jButton.apply {
+//                addActionListener{
+//                    service.startTaintBomb()
+//                }
+//            }
+//        }
+
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
             val label1 = JBLabel(MyBundle.message("obfuscateLabel1"))
@@ -59,7 +79,5 @@ class TaintBombFactory : ToolWindowFactory {
             MyConsoleViewer.setConsole(consolePanel)
             add(scrollPane)
         }
-
-
     }
 }
