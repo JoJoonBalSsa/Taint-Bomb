@@ -28,7 +28,14 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
 
             val processBuilder = when {
-                "windows" in osName -> ProcessBuilder("mvn", "-f", "$outFolder/pom.xml", "package")
+                "windows" in osName -> {
+                    val mavenHome = System.getenv("MAVEN_HOME") ?: System.getenv("M2_HOME")
+                    if (mavenHome != null) {
+                        throw IllegalArgumentException("maven ENV error.")
+                    }
+                    val mvnPath = "$mavenHome\\bin\\mvn.cmd"
+                    ProcessBuilder(mvnPath, "-f", "$outFolder/pom.xml", "package")
+                }
                 "linux" in osName-> ProcessBuilder("mvn", "-f", "$outFolder/pom.xml", "package")
                 "mac" in osName -> ProcessBuilder("mvn", "-f", "$outFolder/pom.xml", "package")
                 else -> throw IllegalArgumentException("Unsupported OS: $osName")
