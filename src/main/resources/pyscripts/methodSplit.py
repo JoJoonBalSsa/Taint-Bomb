@@ -111,7 +111,7 @@ class MethodSplit:
             else:
                 modified_statements.append(line[0])
         modified_statements = self.__remove_empty_strings(modified_statements)
-        var_pattern = re.compile(r'(\w+(?:\[\])?)\s+(\w+)\s*=')
+        var_pattern = re.compile(r'(\w+(?:<[\w,\s]+>)?(?:\[\])?)\s+(\w+)\s*=')
         update_pattern = re.compile(r'(\w+)\s*=\s*(?![=!])(.+)')  # 변수 업데이트 패턴에서 == 또는 != 같은 비교 연산자 제외
         local_vars = {}  # 로컬 변수와 자료형 저장
 
