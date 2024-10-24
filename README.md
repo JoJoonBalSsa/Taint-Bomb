@@ -20,7 +20,7 @@
 
 
 <!-- Plugin description -->
-  Taint Bomb is a one click auto Java obfuscator intelliJ plugin, with light but strong obfuscate feature. It analysis project's source codes with Taint Analysis and set obfuscate level by defined sensitivity.
+  Taint Bomb is a one click auto Java obfuscator IntelliJ plugin, with light but strong obfuscate feature. It analysis project's source codes with Taint Analysis and set obfuscate level by defined sensitivity.
   If you want to report a bug or request a feature, please feel free to leave an [issue](https://github.com/JoJoonBalSsa/Taint-Bomb/issues).
 
   ---
@@ -42,10 +42,10 @@
 
 ---
 
-- 플러그인을 intelliJ에 설치합니다.
-  - [GitHub Releases](https://github.com/JoJoonBalSsa/Taint-Bomb/releases)를 확인하거나 [intelliJ marketplace](https://plugins.jetbrains.com/plugin/25629-taint-bomb-auto-java-obfuscator)에서 설치합니다.
-- 난독화 할 프로젝트를 intelliJ에서 열고, Taint-Bomb 창을 열어 Obfuscate 버튼을 클릭합니다.
-- 프로젝트 폴더 내에 'obfuscated_project_folder' 가 생성되며, 내부에는 난독화된 프로젝트 코드가, result.txt에는 Taint-Analysis 결과가, build/libs 내부에는 난독화된 프로젝트의 jar 빌드 파일이 존재합니다.
+- 플러그인을 IntelliJ에 설치합니다.
+  - [GitHub Releases](https://github.com/JoJoonBalSsa/Taint-Bomb/releases)를 확인하거나 [IntelliJ marketplace](https://plugins.jetbrains.com/plugin/25629-taint-bomb-auto-java-obfuscator)에서 설치합니다.
+- 난독화 할 프로젝트를 IntelliJ에서 열고, Taint Bomb 창을 열어 Obfuscate 버튼을 클릭합니다.
+- 프로젝트 폴더 내에 'obfuscated_project_folder' 가 생성되며, 내부에는 난독화된 프로젝트 코드와 난독화된 프로젝트의 jar 빌드 파일이, 'analysis_result.md'에는 Taint-Analysis 결과가 존재합니다.
 
 [주의 사항]
 - 난독화 전 프로젝트의 모든 override함수에 @Override 어노테이션이 붙어있어야 합니다.
@@ -57,7 +57,7 @@
 
 ## 플러그인
 - python 3.7 이상
-- intelliJ : 2023.3 이상
+- IntelliJ : 2023.3 이상
 - Windows, macOS, linux 지원
 
 ## 난독화 대상 프로젝트
@@ -94,7 +94,7 @@
 
 ---
 
-- applyObfuscated.py : 민감도 레벨별로 난독화된 코드를 파일에 적용하는 스크립트입니다.
+- applyObfuscated.py : 민감도 단계별로 난독화된 코드를 파일에 적용하는 스크립트입니다.
 - levelObfuscate.py : 코드를 식별된 민감도 단계별 난독화를 진행하는 스크립트입니다.
 - obfuscateTool.py : 여러 스크립트에서 공통적으로 사용되는 함수들을 모아둔 클래스입니다.
 - checkJavaSyntax.py : 프로젝트의 모든 .java 파일의 문법을 javalang parser로 검사합니다.
@@ -108,7 +108,7 @@
 
 - analysisResultManager.py : Taint 분석 결과를 Json으로 출력하는 클래스입니다. 프로젝트에 Source/Sink 흐름이 없다면 아무 것도 출력되지 않습니다.
 - methodEndLineFinder.py : 메소드의 끝을 찾아주는 클래스입니다.
-- sensitivityDB.py : 민감도 레벨을 정의하는 클래스입니다.
+- sensitivityDB.py : 소스, 싱크 그리고 소스, 싱크의 민감도 단계를 정의하는 클래스입니다.
 - taintAnalysis.py : 프로젝트를 taint 분석합니다.
 - makeMD.py : 프로젝트의 taint 분석 결과를 md 파일로 출력합니다.
 
