@@ -2,6 +2,19 @@ import string
 import secrets
 import re
 
+checked_exception_classes = [
+    'FileReader', 'FileWriter', 'BufferedReader', 'BufferedWriter',
+    'FileInputStream', 'FileOutputStream', 'RandomAccessFile', 
+    'PipedInputStream', 'PipedOutputStream', 'PrintWriter', 'PushbackReader','BufferedImage',
+    'ImageIO', 'ObjectInputStream', 'ObjectOutputStream', 'InputStreamReader', 'OutputStreamWriter', 
+    'DataInputStream', 'DataOutputStream', 'FileChannel', 'FileLock',
+    'Socket', 'ServerSocket', 'HttpURLConnection', 'DatagramSocket', 'MulticastSocket',
+    'URL', 'URLConnection', 'JarURLConnection',
+    'Connection', 'Statement', 'PreparedStatement', 'ResultSet', 'CallableStatement',
+    'Thread', 'ExecutorService', 'FutureTask',
+    'StreamTokenizer', 'LineNumberReader', 'SequenceInputStream', 'PrintStream', 'Console'
+]
+
 class MethodSplit:
     def __init__(self, method):
         self.method = method
@@ -16,9 +29,44 @@ class MethodSplit:
         indent_space = "    "  # 4 spaces for each indent level
         i = 0
         length = len(java_code)
+        inside_string = False  # Track if we're inside a string literal
+        inside_case = False  # Track if we're inside a case statement
 
         while i < length:
             char = java_code[i]
+
+            # Toggle string state when encountering double quotes
+            if char == '"':
+                formatted_code += char
+                inside_string = not inside_string
+                i += 1
+                continue
+
+            # If we're inside a string, just append the characters as is
+            if inside_string:
+                formatted_code += char
+                i += 1
+                continue
+
+            # Handle case for 'case' keyword
+            if java_code[i:i+4] == 'case':
+                inside_case = True
+                formatted_code += "\n" + (indent_space * indent_level) + "case "
+                i += 4
+                continue
+
+            # After the case keyword, add the case label (e.g., 'PNG:')
+            if inside_case and char == ':':
+                formatted_code += ":\n" + (indent_space * (indent_level + 1))
+                inside_case = False
+                i += 1
+                continue
+
+            # Handle 'break;' within a case, ensure it gets indented correctly
+            if java_code[i:i+5] == 'break':
+                formatted_code += "\n" + (indent_space * indent_level) + "break;"
+                i += 5
+                continue
 
             # Decrease indent level if we encounter a closing brace
             if char == '}':
@@ -35,7 +83,7 @@ class MethodSplit:
                 i += 1
                 continue
 
-            # Add newline and indent after semicolon, except inside a method signature
+            # Add newline and indent after semicolon, including inside a case statement
             if char == ';':
                 formatted_code += char + "\n" + (indent_space * indent_level)
                 i += 1
@@ -88,7 +136,16 @@ class MethodSplit:
             return None  # 메소드 패턴이 일치하지 않을 경우
 
     def __remove_empty_strings(self, lst):
-        return [item for item in lst if item.strip() != ''] 
+        new_lst = []
+        for item in lst:
+            if isinstance(item, list):
+                for i in range(len(item)):
+                    if item[i].strip() != '':
+                        new_lst.append(item[i])
+            elif len(item) > 1:
+                if item.strip() != '':
+                    new_lst.append(item)
+        return new_lst
 
     def __dynamic_method_split(self, method_code):
         result = self.__extract_java_method_info(method_code)
@@ -102,6 +159,7 @@ class MethodSplit:
         modified_statements = []
         # body를 ';'로 나누어 각 구문을 처리
         statements = body.split(';')
+        
         for line in statements:
             modified_statement.append(line.split('\n'))
         for line in modified_statement:
@@ -109,7 +167,7 @@ class MethodSplit:
                 for x in range(len(line)):
                     modified_statements.append(line[x])
             else:
-                modified_statements.append(line[0])
+                modified_statements.append(line)
         modified_statements = self.__remove_empty_strings(modified_statements)
         var_pattern = re.compile(r'(\w+(?:<[\w,\s]+>)?(?:\[\])?)\s+(\w+)\s*=')
         update_pattern = re.compile(r'(\w+)\s*=\s*(?![=!])(.+)')  # 변수 업데이트 패턴에서 == 또는 != 같은 비교 연산자 제외
@@ -117,29 +175,36 @@ class MethodSplit:
 
         # 본문을 한 줄씩 처리하며 변수 선언 및 변수 업데이트를 함수로 분리
         for line in modified_statements:
+
             line = line.strip()
             
             declare_match = var_pattern.search(line)  # 변수 선언
             update_match = update_pattern.search(line)  # 변수 업데이트
-            if declare_match:  # 블록 밖에서만 처리
+            if declare_match and not '{' in line:  # 블록 밖에서만 처리
                 # 변수 선언 처리
                 var_type, var_name = declare_match.groups()
-                expression = line.split('=')[1].strip(';').strip()
-                # 선언된 로컬 변수와 자료형을 추적
-                local_vars[var_name] = var_type
-                # 표현식에서 사용된 변수를 추적 (파라미터로 넘길 변수들)
-                used_vars = [var for var in local_vars if var in expression] + [pname for _, pname in param_list if pname in expression]
-                # 중복된 매개변수를 제거
-                used_vars = list(dict.fromkeys(used_vars))
-                # 새로운 함수 이름 생성
-                function_name = self.__generate_random_string()
-                # 동적으로 추적한 변수의 자료형을 매개변수로 할당
-                new_function = f"public {'static ' if is_static else ''}{var_type} {function_name}({', '.join([f'{local_vars[var]} {var}' for var in used_vars if var in local_vars] + [f'{ptype} {pname}' for ptype, pname in param_list if pname in used_vars])}) {{\n    {var_type} {var_name} = {expression};\n    return {var_name};\n}}\n"
-                extracted_functions.append(new_function)
-                # 기존 라인에서 변수 선언을 함수 호출로 변경 (자료형 포함)
-                modified_line = f"{var_type} {var_name} = {function_name}({', '.join(used_vars)});"
-                modified_body.append(modified_line)
-            elif update_match:  # 블록 안에서도 변수 업데이트 처리
+                if var_type in checked_exception_classes:
+                    modified_body.append(line + ';')
+                    pass
+                else:
+                    expression = line.split('=')[1].strip(';').strip()
+                    # 선언된 로컬 변수와 자료형을 추적
+                    local_vars[var_name] = var_type
+                    # 표현식에서 사용된 변수를 추적 (파라미터로 넘길 변수들)
+                    used_vars = [var for var in local_vars if var in expression] + [pname for _, pname in param_list if pname in expression]
+                    # 중복된 매개변수를 제거
+                    if var_name in used_vars:
+                        used_vars.remove(var_name)
+                    used_vars = list(dict.fromkeys(used_vars))
+                    # 새로운 함수 이름 생성
+                    function_name = self.__generate_random_string()
+                    # 동적으로 추적한 변수의 자료형을 매개변수로 할당
+                    new_function = f"public {'static ' if is_static else ''}{var_type} {function_name}({', '.join([f'{local_vars[var]} {var}' for var in used_vars if var in local_vars] + [f'{ptype} {pname}' for ptype, pname in param_list if pname in used_vars])}) {{\n    {var_type} {var_name} = {expression};\n    return {var_name};\n}}\n"
+                    extracted_functions.append(new_function)
+                    # 기존 라인에서 변수 선언을 함수 호출로 변경 (자료형 포함)
+                    modified_line = f"{var_type} {var_name} = {function_name}({', '.join(used_vars)});"
+                    modified_body.append(modified_line)
+            elif update_match and not '{' in line :  # 블록 안에서도 변수 업데이트 처리
                 # 변수 업데이트 처리
                 var_name, expression = update_match.groups()
                 # 표현식에서 사용된 변수를 추적 (파라미터로 넘길 변수들)
@@ -157,8 +222,11 @@ class MethodSplit:
                 modified_body.append(modified_line)
             else:
                 # 기존의 세미콜론을 붙여주는 방식으로 처리
-                if '{' in line or '}' in line :
-                    modified_body.append(line)
+                if ('{' in line or '}' in line or ':' in line) and not line.strip().startswith('throw'):
+                    if 'println' in line:
+                        modified_body.append(line + ';')
+                    else:
+                        modified_body.append(line)
                 else:
                     modified_body.append(line + ';')
         # 기존 메서드에 수정된 본문 적용 (맨 마지막 중괄호는 지움)
