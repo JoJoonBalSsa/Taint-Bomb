@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>io.namaek2.plugins</id>
     <name>Taint Bomb auto Java Obfuscator</name>
-    <vendor>조준발싸!(JoJoonBalSsa)</vendor>
+    <vendor>조준발싸!(JoJoonBalSsa!)</vendor>
 
     <depends>com.intellij.modules.platform</depends>
 
