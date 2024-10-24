@@ -12,11 +12,9 @@
   <img alt="JetBrains Plugin Downloads" src="https://img.shields.io/jetbrains/plugin/d/25629" width="100px">
   <img alt="JetBrains Plugin Rating" src="https://img.shields.io/jetbrains/plugin/r/rating/25629" width="90px">
 </div>
-<div style="text-align: center">
-  <a href="https://plugins.jetbrains.com/plugin/25629-taint-bomb-auto-java-obfuscator">
-    <div><img alt="Get from marketplace" src=".././docs/getFromMarketplace.png" width="500px"></div>
-  </a>
-</div>
+
+[![Get from Marketplace](./getFromMarketplace.png)](https://plugins.jetbrains.com/plugin/25629-taint-bomb-auto-java-obfuscator)
+
 
 
 <!-- Plugin description -->
@@ -27,13 +25,13 @@ If you want to report a bug or request a feature, please feel free to leave an [
 
 Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플러그인입니다. 가볍지만 강력한 난독화 기능을 지원하며, Taint 분석을 통해 코드의 민감도를 식별하고 그 결과에 기반한 차등적 난독화를 수행합니다.
 버그나 기능 추가를 원하신다면 [이슈](https://github.com/JoJoonBalSsa/Taint-Bomb/issues)를 남겨주세요.
-  <!-- Plugin description end -->
+<!-- Plugin description end -->
 
 
 
 
 <div style="text-align: center">
-  <a href="/docs/README-eng.md">
+  <a href="../README.md">
     <div style="font-size:130%">🇰🇷 한글 문서</div>
   </a>
 </div>
