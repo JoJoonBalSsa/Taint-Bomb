@@ -13,8 +13,11 @@
   <img alt="JetBrains Plugin Rating" src="https://img.shields.io/jetbrains/plugin/r/rating/25629" width="90px">
 </div>
 
-[![Get from Marketplace](./docs/getFromMarketplace.png)](https://plugins.jetbrains.com/plugin/25629-taint-bomb-auto-java-obfuscator)
-
+<div style="text-align: center">
+  <a href="https://plugins.jetbrains.com/plugin/25629-taint-bomb-auto-java-obfuscator">
+    <div><img alt="Get from marketplace" src="./docs/getFromMarketplace.png" width="500px"></div>
+  </a>
+</div>
 
 <!-- Plugin description -->
   Taint Bomb is a one click auto Java obfuscator IntelliJ plugin, with light but strong obfuscate feature. It analysis project's source codes with Taint Analysis and set obfuscate level by defined sensitivity.
