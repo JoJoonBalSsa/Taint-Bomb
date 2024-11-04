@@ -42,8 +42,6 @@ class ob_identifier:
 
 
     def generate_obfuscated_name(self, name, length=8):
-        """난독화된 이름을 생성합니다."""
-
         if (name not in self.identifier_map) and (name not in self.not_ob_list):
             obfuscated_name = None
             ran = self.ran
@@ -84,14 +82,12 @@ class ob_identifier:
                 source_code = file.read()
 
             try:
-                # 자바 소스코드를 파싱하여 AST 추출
                 tree = javalang.parse.parse(source_code)
             except SyntaxError as e:  # 문법 오류는 파이썬의 SyntaxError로 처리
                 print(f"Syntax error in file {file_path}: {e}")
             except javalang.parser.JavaSyntaxError as e:
                 print(f"Java syntax error in file {file_path}: {e}")
 
-            # AST에서 식별자 수집 및 난독화 맵 구축
             self.collect_identifiers_from_ast(tree, file_path)
 
 
@@ -111,6 +107,7 @@ class ob_identifier:
                     curr_class = node.name
                     self.not_ob_list.append(node.name)
                     self.identifier_map.pop(node.name, None)
+                    self.class_list.append(node.name)
 
                     # if is_external:
                     #     self.not_ob_list.append(node.name)
@@ -159,7 +156,6 @@ class ob_identifier:
 
 
     def apply_obfuscation_to_files(self):
-        """난독화된 맵을 사용하여 각 파일을 다시 처리하고 난독화된 파일로 저장합니다."""
 
         # 외부 클래스가 리턴값인 함수 식별자 확인
         # self.return_type 을 통해 내부 클래스가 리턴값이 아닌 함수들을 self.imp_var_list에 추가
@@ -463,6 +459,8 @@ class ob_identifier:
                 if match:
                     for var_type, var_name in match:
                         if (var_type in external_class) or ("<" in var_type) or var_type not in self.class_list:
+                            print(var_name)
+                            print(line)
                             self.imp_var_list.append(var_name)
 
 
