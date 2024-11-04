@@ -459,8 +459,6 @@ class ob_identifier:
                 if match:
                     for var_type, var_name in match:
                         if (var_type in external_class) or ("<" in var_type) or var_type not in self.class_list:
-                            print(var_name)
-                            print(line)
                             self.imp_var_list.append(var_name)
 
 
