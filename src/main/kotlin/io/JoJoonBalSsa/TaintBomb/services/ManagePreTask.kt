@@ -212,12 +212,31 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
     }
 
     private fun copyScript(scriptName : String) {
-        val scriptStream = javaClass.getResourceAsStream("/pyscripts/$scriptName.py")
+        // Try different possible paths for the script
+        val possiblePaths = listOf(
+            "/pyscripts/$scriptName.py",
+            "/pyscripts/analysis/core/$scriptName.py",
+            "/pyscripts/analysis/data/$scriptName.py",
+            "/pyscripts/analysis/utils/$scriptName.py",
+            "/pyscripts/analysis/reporting/$scriptName.py"
+        )
+
+        var scriptStream: InputStream? = null
+        var foundPath: String? = null
+
+        for (path in possiblePaths) {
+            scriptStream = javaClass.getResourceAsStream(path)
+            if (scriptStream != null) {
+                foundPath = path
+                break
+            }
+        }
+
         val scriptContent = scriptStream?.bufferedReader()?.use { it.readText() }
-            ?: throw IllegalArgumentException("Script not found: $scriptName")
+            ?: throw IllegalArgumentException("Script not found: $scriptName (tried paths: ${possiblePaths.joinToString(", ")})")
 
         val scriptFile = File(tempFolder, "$scriptName.py").apply { createNewFile() }.toPath()
-        MyConsoleLogger.logPrint(scriptFile.toString())
+        MyConsoleLogger.logPrint("$scriptFile (from $foundPath)")
 
         scriptContent.toByteArray().let { Files.write(scriptFile, it, StandardOpenOption.WRITE) }
         MyConsoleLogger.logPrint("$scriptName created successfully")

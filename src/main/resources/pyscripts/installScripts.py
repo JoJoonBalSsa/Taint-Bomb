@@ -15,3 +15,4 @@ def install(package):
 if __name__ == '__main__':
     install('pycryptodome')
     install('javalang')
+    install('anthropic')

@@ -8,10 +8,15 @@ import json
 
 
 class LevelObfuscation:
-    def __init__(self, output_folder):
+    def __init__(self, output_folder, operator_obf="True", method_obf="True", dummy_obf="True"):
         tainted_json = self.parse_json(output_folder + '/analysis_result.json')
         if tainted_json is None:
             return
+
+        # 문자열을 boolean으로 변환
+        self.operator_obf = operator_obf.lower() == "true"
+        self.method_obf = method_obf.lower() == "true"
+        self.dummy_obf = dummy_obf.lower() == "true"
 
         self.check_level(tainted_json)
 
@@ -32,62 +37,79 @@ class LevelObfuscation:
                 continue
 
             if item["sensitivity"] == 3:
-                ddb = DumbDB()
-                for tainted in item["tainted"]:
-                    # 연산자 난독화
-                    print("operation obfuscation started...")
-                    O = ObfuscateOperations(tainted)
-                    obfuscated_code = O.return_obfuscated_code()
+                self._process_level3_obfuscation(item)
+            elif item["sensitivity"] == 2:
+                self._process_level2_obfuscation(item)
 
-                    print("function spliting... ", )
-                    if obfuscated_code is None:
-                        obfuscated_code = tainted["source_code"]
+    def _process_level3_obfuscation(self, item):
+        """Level 3: 연산자 난독화, 메소드 분할, 더미 코드 삽입"""
+        ddb = DumbDB() if self.dummy_obf else None
 
-                    # 메소드 분할
-                    O = MethodSplit(obfuscated_code)
-                    temp_ob = O.get_new_method()
+        for tainted in item["tainted"]:
+            obfuscated_code = tainted["source_code"]
 
-                    if temp_ob is not None:
-                        obfuscated_code = temp_ob
-                    # 더미 코드 추가
-                    rand = ddb.get_unique_random_number()
+            # 연산자 난독화
+            if self.operator_obf:
+                print("operation obfuscation started...")
+                obfuscated_code = self._apply_operator_obfuscation(obfuscated_code, tainted)
 
-                    if rand is not None:
-                        if obfuscated_code is None:
-                            obfuscated_code = tainted["source_code"]
+            # 메소드 분할
+            if self.method_obf:
+                print("function spliting...")
+                obfuscated_code = self._apply_method_split(obfuscated_code)
 
-                            print("dummy code insertion started...")
-                            dummy_code = ddb.get_dumb(rand)
-                            idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
-                            obfuscated_code = idc.get_obfuscated_code()
+            # 더미 코드 추가
+            if self.dummy_obf:
+                obfuscated_code = self._apply_dummy_code(obfuscated_code, ddb)
 
-                        else:
-                            print("dummy code insertion started...")
-                            dummy_code = ddb.get_dumb(rand)
-                            idc = InsertDummyCode(obfuscated_code, dummy_code, rand)
-                            temp_ob = idc.get_obfuscated_code()
-                            if temp_ob is not None:
-                                obfuscated_code = temp_ob
+            # 난독화가 실제로 적용된 경우에만 파일 업데이트
+            if obfuscated_code != tainted["source_code"]:
+                ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
 
-                    else:
-                        continue
+    def _process_level2_obfuscation(self, item):
+        """Level 2: 연산자 난독화만 수행"""
+        if not self.operator_obf:
+            return
 
-                    if obfuscated_code is not None:
-                        ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+        for tainted in item["tainted"]:
+            print("operation obfuscation started...")
+            obfuscated_code = self._apply_operator_obfuscation(
+                tainted["source_code"],
+                tainted
+            )
 
-            if item["sensitivity"] == 2:
-                for tainted in item["tainted"]:
-                    #print(f"\n{tainted["method_name"]} level obfuscation")
-                    print("operation obfuscation started...")
-                    O = ObfuscateOperations(tainted)
+            if obfuscated_code is not None:
+                ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
 
-                    obfuscated_code = O.return_obfuscated_code()
+    def _apply_operator_obfuscation(self, source_code, tainted):
+        """연산자 난독화 적용"""
+        O = ObfuscateOperations(tainted)
+        obfuscated_code = O.return_obfuscated_code()
+        return obfuscated_code if obfuscated_code is not None else source_code
 
-                    if obfuscated_code is not None:
-                        ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+    def _apply_method_split(self, code):
+        """메소드 분할 적용"""
+        O = MethodSplit(code)
+        temp_ob = O.get_new_method()
+        return temp_ob if temp_ob is not None else code
+
+    def _apply_dummy_code(self, code, ddb):
+        """더미 코드 삽입 적용"""
+        if ddb is None:
+            return code
+
+        rand = ddb.get_unique_random_number()
+        if rand is None:
+            return code
+
+        print("dummy code insertion started...")
+        dummy_code = ddb.get_dumb(rand)
+        idc = InsertDummyCode(code, dummy_code, rand)
+        temp_ob = idc.get_obfuscated_code()
+        return temp_ob if temp_ob is not None else code
 
 
 if __name__ == '__main__':
     import sys
 
-    LevelObfuscation(sys.argv[1])
+    LevelObfuscation(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

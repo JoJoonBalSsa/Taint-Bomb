@@ -23,15 +23,16 @@ class TasksManager(private val project : Project, private val javaFilesPath: Str
         ManageObfuscate(javaFilesPath, outFolder, tempFolder, manageHash, venvPath, preTask.getOS(), indicator)
         manageBuild.runBuildManager(0.8, buildManager)
 
-        openFileInEditorAsync(project, outFolder)
+        openFileInEditorAsync(project, outFolder, "/analysis_result.md")
+        openFileInEditorAsync(project, outFolder, "/llm_analysis_result.md")
 
         indicator.text = "Deleting temp directory..."
         preTask.deleteDirectory(File(tempFolder), 0.95)
     }
 
-    fun openFileInEditorAsync(project: Project, outFolder: String) {
+    fun openFileInEditorAsync(project: Project, outFolder: String, fileName: String) {
         ApplicationManager.getApplication().invokeLater {
-            val filePath = "$outFolder/analysis_result.md"
+            val filePath = "$outFolder$fileName"
 
             var file = LocalFileSystem.getInstance().findFileByPath(filePath)
 

@@ -3,6 +3,8 @@ package io.JoJoonBalSsa.TaintBomb.services
 import com.intellij.openapi.progress.ProgressIndicator
 import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleLogger
 import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleViewer
+import io.JoJoonBalSsa.TaintBomb.settings.TaintBombSettings
+import kotlinx.html.B
 import java.io.*
 import java.util.concurrent.TimeUnit
 
@@ -11,203 +13,265 @@ class ManageObfuscate(
     private var outputFolder: String,
     private var tempFolder: String,
     manageHash: ManageHash,
-    venvPath: String,
-    osName: String,
+    private val venvPath: String,
+    private val osName: String,
     private val indicator: ProgressIndicator
 ) {
+    private val settings = TaintBombSettings.getInstance()
+
+    companion object {
+        private const val OUTPUT_THREAD_TIMEOUT_MS = 5000L
+        private const val OUTPUT_THREAD_INTERRUPT_WAIT_MS = 1000L
+        private const val MAIN_SCRIPT_TIMEOUT_SECONDS = 60L
+        private const val STEP_SIZE = 0.08
+    }
+
     init {
         indicator.text = "Checking Java code syntax..."
         manageHash.compareFileHashes(0.25)
-        initCheckJavaSyntax(venvPath, javaFilesPath, 0.3)
-
-        executePythonScript(venvPath, osName)
+        checkJavaSyntax(0.3)
+        executePythonScript()
     }
 
     private fun readJavaCode(path: String): String {
-        val scriptStream = javaClass.getResourceAsStream("/java/" + path)
-        val javaCode = scriptStream?.bufferedReader()?.use { it.readText() }
+        return javaClass.getResourceAsStream("/java/$path")
+            ?.bufferedReader()
+            ?.use { it.readText() }
             ?: throw IllegalArgumentException("Script not found: $path")
-
-        return javaCode
     }
 
-    private fun executePythonScript(venvPath : String, osName : String) {
-        indicator.text = "Removing comments..."
-        MyConsoleViewer.println("Removing comments...")
-        runPythonScript(venvPath, "removeComments", outputFolder, 0.35)
-        //checkJavaSyntax(venvPath, outputFolder, 0.4)
+    private fun executePythonScript() {
+        var currentFraction = 0.35
 
-        indicator.text = "Encrypting strings..."
-        MyConsoleViewer.println("Encrypting strings...")
-        runStringObfuscate(venvPath, "stringObfuscate", outputFolder, osName, 0.45)
-        //checkJavaSyntax(venvPath, outputFolder, 0.5)
+        executeOptionalScript(
+            enabled = true, //settings.enableRemoveComments,
+            scriptName = "removeComments",
+            displayText = "Removing comments",
+            disabledMessage = "remove comments",
+            currentFraction = currentFraction
+        )
+        currentFraction += STEP_SIZE
+
+        if (settings.enableStringEncryption) {
+            indicator.text = "Encrypting strings..."
+            logAndPrint("Encrypting strings...")
+            runStringObfuscate(currentFraction)
+            currentFraction += STEP_SIZE
+        } else {
+            logSkipped("string obfuscation")
+        }
 
         indicator.text = "Analysing code..."
-        MyConsoleViewer.println("Analysing code...")
-        runPythonScript(venvPath, "main", outputFolder, 0.55)
+        logAndPrint("Analysing code...")
+        runAnalysisObfuscate(currentFraction)
+        currentFraction += STEP_SIZE
 
-        indicator.text = "Level obfuscation activated..."
-        MyConsoleViewer.println("Level obfuscation activated...")
-        runPythonScript(venvPath, "levelObfuscate", outputFolder, 0.65)
-        // checkJavaSyntax(venvPath, outputFolder, 0.7)
+        indicator.text = "Running differential obfuscating..."
+        logAndPrint("Running differential obfuscating...")
+        runLevelObfuscate(currentFraction)
+        currentFraction += STEP_SIZE
 
-        indicator.text = "Identifier obfuscating..."
-        MyConsoleViewer.println("Identifier obfuscating...")
-        runPythonScript(venvPath, "identifierObfuscate", outputFolder, 0.75)
-        //checkJavaSyntax(venvPath, outputFolder, 0.8)
+        executeOptionalScript(
+            enabled = settings.enableIdentifierObfuscation,
+            scriptName = "identifierObfuscate",
+            displayText = "Identifier obfuscating",
+            disabledMessage = "identifier obfuscation",
+            currentFraction = currentFraction
+        )
     }
 
-    private fun checkJavaSyntax(venvPath:String, javaFilesPath: String, fractionValue: Double) {
-        indicator.fraction = fractionValue
-
-        val exitCode = runScript(venvPath, "checkJavaSyntax", javaFilesPath)
-
-        if (exitCode != 0) {
-            MyConsoleViewer.println("ObfuscationSyntaxError.")
-            MyConsoleLogger.logPrint("obfuscation syntax error occurred.")
-            throw IOException("obfuscation syntax error occurred.")
+    private fun executeOptionalScript(
+        enabled: Boolean,
+        scriptName: String,
+        displayText: String,
+        disabledMessage: String,
+        currentFraction: Double
+    ) {
+        if (enabled) {
+            indicator.text = "$displayText..."
+            logAndPrint("$displayText...")
+            runPythonScript(scriptName, currentFraction)
+        } else {
+            logSkipped(disabledMessage)
         }
     }
 
-    private fun initCheckJavaSyntax(venvPath:String, javaFilesPath: String, fractionValue: Double) {
+    private fun checkJavaSyntax(fractionValue: Double) {
         indicator.fraction = fractionValue
-
-        val exitCode = runScript(venvPath, "checkJavaSyntax", javaFilesPath)
+        val exitCode = runScript("checkJavaSyntax", javaFilesPath)
 
         if (exitCode == 0) {
-            MyConsoleViewer.println("This code is supported")
-            MyConsoleLogger.logPrint("This code is supported")
+            logAndPrint("This code is supported")
         } else {
-            MyConsoleViewer.println("JavaSyntaxError.")
-            MyConsoleViewer.println("\n!!!!!!   CODE SYNTAX IS NOT SUPPORTED   !!!!!!")
-            MyConsoleViewer.println("The code must be based on the Java language spec available at : ")
-            MyConsoleViewer.println("http://docs.oracle.com/javase/specs/jls/se8/html/.")
-            MyConsoleViewer.println("\nthe process will be continued but it might be go wrong\n")
-
+            MyConsoleViewer.apply {
+                println("JavaSyntaxError.")
+                println("\n!!!!!!   CODE SYNTAX IS NOT SUPPORTED   !!!!!!")
+                println("The code must be based on the Java language spec available at : ")
+                println("http://docs.oracle.com/javase/specs/jls/se8/html/.")
+                println("\nthe process will be continued but it might be go wrong\n")
+            }
             MyConsoleLogger.logPrint("java syntax error occurred.")
         }
     }
 
-    private fun runStringObfuscate(
-        venvPath: String,
-        scriptName: String,
-        outFolder: String,
-        osName: String,
-        fractionValue: Double
-    ) : Int{
+    private fun runStringObfuscate(fractionValue: Double) {
         indicator.fraction = fractionValue
 
-        try{
+        try {
             val stringDecryptJava = readJavaCode("stringDecrypt$osName.java")
             val keyDecryptJava = readJavaCode("keyDecrypt$osName.java")
 
-            val installScript = "$tempFolder/$scriptName.py"
-            val pythonProcess = ProcessBuilder(venvPath, "-u", installScript, outFolder, keyDecryptJava, stringDecryptJava)
-                .redirectErrorStream(true)
-                .start()
-            val reader = BufferedReader(InputStreamReader(pythonProcess.inputStream))
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                MyConsoleLogger.logPrint("$scriptName output: $line")
-            }
+            val scriptPath = "$tempFolder/stringObfuscate.py"
+            val args = listOf(venvPath, "-u", scriptPath, outputFolder, keyDecryptJava, stringDecryptJava)
 
-            return pythonProcess.waitFor()
+            executeProcess(args, "stringObfuscate", timeout = null)
         } catch (e: InterruptedException) {
-            MyConsoleViewer.println("Canceled by user")
-            MyConsoleLogger.logPrint("Canceled by user")
+            logAndPrint("Canceled by user")
             throw e
         } catch (e: IOException) {
-            MyConsoleViewer.println("An error occurred: ${e.message}")
-            MyConsoleLogger.logPrint("An error occurred: ${e.message}")
+            logAndPrint("An error occurred: ${e.message}")
             throw e
         }
     }
 
-    private fun runPythonScript(venvPath: String, scriptName: String, outFolder: String, fractionValue: Double) {
+    private fun runAnalysisObfuscate(fractionValue: Double) {
         indicator.fraction = fractionValue
-        runScript(venvPath, scriptName, outFolder)
-        return
+        val timeout = MAIN_SCRIPT_TIMEOUT_SECONDS
+
+        try {
+            val scriptPath = "$tempFolder/main.py"
+            val args = listOf(venvPath, "-u", scriptPath, outputFolder, settings.apiKey, settings.enableOperatorObfuscation.toString(), settings.enableMethodSplitting.toString(), settings.enableInsertDummyCode.toString())
+
+            executeProcess(args, "main", timeout = null)
+        } catch (e: InterruptedException) {
+            logAndPrint("Canceled by user")
+            throw e
+        } catch (e: IOException) {
+            logAndPrint("An error occurred: ${e.message}")
+            throw e
+        }
     }
 
-    private fun runScript(venvPath: String, scriptName: String, outFolder: String) : Int{
-        val installScript = "$tempFolder/$scriptName.py"
-        val pythonProcess = ProcessBuilder(venvPath, "-u", installScript, outFolder)
+    private fun runLevelObfuscate(fractionValue: Double) {
+        indicator.fraction = fractionValue
+
+        try {
+            val scriptPath = "$tempFolder/levelObfuscate.py"
+            val args = listOf(venvPath, "-u", scriptPath, outputFolder, settings.enableOperatorObfuscation.toString(), settings.enableMethodSplitting.toString(), settings.enableInsertDummyCode.toString())
+
+            executeProcess(args, "levelObfuscate.py", timeout = null)
+        } catch (e: InterruptedException) {
+            logAndPrint("Canceled by user")
+            throw e
+        } catch (e: IOException) {
+            logAndPrint("An error occurred: ${e.message}")
+            throw e
+        }
+    }
+
+    private fun runPythonScript(scriptName: String, fractionValue: Double) {
+        indicator.fraction = fractionValue
+        runScript(scriptName, outputFolder)
+    }
+
+    private fun runScript(scriptName: String, outFolder: String): Int {
+        val scriptPath = "$tempFolder/$scriptName.py"
+        val args = buildScriptArgs(scriptPath, outFolder, scriptName)
+        val timeout = if (scriptName == "main") MAIN_SCRIPT_TIMEOUT_SECONDS else null
+
+        return executeProcess(args, scriptName, timeout)
+    }
+
+    private fun buildScriptArgs(scriptPath: String, outFolder: String, scriptName: String): List<String> {
+        return listOf(venvPath, "-u", scriptPath, outFolder)
+    }
+
+    private fun executeProcess(
+        args: List<String>,
+        scriptName: String,
+        timeout: Long?
+    ): Int {
+        val process = ProcessBuilder(args)
             .redirectErrorStream(true)
             .start()
 
-        val outputThread = Thread {
+        val outputThread = createOutputReaderThread(process, scriptName)
+        outputThread.start()
+
+        return try {
+            val exitCode = waitForProcess(process, timeout, scriptName)
+            waitForOutputThread(outputThread)
+            exitCode
+        } catch (e: InterruptedException) {
+            handleProcessInterruption(process, outputThread, "Canceled by user")
+            -1
+        } catch (e: IOException) {
+            handleProcessInterruption(process, outputThread, "An error occurred: ${e.message}")
+            -1
+        }
+    }
+
+    private fun createOutputReaderThread(process: Process, scriptName: String): Thread {
+        return Thread {
             try {
-                val reader = BufferedReader(InputStreamReader(pythonProcess.inputStream))
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    MyConsoleLogger.logPrint("$scriptName output: $line")
+                BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                    reader.lineSequence().forEach { line ->
+                        MyConsoleLogger.logPrint("$scriptName output: $line")
+                    }
                 }
             } catch (e: IOException) {
                 MyConsoleLogger.logPrint("Error reading output from $scriptName: ${e.message}")
             }
         }
+    }
 
-        outputThread.start()
-
-        if (scriptName == "main") {
-            var completed = false
-            try {
-                completed = pythonProcess.waitFor(60, TimeUnit.SECONDS)
-            } catch (e: InterruptedException) {
-                MyConsoleViewer.println("Canceled by user")
-                MyConsoleLogger.logPrint("Canceled by user")
-                pythonProcess.destroy()
-                outputThread.interrupt()
-                return -1
-            } catch (e: IOException) {
-                MyConsoleViewer.println("An error occurred: ${e.message}")
-                MyConsoleLogger.logPrint("An error occurred: ${e.message}")
-                pythonProcess.destroy()
-                outputThread.interrupt()
-                return -1
-            }
-
+    private fun waitForProcess(process: Process, timeout: Long?, scriptName: String): Int {
+        return if (timeout != null) {
+            val completed = process.waitFor(timeout, TimeUnit.SECONDS)
             if (!completed) {
-                pythonProcess.destroy()
-                if (pythonProcess.isAlive) {
-                    pythonProcess.destroyForcibly()
+                process.destroy()
+                if (process.isAlive) {
+                    process.destroyForcibly()
                 }
                 MyConsoleLogger.logPrint("$scriptName execution timed out.")
-                outputThread.interrupt()
                 return -1
             }
+            process.exitValue()
         } else {
-            try {
-                pythonProcess.waitFor()
-            } catch (e: InterruptedException) {
-                MyConsoleViewer.println("Canceled by user")
-                MyConsoleLogger.logPrint("Canceled by user")
-                pythonProcess.destroy()
-                outputThread.interrupt()
-                return -1
-            } catch (e: IOException) {
-                MyConsoleViewer.println("An error occurred: ${e.message}")
-                MyConsoleLogger.logPrint("An error occurred: ${e.message}")
-                pythonProcess.destroy()
-                outputThread.interrupt()
-                return -1
-            }
+            process.waitFor()
+            process.exitValue()
         }
+    }
 
-        // 프로세스 종료 후 outputThread를 최대 5초 동안 대기
+    private fun waitForOutputThread(thread: Thread) {
         try {
-            outputThread.join(5000) // 5초 동안 스레드 종료 대기
-            if (outputThread.isAlive) {
-                MyConsoleLogger.logPrint("Output thread is still running after 5 seconds. Interrupting...")
-                outputThread.interrupt()
-                outputThread.join(1000) // 인터럽트 후 1초 더 대기
-                if (outputThread.isAlive) {
+            thread.join(OUTPUT_THREAD_TIMEOUT_MS)
+            if (thread.isAlive) {
+                MyConsoleLogger.logPrint("Output thread is still running after ${OUTPUT_THREAD_TIMEOUT_MS}ms. Interrupting...")
+                thread.interrupt()
+                thread.join(OUTPUT_THREAD_INTERRUPT_WAIT_MS)
+                if (thread.isAlive) {
                     MyConsoleLogger.logPrint("Output thread could not be interrupted. It may be blocked.")
                 }
             }
         } catch (e: InterruptedException) {
             MyConsoleLogger.logPrint("Interrupted while waiting for output thread to finish: ${e.message}")
         }
-        return pythonProcess.exitValue()
+    }
+
+    private fun handleProcessInterruption(process: Process, outputThread: Thread, message: String) {
+        logAndPrint(message)
+        process.destroy()
+        outputThread.interrupt()
+    }
+
+    private fun logAndPrint(message: String) {
+        MyConsoleViewer.println(message)
+        MyConsoleLogger.logPrint(message)
+    }
+
+    private fun logSkipped(feature: String) {
+        MyConsoleViewer.println("Skipping $feature (disabled in configuration)")
+        MyConsoleLogger.logPrint("Skipping $feature - disabled")
     }
 }
