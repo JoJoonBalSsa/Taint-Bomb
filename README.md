@@ -3,7 +3,7 @@
 ---
 
 
-<div style="text-align: center;"><img src="../.idea/icon.png" width="600px" height="600px" alt="Taint Bomb logo"></div>
+<div style="text-align: center;"><img src=".idea/icon.png" width="600px" height="600px" alt="Taint Bomb logo"></div>
 
 
 ####
@@ -15,7 +15,7 @@
 
 <div style="text-align: center">
   <a href="https://plugins.jetbrains.com/plugin/25629-taint-bomb-auto-java-obfuscator">
-    <div><img alt="Get from marketplace" src="./getFromMarketplace.png" width="500px"></div>
+    <div><img alt="Get from marketplace" src="./docs/getFromMarketplace.png" width="500px"></div>
   </a>
 </div>
 
