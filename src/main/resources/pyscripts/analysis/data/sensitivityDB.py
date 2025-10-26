@@ -234,6 +234,39 @@ class SensitivityDB:
         'getHeapMemoryUsage': 2,
         'getNonHeapMemoryUsage': 2,
         'getThreadCpuTime': 2,
+
+        # Android 네트워크 입력
+        'getStringExtra': 2,
+        'getIntExtra': 2,
+        'getParcelableExtra': 2,
+        'getData': 2,  # Intent
+        'getExtras': 2,
+        'getText': 2,  # EditText
+
+        # SharedPreferences
+        'getString': 3,  # SharedPreferences용
+        'getInt': 3,
+        'getBoolean': 3,
+
+        # ContentProvider
+        'query': 3,
+        'getContentResolver': 2,
+
+        # Bundle
+        'get': 2,
+        'getBundle': 2,
+
+        # HTTP 응답에서 데이터를 읽어오는 함수들
+        'body': 2,      # Response.body() - 응답 본문
+        'string': 2,    # ResponseBody.string() - 응답을 문자열로
+
+        'header': 2,           # Response.header() - 응답 헤더
+        'headers': 2,          # Response.headers()
+        'code': 2,             # Response.code() - 상태 코드
+        'message': 2,          # Response.message()
+        'bytes': 2,            # ResponseBody.bytes()
+        'byteStream': 2,       # ResponseBody.byteStream()
+        'source': 2,           # ResponseBody.source()
     }
 
 
@@ -371,4 +404,35 @@ class SensitivityDB:
 
         # Web Services
         'send': 3,
+
+        # Android UI 출력
+        'setText': 2,  # TextView
+        'setImageBitmap': 2,
+        'setImageResource': 2,
+
+        # Intent 전달
+        'startActivity': 2,
+        'startService': 2,
+        'sendBroadcast': 2,
+
+        # SharedPreferences 저장
+        'putString': 3,
+        'putInt': 3,
+        'apply': 2,
+        'commit': 2,
+
+        # WebView (중요!)
+        'loadUrl': 3,
+        'loadData': 3,
+        'evaluateJavascript': 3,
+
+        # HTTP 요청을 실행하는 함수들
+        'execute': 3,   # Call.execute() - 동기 요청 실행
+        'enqueue': 3,   # Call.enqueue() - 비동기 요청 실행
+
+        'newCall': 3,          # OkHttpClient.newCall()
+        'url': 2,              # Request.Builder.url()
+        'post': 2,             # Request.Builder.post()
+        'put': 2,              # Request.Builder.put()
+        'addHeader': 2,        # Request.Builder.addHeader()
     }
