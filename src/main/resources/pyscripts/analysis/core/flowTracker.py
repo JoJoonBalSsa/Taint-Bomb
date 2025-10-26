@@ -14,15 +14,25 @@ class FlowTracker:
         self.flows = defaultdict(list)
         self.flow = []
         self.sink_check = []
+        self.visited = set()  # 방문한 (class_method, var_name) 조합 추적
 
     def track_all_flows(self, tainted_variables):
         """모든 taint된 변수의 흐름을 추적"""
         for class_method, var, count in tainted_variables:
             self.flow.clear()
+            self.visited.clear()  # 각 변수 추적 시작 전 방문 기록 초기화
             self._track_variable_flow(class_method, var, count)
 
     def _track_variable_flow(self, class_method, var_name, count=0):
         """변수 흐름 추적 (계속 추가 가능)"""
+        # 이미 방문한 조합인지 확인
+        tracking_key = (class_method, var_name)
+        if tracking_key in self.visited:
+            return
+
+        # 방문 표시
+        self.visited.add(tracking_key)
+
         MAX_RECURSION_DEPTH = 20  # 재귀 호출 최대 깊이 설정
 
         # 현재 재귀 깊이를 가져옴
@@ -254,11 +264,15 @@ class FlowTracker:
     def _if_for_statement(self, node, class_method, var_name, count, current_count):
         if isinstance(node.control, javalang.tree.EnhancedForControl):
             EFC = node.control
-            if EFC.iterable.member == var_name:
+
+            # iterable이 TernaryExpression인지 체크
+            if isinstance(EFC.iterable, javalang.tree.TernaryExpression):
+                self._if_ternary(EFC.iterable, class_method, var_name, count, current_count)
+            elif hasattr(EFC.iterable, 'member') and EFC.iterable.member == var_name:
                 for var_decl in EFC.var.declarators:
                     if isinstance(var_decl, javalang.tree.VariableDeclarator) and (count < current_count):
                         var_name_2 = var_decl.name
-                        self._track_variable_flow(class_method, var_name_2, current_count)  # for 문 끝날때 까지만 추적하도록 수정 필요
+                        self._track_variable_flow(class_method, var_name_2, current_count)
 
     def _if_try(self, node, class_method, var_name, count, current_count):
         try:
@@ -318,7 +332,7 @@ class FlowTracker:
         prioritized_flows = []
 
         for (class_method, var), value in self.flows.items():
-            for flow in self.flows[(class_method, var)]:
+            for flow in value:
                 # 흐름에서 첫 번째 항목 (source)와 마지막 항목 (sink)을 가져옴
                 source_full = flow[0]  # 첫 번째 항목의 첫 번째 요소 추출
                 sink_full = flow[-1]  # 마지막 항목의 첫 번째 요소 추출
