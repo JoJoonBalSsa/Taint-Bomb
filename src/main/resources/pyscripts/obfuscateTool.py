@@ -20,7 +20,12 @@ class ObfuscateTool:
 
     def parse_java_files(folder_path):
         java_files = []
-        for root, _, files in os.walk(folder_path):
+        excluded_dirs = {'.gradle', 'build', '.git', '.idea', 'gradle'}  # 제외할 디렉토리
+
+        for root, dirs, files in os.walk(folder_path):
+            # 제외할 디렉토리를 dirs에서 제거 (os.walk가 해당 디렉토리로 진입하지 않음)
+            dirs[:] = [d for d in dirs if d not in excluded_dirs]
+
             for file_name in files:
                 if file_name.endswith('.java'):
                     file_path = os.path.join(root, file_name)
@@ -38,7 +43,11 @@ class ObfuscateTool:
         return java_files
 
     def convert_unicode_literals(folder_path):
-        for root, _, files in os.walk(folder_path):
+        excluded_dirs = {'.gradle', 'build', '.git', '.idea', 'gradle'}  # 제외할 디렉토리
+
+        for root, dirs, files in os.walk(folder_path):
+            # 제외할 디렉토리를 dirs에서 제거
+            dirs[:] = [d for d in dirs if d not in excluded_dirs]
             for file_name in files:
                 if file_name.endswith('.java'):
                     file_path = os.path.join(root, file_name)
