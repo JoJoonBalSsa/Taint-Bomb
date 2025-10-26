@@ -66,11 +66,8 @@ class ManageObfuscate(
         runAnalysisObfuscate(currentFraction)
         currentFraction += STEP_SIZE
 
-        indicator.text = "Running differential obfuscating..."
-        logAndPrint("Running differential obfuscating...")
-        runLevelObfuscate(currentFraction)
-        currentFraction += STEP_SIZE
-
+        // CRITICAL: identifierObfuscate MUST run before levelObfuscate
+        // to ensure method names are obfuscated before code transformation
         executeOptionalScript(
             enabled = settings.enableIdentifierObfuscation,
             scriptName = "identifierObfuscate",
@@ -78,6 +75,12 @@ class ManageObfuscate(
             disabledMessage = "identifier obfuscation",
             currentFraction = currentFraction
         )
+        currentFraction += STEP_SIZE
+
+        indicator.text = "Running differential obfuscating..."
+        logAndPrint("Running differential obfuscating...")
+        runLevelObfuscate(currentFraction)
+        currentFraction += STEP_SIZE
     }
 
     private fun executeOptionalScript(

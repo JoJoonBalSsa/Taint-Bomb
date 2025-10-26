@@ -23,8 +23,17 @@ class MethodSplit:
             param_list = []
             if parameters:
                 for param in parameters.split(','):
-                    param_type, param_name = param.strip().split()
-                    param_list.append((param_type, param_name))
+                    tokens = param.strip().split()
+                    if len(tokens) >= 2:
+                        # 'final String name' 또는 '@NonNull String name' 같은 경우 처리
+                        # 타입은 마지막에서 두 번째, 이름은 마지막
+                        param_type = tokens[-2]
+                        param_name = tokens[-1]
+                        param_list.append((param_type, param_name))
+                    elif len(tokens) == 1:
+                        # 타입만 있고 이름 없음 (잘못된 파라미터, 무시)
+                        continue
+                    # tokens가 비어있으면 무시
 
             start_index = match.end()
             body = ""
@@ -100,8 +109,7 @@ class MethodSplit:
                 new_function = (
                     f"public {'static ' if is_static else ''}{var_type} {function_name}"
                     f"({', '.join(sig_parts)}) {{\n"
-                    f"    {var_type} {var_name} = {expr};\n"
-                    f"    return {var_name};\n"
+                    f"    return {expr};\n"
                     f"}}\n"
                 )
                 extracted_functions.append(new_function)
@@ -147,8 +155,7 @@ class MethodSplit:
                     new_function = (
                         f"public {'static ' if is_static else ''}{target_type} {function_name}"
                         f"({', '.join(sig_parts)}) {{\n"
-                        f"    {var_name} = {expr};\n"
-                        f"    return {var_name};\n"
+                        f"    return {expr};\n"
                         f"}}\n"
                     )
                     extracted_functions.append(new_function)

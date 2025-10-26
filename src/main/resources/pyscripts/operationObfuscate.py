@@ -37,6 +37,11 @@ class ObfuscateOperations:
         self.obfuscation_map = {}  # 난독화된 부분을 임시 저장할 맵
         self.counter = 0  # 난독화 넘버링에 사용
 
+        # 무한 루프 방지를 위한 설정
+        self.MAX_ITERATIONS = 1000  # 최대 반복 횟수
+        self.MAX_RECURSION_DEPTH = 50  # 최대 재귀 깊이
+        self.recursion_depth = 0  # 현재 재귀 깊이
+
         e = ExtractOperations(self.source_code)
 
         expressions = e.expressions
@@ -68,6 +73,13 @@ class ObfuscateOperations:
 
 
     def apply_operator_priority(self, expression):
+        # 재귀 깊이 체크
+        self.recursion_depth += 1
+        if self.recursion_depth > self.MAX_RECURSION_DEPTH:
+            print(f"Warning: Maximum recursion depth ({self.MAX_RECURSION_DEPTH}) reached, returning expression as-is")
+            self.recursion_depth -= 1
+            return expression
+
         # 함수 호출과 일반 괄호를 구분하기 위한 패턴
         function_call_pattern = re.compile(r'\b[\w\.]+\s*\([^()]*\)')
 
@@ -83,12 +95,23 @@ class ObfuscateOperations:
         expression = function_call_pattern.sub(preserve_function_calls, expression)
 
         # 괄호 내부를 재귀적으로 처리 (단, 함수 호출은 제외)
-        while '(' in expression:
+        paren_iterations = 0
+        while '(' in expression and paren_iterations < self.MAX_ITERATIONS:
+            prev_expression = expression
             expression = re.sub(
                 r'\(([^()]+)\)',
                 lambda x: self.apply_operator_priority(x.group(1)),
                 expression
             )
+            paren_iterations += 1
+
+            # 표현식이 변하지 않았다면 더 이상 처리할 수 없음 (무한 루프 방지)
+            if prev_expression == expression:
+                print(f"Warning: Cannot process remaining parentheses in expression, skipping")
+                break
+
+        if paren_iterations >= self.MAX_ITERATIONS:
+            print(f"Warning: Max iterations ({self.MAX_ITERATIONS}) reached in parentheses processing")
 
         # 숫자값 전용 연산자 리스트
         integer_operators = {r'**', r'*', r'/', r'%', r'+', r'-', r'<<', r'>>', r'>>>'}
@@ -102,13 +125,19 @@ class ObfuscateOperations:
             )
             expression = ''.join(expression)
             match = pattern.search(expression)
-            while match:
+            match_iterations = 0
+            prev_match_pos = -1  # 이전 매칭 위치 추적
+
+            while match and match_iterations < self.MAX_ITERATIONS:
+                # 같은 위치를 계속 매칭하는지 체크 (무한 루프 방지)
+                if match.start() == prev_match_pos:
+                    print(f"Warning: Same position matched repeatedly at {prev_match_pos}, breaking loop")
+                    break
+                prev_match_pos = match.start()
+
                 operand1 = match.group(1) if match.group(1) else "q"
                 operator = match.group(2) if match.group(2) else "q"
                 operand2 = match.group(3) if match.group(3) else "q"
-
-                # 디버깅용 출력
-                print(f"Identified operator: {operator} between '{operand1}' and '{operand2}'")
 
                 # == 또는 != 연산자 처리
                 if operator in ['==', '!=']:
@@ -153,14 +182,21 @@ class ObfuscateOperations:
                         + expression[match.end():]
                 )
                 self.counter += 1
+                match_iterations += 1
 
                 # 다음 연산자 처리
                 match = pattern.search(expression)
+
+            if match_iterations >= self.MAX_ITERATIONS:
+                print(f"Warning: Max iterations ({self.MAX_ITERATIONS}) reached for operator pattern: {operator_pattern}")
 
         # 임시로 치환한 함수 호출을 원래대로 복원
         for key, value in self.obfuscation_map.items():
             if key.startswith("__FUNC_CALL_"):
                 expression = expression.replace(key, value)
+
+        # 재귀 깊이 감소
+        self.recursion_depth -= 1
 
         return expression
 
@@ -172,8 +208,6 @@ class ObfuscateOperations:
         result = source_code
 
         for original, obfuscated in zip(original_list, obfuscate_list):
-            print("오리지널:",original)
-            print("난독화: ",obfuscated)
             # 임시 변수 초기화
             temp_result = ""
             index = 0
