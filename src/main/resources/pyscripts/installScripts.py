@@ -16,3 +16,5 @@ if __name__ == '__main__':
     install('pycryptodome')
     install('javalang')
     install('anthropic')
+    install('openai')
+    install('google-genai')
