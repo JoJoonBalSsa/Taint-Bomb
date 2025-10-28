@@ -30,7 +30,7 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 <!-- Plugin description end -->
 
 <div style="text-align: center">
-  <a href="../README-kor.md">
+  <a href="./docs/README-KOR.md">
     <div style="font-size:250%">🇰🇷 한국어 문서</div>
   </a>
 </div>
@@ -44,6 +44,7 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 - Python 3.7 or later
 - IntelliJ 2023.3 or later
 - support Windows, macOS, Linux
+- Support AI API of Claude, Chat GPT and Gemini
 
 ## for Target Project
 
@@ -52,7 +53,7 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 
 - gradle(8 or later) or maven(3.9 or later)
   - When using gradle, the jar property must be defined in build.gradle.
-- usage - checkout caution
+- checkout Caution
 
 # How to use
 
@@ -61,7 +62,7 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 2. Open the target project to obfuscate on IntelliJ, and open Taint Bomb window.
 3. Set obfuscation methods and AI api key(optional) on Configuration tab.
 4. Click Obfuscate button.
-5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file. And also Taint-Analysis result(taint_anlaysis.txt & analysis_result.md) and analysis result by Claude AI
+5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file. And also Taint-Analysis result(taint_anlaysis.txt & analysis_result.md) and analysis result by AI(llm_analysis_result.md).
 
 ## Caution
 
