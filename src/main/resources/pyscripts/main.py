@@ -2,12 +2,8 @@ from taintAnalyzer import TaintAnalysis
 from resultManager import AnalysisResultManager
 from reportGenerator import MakeMD
 from datetime import datetime
+from ai_analysis import send_to_ai
 
-try:
-    from claude_simple import send_to_claude
-    CLAUDE_AVAILABLE = True
-except ImportError:
-    CLAUDE_AVAILABLE = False
 
 def create_result(output_folder, flows):
     path = output_folder + "/taint_result.txt"
@@ -61,13 +57,11 @@ def __analyze_method(output_folder, tainted):
     return json_file_path  # JSON 파일 경로 반환
 
 
-def __run_claude_analysis(priority_flow, output_folder, api_key=None):
+def __run_ai_analysis(priority_flow, output_folder, api_key=None):
     """Claude 분석 실행"""
-    if not CLAUDE_AVAILABLE:
-        return
 
     try:
-        result = send_to_claude(priority_flow, api_key)
+        result = send_to_ai(priority_flow, api_key)
         if result:
             # 결과 저장
             output_file = output_folder + "/llm_analysis_result.md"
@@ -102,7 +96,7 @@ def main(output_folder, api_key=None) :
         json_file_path = __analyze_method(output_folder, tainted)
 
         # Claude 분석 실행
-        __run_claude_analysis(priority_flow, output_folder, api_key)
+        __run_ai_analysis(priority_flow, output_folder, api_key)
 
         make_md = MakeMD(output_folder + "/taint_result.txt", output_folder + "/analysis_result.md", priority_flow)
         make_md.make_md_file()
