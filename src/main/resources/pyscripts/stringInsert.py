@@ -3,11 +3,12 @@ import javalang
 from obfuscateTool import ObfuscateTool
 
 class StringInsert:
-    def __init__(self, Literals, enc_Literals, class_names, foler_path, keyDecryptJava, stringDecryptJava):
+    def __init__(self, Literals, enc_Literals, class_names, foler_path, keyDecryptJava, stringDecryptJava, is_android=False):
         self.Literals = Literals
         self.enc_Literals = enc_Literals
         self.classes = class_names
         self.foler_path = foler_path
+        self.is_android = is_android  # Android 프로젝트 여부
 
         self.str_decrypt = self.classes[0]
         self.key_decrypt = self.classes[1]
@@ -103,12 +104,18 @@ class StringInsert:
 
                     lines.insert(pos,key_decryptor_code)
 
+                    # Android 프로젝트인 경우 기존 java.util.Base64 import 제거
+                    if self.is_android:
+                        lines = [line for line in lines if 'import java.util.Base64;' not in line]
+
+                    # Android 여부에 따라 다른 Base64 import 사용
+                    base64_import = "import android.util.Base64;" if self.is_android else "import java.util.Base64;"
 
                     import_statements = [
                         "import javax.crypto.Cipher;",
                         "import javax.crypto.SecretKey;",
                         "import javax.crypto.spec.SecretKeySpec;",
-                        "import java.util.Base64;",
+                        base64_import,
                         "import java.lang.reflect.Method;"
                         "import java.util.Random;"
                     ]

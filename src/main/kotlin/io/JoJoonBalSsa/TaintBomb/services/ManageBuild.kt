@@ -1,6 +1,7 @@
 package io.JoJoonBalSsa.TaintBomb.services
 
 import com.intellij.openapi.progress.ProgressIndicator
+import io.JoJoonBalSsa.TaintBomb.settings.TaintBombSettings
 import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleLogger
 import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleViewer
 import java.io.*
@@ -8,6 +9,7 @@ import java.util.*
 
 
 class ManageBuild (private val javaFilesPath: String, private var outFolder : String, private val indicator: ProgressIndicator) {
+    private val settings = TaintBombSettings.getInstance()
     fun runBuildManager(fractionValue: Double, buildManager: String) {
         indicator.fraction = fractionValue
 
@@ -82,10 +84,21 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             // 프로세스 빌더를 생성합니다.
             val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
 
+            // Android 프로젝트인지 확인
+            val isAndroid = isAndroidProject()
+            val gradleTask = if (isAndroid) {
+                val variant = settings.androidBuildVariant
+                MyConsoleViewer.println("Android project detected - Building variant: $variant")
+                MyConsoleLogger.logPrint("Android project detected - Building variant: $variant")
+                "assemble$variant"
+            } else {
+                "jar"
+            }
+
             val processBuilder = when {
-                "windows" in osName -> ProcessBuilder("gradle.bat", "jar")
-                "linux" in osName-> ProcessBuilder("gradle", "jar")
-                "mac" in osName -> ProcessBuilder("gradle", "jar")
+                "windows" in osName -> ProcessBuilder("gradle.bat", gradleTask)
+                "linux" in osName-> ProcessBuilder("gradle", gradleTask)
+                "mac" in osName -> ProcessBuilder("gradle", gradleTask)
                 else -> throw IllegalArgumentException("Unsupported OS: $osName")
             }
 
@@ -179,6 +192,38 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
         }
 
         return isMaven
+    }
+
+    private fun isAndroidProject() : Boolean {
+        // AndroidManifest.xml 존재 확인
+        val androidManifest = File(javaFilesPath, "app/src/main/AndroidManifest.xml")
+        if (androidManifest.exists()) {
+            return true
+        }
+
+        // build.gradle 파일에서 android 플러그인 확인
+        val buildGradleFiles = listOf(
+            File(javaFilesPath, "build.gradle"),
+            File(javaFilesPath, "build.gradle.kts"),
+            File(javaFilesPath, "app/build.gradle"),
+            File(javaFilesPath, "app/build.gradle.kts")
+        )
+
+        for (file in buildGradleFiles) {
+            if (file.exists()) {
+                try {
+                    val content = file.readText()
+                    if (content.contains("com.android.application") ||
+                        content.contains("com.android.library")) {
+                        return true
+                    }
+                } catch (e: IOException) {
+                    MyConsoleLogger.logPrint("Error reading build.gradle: ${e.message}")
+                }
+            }
+        }
+
+        return false
     }
 
     private fun findGradleVersion(projectDir: File): String? {

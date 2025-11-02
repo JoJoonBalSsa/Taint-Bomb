@@ -124,6 +124,24 @@ class TaintBombFactory : ToolWindowFactory {
                 })
             }
 
+            val variantLabel = JLabel("Android Build Variant:").apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+            }
+
+            val variantField = JTextField(settings.androidBuildVariant).apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+                maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+                toolTipText = "Enter Android build variant (e.g., Debug, Release)"
+                document.addDocumentListener(object : javax.swing.event.DocumentListener {
+                    override fun insertUpdate(e: javax.swing.event.DocumentEvent) = update()
+                    override fun removeUpdate(e: javax.swing.event.DocumentEvent) = update()
+                    override fun changedUpdate(e: javax.swing.event.DocumentEvent) = update()
+                    private fun update() {
+                        settings.androidBuildVariant = text
+                    }
+                })
+            }
+
             val titleLabel = JBLabel("Obfuscation Features Configuration").apply {
                 alignmentX = Component.CENTER_ALIGNMENT
                 font = font.deriveFont(16f)
@@ -196,6 +214,11 @@ class TaintBombFactory : ToolWindowFactory {
             add(apiKeyLabel)
             add(Box.createVerticalStrut(5))
             add(apiKeyField)
+            add(Box.createVerticalStrut(10))
+
+            add(variantLabel)
+            add(Box.createVerticalStrut(5))
+            add(variantField)
             add(Box.createVerticalStrut(10))
 
             add(Box.createVerticalStrut(15))

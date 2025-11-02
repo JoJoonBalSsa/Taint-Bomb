@@ -121,11 +121,19 @@ class ManageObfuscate(
         indicator.fraction = fractionValue
 
         try {
-            val stringDecryptJava = readJavaCode("stringDecrypt$osName.java")
+            val isAndroid = isAndroidProject()
+
+            // Android 프로젝트인 경우 Android용 Base64를 사용하는 템플릿 선택
+            val stringDecryptJava = if (isAndroid) {
+                readJavaCode("stringDecryptAndroid.java")
+            } else {
+                readJavaCode("stringDecrypt$osName.java")
+            }
             val keyDecryptJava = readJavaCode("keyDecrypt$osName.java")
 
             val scriptPath = "$tempFolder/stringObfuscate.py"
-            val args = listOf(venvPath, "-u", scriptPath, outputFolder, keyDecryptJava, stringDecryptJava)
+            // Android 여부를 Python 스크립트에 전달
+            val args = listOf(venvPath, "-u", scriptPath, outputFolder, keyDecryptJava, stringDecryptJava, isAndroid.toString())
 
             executeProcess(args, "stringObfuscate", timeout = null)
         } catch (e: InterruptedException) {
@@ -276,5 +284,40 @@ class ManageObfuscate(
     private fun logSkipped(feature: String) {
         MyConsoleViewer.println("Skipping $feature (disabled in configuration)")
         MyConsoleLogger.logPrint("Skipping $feature - disabled")
+    }
+
+    /**
+     * Android 프로젝트 여부를 확인합니다.
+     * AndroidManifest.xml 존재 여부 또는 build.gradle 파일 내용을 확인합니다.
+     */
+    private fun isAndroidProject(): Boolean {
+        // AndroidManifest.xml 존재 확인
+        val androidManifest = File(javaFilesPath, "app/src/main/AndroidManifest.xml")
+        if (androidManifest.exists()) {
+            return true
+        }
+
+        // build.gradle 파일에서 Android 플러그인 확인
+        val buildGradleFiles = listOf(
+            File(javaFilesPath, "build.gradle"),
+            File(javaFilesPath, "build.gradle.kts"),
+            File(javaFilesPath, "app/build.gradle"),
+            File(javaFilesPath, "app/build.gradle.kts")
+        )
+
+        for (file in buildGradleFiles) {
+            if (file.exists()) {
+                try {
+                    val content = file.readText()
+                    if (content.contains("com.android.application") ||
+                        content.contains("com.android.library")) {
+                        return true
+                    }
+                } catch (e: IOException) {
+                    MyConsoleLogger.logPrint("Error reading build.gradle: ${e.message}")
+                }
+            }
+        }
+        return false
     }
 }

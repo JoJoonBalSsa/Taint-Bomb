@@ -1,17 +1,50 @@
 import re
+import os
+import json
 
 class ApplyObfuscated:
-    def __init__(self, file_path, method_code, obfuscated_code):
+    def __init__(self, file_path, method_code, obfuscated_code, output_folder=None):
         self.content = re.sub(r'\s+', ' ', method_code.strip())
+        self.file_mapping = {}
 
-        self.content = self.open_file(file_path)
+        # 매핑 파일 로드
+        if output_folder:
+            mapping_file = os.path.join(output_folder, 'identifier_mapping.json')
+            if os.path.exists(mapping_file):
+                with open(mapping_file, 'r', encoding='utf-8') as f:
+                    self.file_mapping = json.load(f)
+
+        # 실제 파일 경로 찾기 (매핑 사용)
+        actual_file_path = self._get_actual_file_path(file_path)
+
+        self.content = self.open_file(actual_file_path)
         self.content = self.replace_method(self.content, method_code, obfuscated_code)
-        self.write_file(file_path, self.content)
+        self.write_file(actual_file_path, self.content)
 
+    def _get_actual_file_path(self, file_path):
+        """매핑을 사용하여 실제 파일 경로 반환"""
+        # 파일 경로 정규화 (백슬래시 → 슬래시)
+        normalized_path = file_path.replace('\\', '/')
+
+        # 매핑에서 찾기
+        if normalized_path in self.file_mapping:
+            return self.file_mapping[normalized_path]
+
+        # 역방향 매핑 확인 (원본 → 난독화)
+        for original, obfuscated in self.file_mapping.items():
+            if original.replace('\\', '/') == normalized_path:
+                return obfuscated
+
+        # 매핑에 없으면 원본 그대로 (파일이 난독화 안 된 경우)
+        return file_path
 
     def open_file(self, file_path):
-        with open(file_path, 'r', encoding='utf-8') as file:
-            return file.read()
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        except FileNotFoundError:
+            print(f"Warning: File not found: {file_path}")
+            raise
 
 
     def write_file(self, file_path, content):

@@ -2,6 +2,7 @@ import os
 import secrets
 import javalang
 import re
+import json
 from typing import Dict, Set, Tuple, Optional
 
 
@@ -174,6 +175,7 @@ class SmartIdentifierObfuscator:
         self.identifier_map = {}  # 난독화 맵
         self.files = []  # 파일 경로
         self.ran = secrets.choice(range(2))  # 난독화 모드
+        self.file_mapping = {}  # 파일명 매핑: {원본경로: 난독화된경로}
 
         # 특수 처리
         self.main_class = None
@@ -717,6 +719,12 @@ class SmartIdentifierObfuscator:
             print(f"  Obfuscating: {os.path.basename(file_path)}")
             self.obfuscate_java_file(file_path)
 
+        # 파일명 매핑을 JSON으로 저장
+        mapping_file = os.path.join(self.output_folder, 'identifier_mapping.json')
+        with open(mapping_file, 'w', encoding='utf-8') as f:
+            json.dump(self.file_mapping, f, indent=2, ensure_ascii=False)
+        print(f"\n[INFO] File mapping saved to: {mapping_file}")
+
     def obfuscate_java_file(self, file_path: str):
         """파일에 난독화 적용 (기존 로직 간소화 버전)"""
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -735,6 +743,9 @@ class SmartIdentifierObfuscator:
             os.path.dirname(relative_path),
             f"{obfuscated_class_name}.java"
         )
+
+        # 파일명 매핑 저장 (원본 → 난독화)
+        self.file_mapping[file_path] = output_path
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         os.remove(file_path)

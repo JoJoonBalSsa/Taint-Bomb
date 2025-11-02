@@ -9,6 +9,7 @@ import json
 
 class LevelObfuscation:
     def __init__(self, output_folder, operator_obf="True", method_obf="True", dummy_obf="True"):
+        self.output_folder = output_folder
         tainted_json = self.parse_json(output_folder + '/analysis_result.json')
         if tainted_json is None:
             return
@@ -64,7 +65,7 @@ class LevelObfuscation:
 
             # 난독화가 실제로 적용된 경우에만 파일 업데이트
             if obfuscated_code != tainted["source_code"]:
-                ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+                ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code, self.output_folder)
 
     def _process_level2_obfuscation(self, item):
         """Level 2: 연산자 난독화만 수행"""
@@ -79,7 +80,7 @@ class LevelObfuscation:
             )
 
             if obfuscated_code is not None:
-                ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+                ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code, self.output_folder)
 
     def _apply_operator_obfuscation(self, source_code, tainted):
         """연산자 난독화 적용"""
