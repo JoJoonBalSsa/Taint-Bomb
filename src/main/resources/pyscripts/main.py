@@ -113,5 +113,5 @@ if __name__ == '__main__':
 
     output_folder = sys.argv[1]
     api_key = sys.argv[2]
-    print("api :", api_key)
+    print("api key set:", bool(api_key))
     main(output_folder, api_key)

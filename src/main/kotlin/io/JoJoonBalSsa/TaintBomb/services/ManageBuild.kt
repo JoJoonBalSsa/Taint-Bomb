@@ -30,7 +30,7 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             val processBuilder = when {
                 "windows" in osName -> {
                     val mavenHome = System.getenv("MAVEN_HOME") ?: System.getenv("M2_HOME")
-                    if (mavenHome != null) {
+                    if (mavenHome == null) {
                         throw IllegalArgumentException("maven ENV error.")
                     }
                     val mvnPath = "$mavenHome\\bin\\mvn.cmd"

@@ -2,8 +2,6 @@ import re
 
 class ApplyObfuscated:
     def __init__(self, file_path, method_code, obfuscated_code):
-        self.content = re.sub(r'\s+', ' ', method_code.strip())
-
         self.content = self.open_file(file_path)
         self.content = self.replace_method(self.content, method_code, obfuscated_code)
         self.write_file(file_path, self.content)

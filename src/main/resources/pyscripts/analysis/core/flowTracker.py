@@ -1,8 +1,10 @@
 import javalang
 import logging
-import inspect
 from collections import defaultdict
 from sensitivityDB import SensitivityDB as S
+
+
+MAX_RECURSION_DEPTH = 20
 
 
 class FlowTracker:
@@ -14,109 +16,111 @@ class FlowTracker:
         self.flows = defaultdict(list)
         self.flow = []
         self.sink_check = []
+        self._recursion_depth = 0
+
+        # 메서드 이름 -> [(class_name, file_path, method_node), ...] 인덱스.
+        # _call2method 가 모든 메서드를 선형 탐색하던 것을 O(1) 사전 조회로 대체한다.
+        self._methods_by_name = defaultdict(list)
+        for (class_name, method_name), nodes in methods.items():
+            for file_path, method_node in nodes:
+                self._methods_by_name[method_name].append((class_name, file_path, method_node))
+
+        # 자주 쓰이는 source/sink dict 를 set 으로 캐싱 (멤버십 검사를 빠르게)
+        self._source_keys = set(S.source_functions.keys())
+        self._sink_keys = set(S.sink_functions.keys())
 
     def track_all_flows(self, tainted_variables):
         """모든 taint된 변수의 흐름을 추적"""
         for class_method, var, count in tainted_variables:
             self.flow.clear()
+            self._recursion_depth = 0
             self._track_variable_flow(class_method, var, count)
 
     def _track_variable_flow(self, class_method, var_name, count=0):
         """변수 흐름 추적 (계속 추가 가능)"""
-        MAX_RECURSION_DEPTH = 20  # 재귀 호출 최대 깊이 설정
-
-        # 현재 재귀 깊이를 가져옴
-        current_recursion_depth = len(inspect.stack())
-
-        # 재귀 깊이가 MAX_RECURSION_DEPTH 이상이면 종료
-        if current_recursion_depth >= MAX_RECURSION_DEPTH:
+        if self._recursion_depth >= MAX_RECURSION_DEPTH:
             return
+        self._recursion_depth += 1
+        try:
+            self.__track_variable_flow_impl(class_method, var_name, count)
+        finally:
+            self._recursion_depth -= 1
 
-        parts = class_method.split('.')
-        class_name = parts[0]
+    def __track_variable_flow_impl(self, class_method, var_name, count):
+        # class_method 는 항상 "Class.method[.suffix...]" 형태이므로 한 번만 분리한다.
+        dot = class_method.find('.')
+        if dot == -1:
+            class_name, method_name = class_method, ""
+        else:
+            class_name = class_method[:dot]
+            rest = class_method[dot + 1:]
+            second_dot = rest.find('.')
+            method_name = rest if second_dot == -1 else rest[:second_dot]
 
-        if parts[1] is None:
-            parts[1] = " "
+        self.flow.append(class_method)
+        method_nodes = self.methods.get((class_name, method_name), ())
 
-        method_name = parts[1]
-        self.flow.append(class_method)  # 흐름 추가
-        method_nodes = self.methods.get((class_name, method_name), [])  # 메서드 단위로 저장해둔 노드로 바로 접근 가능
+        # 자주 쓰이는 노드 타입을 지역 변수로 캐싱하여 attribute lookup 비용을 줄임
+        MI = javalang.tree.MethodInvocation
+        AS = javalang.tree.Assignment
+        LV = javalang.tree.LocalVariableDeclaration
+        FS = javalang.tree.ForStatement
+        TR = javalang.tree.TryResource
+        TE = javalang.tree.TernaryExpression
 
         current_count = 0
-        for file_path, method_node in method_nodes:
-            for path, node in method_node:  # 노드 내부 탐색
+        for _file_path, method_node in method_nodes:
+            for _path, node in method_node:
                 current_count += 1
-
                 if current_count <= count:
                     continue
 
-                # sink 탐색
-                if isinstance(node, javalang.tree.MethodInvocation):
-                    self._if_find_sink(node, class_method, var_name, count, current_count)
+                node_type = type(node)
 
-                # 변수 할당일 때
-                if isinstance(node, javalang.tree.Assignment):
-                    self._if_variable_assignment(node, class_method, var_name, count, current_count)
-
-                # 지역변수 선언일 때
-                elif isinstance(node, javalang.tree.LocalVariableDeclaration):
-                    self._if_local_variable_declaration(node, class_method, var_name, count, current_count)
-
-                # 메서드 호출일 때
-                elif isinstance(node, javalang.tree.MethodInvocation):
+                # MethodInvocation 은 sink 탐색과 호출-연쇄 추적 양쪽 모두에 해당
+                if node_type is MI:
+                    self._if_find_sink(node, class_method, class_name, method_name, var_name)
                     self._if_call_method(node, var_name, count, current_count)
-
-                # for 문일 때
-                elif isinstance(node, javalang.tree.ForStatement):
+                elif node_type is AS:
+                    self._if_variable_assignment(node, class_method, var_name, count, current_count)
+                elif node_type is LV:
+                    self._if_local_variable_declaration(node, class_method, var_name, count, current_count)
+                elif node_type is FS:
                     self._if_for_statement(node, class_method, var_name, count, current_count)
-
-                # try 문일 때
-                elif isinstance(node, javalang.tree.TryResource):
+                elif node_type is TR:
                     self._if_try(node, class_method, var_name, count, current_count)
-
-                # 삼항연산자 일 때
-                elif isinstance(node, javalang.tree.TernaryExpression):
+                elif node_type is TE:
                     self._if_ternary(node, class_method, var_name, count, current_count)
 
         if self.flow:
             self.flow.pop()
 
-    def _if_find_sink(self, node, class_method, var_name, count, current_count):
-        parts = class_method.split('.')
-        class_name = parts[0]
-        method_name = parts[1]
-
-        if current_count <= count:
+    def _if_find_sink(self, node, class_method, class_name, method_name, var_name):
+        # node 는 호출자에서 이미 MethodInvocation 으로 확정.
+        # current_count > count 도 호출자에서 필터링됨.
+        if not node.arguments or node.member not in self._sink_keys:
             return
 
-        if node.member in S.sink_functions.keys() and node.arguments:
-            flow_added = False
+        flow_added = False
+        for arg in node.arguments:
+            if isinstance(arg, javalang.tree.MemberReference):
+                if arg.member == var_name:
+                    flow_added = True
+                    break
+            elif self._judge_binary_operation(arg, False, var_name):
+                flow_added = True
+                break
 
-            for arg in node.arguments:
-                # 인자가 하나일 때
-                if isinstance(arg, javalang.tree.MemberReference):
-                    if arg.member == var_name:
-                        flow_added = True
-                        break
-                # 인자가 피연산자 중 하나일 때
-                else:
-                    flow_added = self._judge_binary_operation(arg, flow_added, var_name)
-                    if flow_added == True:
-                        break
+        if not flow_added:
+            return
 
-            if flow_added:
-                self.flow.append(f"{class_name}.{method_name}.{node.member}")
-                log_message = f".{method_name}.{node.qualifier}.{node.member}"
-                logging.info(log_message)
-                self.sink_check.append(node.member)
-                # 새로운 키를 생성하고, 기존 키가 존재하면 새 키를 사용
-                existing_key = (class_method, var_name)
-                new_key = self._numbering(self.flows, existing_key, node)
-                if new_key not in self.flows:
-                    self.flows[new_key] = []
-                # flows에 flow 복사
-                self.flows[new_key].append(self.flow[:])
-                self.flow.pop()
+        self.flow.append(f"{class_name}.{method_name}.{node.member}")
+        logging.info(f".{method_name}.{node.qualifier}.{node.member}")
+        self.sink_check.append(node.member)
+        existing_key = (class_method, var_name)
+        new_key = self._numbering(self.flows, existing_key, node)
+        self.flows[new_key].append(self.flow[:])
+        self.flow.pop()
 
     def _judge_binary_operation(self, arg, flow_added, var_name):
         try:
@@ -242,14 +246,11 @@ class FlowTracker:
 
     def _call2method(self, node, arg_index):
         invoked_method = node.member
-        for target_class_method, target_method_nodes in self.methods.items():
-            target_class_name, target_method_name = target_class_method
-            if target_method_name == invoked_method:  # 문제: 메서드 이름은 같은데 클래스가 다르다면?
-                for target_file_path, target_method_node in target_method_nodes:
-                    if len(target_method_node.parameters) > arg_index:
-                        new_var_name = target_method_node.parameters[arg_index].name
-                        return f"{target_class_name}.{invoked_method}", new_var_name
-        return "UnknownClass." + invoked_method, None  # 만약 소스코드에 정의되지 않은 함수라면
+        # _methods_by_name 인덱스로 O(1) 조회 (이전: 모든 (class, method) 선형 탐색)
+        for target_class_name, _file_path, target_method_node in self._methods_by_name.get(invoked_method, ()):
+            if len(target_method_node.parameters) > arg_index:
+                return f"{target_class_name}.{invoked_method}", target_method_node.parameters[arg_index].name
+        return "UnknownClass." + invoked_method, None
 
     def _if_for_statement(self, node, class_method, var_name, count, current_count):
         if isinstance(node.control, javalang.tree.EnhancedForControl):
@@ -316,26 +317,14 @@ class FlowTracker:
     def priority_flow(self):
         """민감도에 따른 우선순위 흐름 계산"""
         prioritized_flows = []
+        src_funcs = S.source_functions
+        sink_funcs = S.sink_functions
 
-        for (class_method, var), value in self.flows.items():
-            for flow in self.flows[(class_method, var)]:
-                # 흐름에서 첫 번째 항목 (source)와 마지막 항목 (sink)을 가져옴
-                source_full = flow[0]  # 첫 번째 항목의 첫 번째 요소 추출
-                sink_full = flow[-1]  # 마지막 항목의 첫 번째 요소 추출
-
-                # 'a.b.c'에서 'c' 부분 추출
-                source = source_full.split('.')[-1]
-                sink = sink_full.split('.')[-1]
-
-                # source와 sink의 민감도 값을 가져옴
-                source_sensitivity = S.source_functions.get(source, 0)  # 기본값 0
-                sink_sensitivity = S.sink_functions.get(sink, 0)        # 기본값 0
-
-                # source와 sink 민감도 중 더 큰 값을 사용 (max)
-                total_sensitivity = max(source_sensitivity, sink_sensitivity)
-
-                # 민감도를 흐름 앞에 삽입
-                prioritized_flow = [int(round(total_sensitivity))] + flow
-                prioritized_flows.append(prioritized_flow)
+        for value in self.flows.values():
+            for flow in value:
+                source = flow[0].rsplit('.', 1)[-1]
+                sink = flow[-1].rsplit('.', 1)[-1]
+                total_sensitivity = max(src_funcs.get(source, 0), sink_funcs.get(sink, 0))
+                prioritized_flows.append([int(round(total_sensitivity))] + flow)
 
         return prioritized_flows

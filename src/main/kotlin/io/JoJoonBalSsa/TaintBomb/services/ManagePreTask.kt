@@ -41,20 +41,11 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
         prepareLibraries(venvPath, 0.24)
     }
 
-    fun getVenvPath(): String {
-        val venvPythonPath = venvPath
-        return venvPythonPath
-    }
+    fun getVenvPath(): String = venvPath
 
-    fun getManageHash(): ManageHash {
-        val hashInfo = manageHash
-        return hashInfo
-    }
+    fun getManageHash(): ManageHash = manageHash
 
-    fun getOS() : String {
-        val osn = osName
-        return osn
-    }
+    fun getOS(): String = osName
 
     private fun checkOS(): String {
         val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
@@ -142,30 +133,28 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
             }
         }
 
-        val totalFiles = Files.walk(source)
-            .filter { path ->
-                !isExcludedDirectory(source.relativize(path))
-            }
-            .count()
+        // 한 번 walk 로 파일/디렉토리를 모은 뒤 복사 진행률을 갱신
+        val toCopy = Files.walk(source).use { stream ->
+            stream
+                .filter { !isExcludedDirectory(source.relativize(it)) }
+                .toList()
+        }
+        val totalFiles = toCopy.count { !Files.isDirectory(it) }
 
         var copiedFiles = 0
-
-        Files.walk(source).forEach { sourcePath ->
-            // 상대 경로를 구하고 해당 경로가 제외 디렉토리에 속하는지 확인
+        for (sourcePath in toCopy) {
             val relativePath = source.relativize(sourcePath)
-            val shouldCopy = !isExcludedDirectory(relativePath)
-
-            if (shouldCopy) {
-                val targetPath = destination.resolve(relativePath)
-                if (Files.isDirectory(sourcePath)) {
-                    Files.createDirectories(targetPath)
-                } else {
-                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
-                    MyConsoleLogger.logPrint("Copied: $sourcePath")
-                    copiedFiles++
+            val targetPath = destination.resolve(relativePath)
+            if (Files.isDirectory(sourcePath)) {
+                Files.createDirectories(targetPath)
+            } else {
+                Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
+                MyConsoleLogger.logPrint("Copied: $sourcePath")
+                copiedFiles++
+                if (totalFiles > 0) {
                     indicator.fraction = fractionValue * (copiedFiles.toDouble() / totalFiles)
-                    indicator.text = "Copying files... (${copiedFiles}/${totalFiles})"
                 }
+                indicator.text = "Copying files... (${copiedFiles}/${totalFiles})"
             }
         }
     }
@@ -199,12 +188,7 @@ class ManagePreTask(private val javaFilesPath: String, private var outFolder : S
         indicator.fraction = fractionValue
         MyConsoleLogger.logPrint("Copying scripts...")
 
-        val result = File(tempFolder).mkdir()
-        if (result) {
-            MyConsoleLogger.logPrint("Directory created successfully")
-        } else {
-            MyConsoleLogger.logPrint("Directory already exists")
-        }
+        File(tempFolder).mkdirs()
 
         for (scriptName in scriptNames) {
             copyScript(scriptName)

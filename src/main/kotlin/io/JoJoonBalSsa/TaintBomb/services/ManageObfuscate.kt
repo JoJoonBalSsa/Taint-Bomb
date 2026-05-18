@@ -4,7 +4,6 @@ import com.intellij.openapi.progress.ProgressIndicator
 import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleLogger
 import io.JoJoonBalSsa.TaintBomb.toolWindow.MyConsoleViewer
 import io.JoJoonBalSsa.TaintBomb.settings.TaintBombSettings
-import kotlinx.html.B
 import java.io.*
 import java.util.concurrent.TimeUnit
 
@@ -176,14 +175,10 @@ class ManageObfuscate(
 
     private fun runScript(scriptName: String, outFolder: String): Int {
         val scriptPath = "$tempFolder/$scriptName.py"
-        val args = buildScriptArgs(scriptPath, outFolder, scriptName)
+        val args = listOf(venvPath, "-u", scriptPath, outFolder)
         val timeout = if (scriptName == "main") MAIN_SCRIPT_TIMEOUT_SECONDS else null
 
         return executeProcess(args, scriptName, timeout)
-    }
-
-    private fun buildScriptArgs(scriptPath: String, outFolder: String, scriptName: String): List<String> {
-        return listOf(venvPath, "-u", scriptPath, outFolder)
     }
 
     private fun executeProcess(

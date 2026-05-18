@@ -8,7 +8,6 @@ class ObfuscateOperations:
     def __init__(self, tainted):
         # 연산자 우선순위 리스트 (우선순위 높은 것부터 나열)
         self.operator_priority = [
-            r'**',  # 거듭제곱 연산자 (Python 스타일)
             r'*', r'/', r'%',  # 곱셈, 나눗셈, 나머지
             r'+', r'-',  # 덧셈, 뺄셈
             r'<<', r'>>', r'>>>',  # 시프트 연산자

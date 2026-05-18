@@ -10,7 +10,10 @@ object MyConsoleViewer {
     }
 
     fun println(message: String) {
-        console?.append("$message\n")
+        console?.let {
+            it.append("$message\n")
+            it.caretPosition = it.document.length
+        }
     }
 
     fun clearConsole() {

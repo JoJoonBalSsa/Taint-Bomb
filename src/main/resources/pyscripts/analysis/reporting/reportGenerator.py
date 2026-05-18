@@ -22,8 +22,9 @@ class MakeMD:
         f = 0
         while i < len(lines):
             line = lines[i].strip()
-            if line is None == "":
-                raise ValueError("No Line Error")
+            if not line:
+                i += 1
+                continue
             if line.startswith("Tainted Variable:"):
                 variable_name = lines[i + 1].strip()
                 flow = []
