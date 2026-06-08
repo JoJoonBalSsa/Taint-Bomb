@@ -63,6 +63,27 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 4. Click Obfuscate button.
 5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file. And also Taint-Analysis result(taint_anlaysis.txt & analysis_result.md) and analysis result by Claude AI
 
+## Obfuscation techniques
+
+Taint Bomb performs **differential obfuscation**: stronger transformations are applied only to the code regions that Taint Analysis marks as sensitive, while low-sensitivity code is left untouched for performance and stability.
+
+| Sensitivity | Transformations applied |
+| --- | --- |
+| Level 1 (low) | skipped |
+| Level 2 (medium) | operator obfuscation, opaque predicate insertion, string split encoding |
+| Level 3 (high) | operator obfuscation, control-flow flattening, method splitting, opaque predicate insertion, string split encoding, dummy code insertion |
+
+Project-wide transformations (applied regardless of sensitivity): comment removal, string encryption, and identifier obfuscation.
+
+New in this release:
+
+- **Control-flow flattening** – rewrites straight-line method bodies into a randomized dispatcher `switch`-loop.
+- **Opaque predicate insertion** – guards junk blocks with always-false predicates that the compiler cannot fold away (no extra imports required).
+- **String split encoding** – replaces string literals with runtime-assembled, per-string XOR-encoded char arrays, so no plaintext string remains in the source.
+- **Syntax-validation safety net** – every transformation is re-parsed before being accepted; if a step would produce invalid Java it is automatically reverted to the last valid version, and a failing transform can never abort the whole run.
+
+> Reflection-based call indirection is also bundled as an experimental, opt-in module. It is excluded from the default pipeline because syntax validation alone cannot guarantee its runtime semantics.
+
 ## Caution
 
 - Make sure that all overriding methods has @Override annotation.
