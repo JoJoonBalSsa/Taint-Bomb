@@ -1,0 +1,84 @@
+digraph InformationArchitecture {
+  rankdir=LR;
+  fontname="Helvetica";
+  labelloc="t"; fontsize=22;
+  label="Taint-Bomb — Information Architecture\n(UI navigation, configuration state & data/artifact flow)";
+  node [fontname="Helvetica", fontsize=11, style="filled"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  nodesep=0.3; ranksep=0.7;
+  compound=true;
+
+  /* ---------- A. UI navigation (tool window) ---------- */
+  subgraph cluster_nav {
+    label="A. Tool Window Navigation";
+    style="rounded,filled"; fillcolor="#EFF6FF"; color="#2563EB"; fontsize=14;
+    node [shape=folder, fillcolor="#BFDBFE"];
+    tw [label="Taint-Bomb Tool Window", fillcolor="#93C5FD"];
+    t_exec [label="Execution tab\n(warnings + Obfuscate button + console)"];
+    t_conf [label="Configuration tab\n(API key + 5 feature toggles)"];
+    t_logs [label="Logs tab\n(MyConsoleLogger output)"];
+    tw -> {t_exec t_conf t_logs};
+  }
+
+  /* ---------- B. Configuration state ---------- */
+  subgraph cluster_cfg {
+    label="B. Persisted Configuration  (taintBombSettings.xml)";
+    style="rounded,filled"; fillcolor="#FEF9C3"; color="#CA8A04"; fontsize=14;
+    node [shape=note, fillcolor="#FEF08A"];
+    cfg [label="TaintBombSettings\n• apiKey\n• enableStringEncryption\n• enableIdentifierObfuscation\n• enableOperatorObfuscation\n• enableMethodSplitting\n• enableInsertDummyCode"];
+  }
+
+  /* ---------- C. Inputs ---------- */
+  subgraph cluster_in {
+    label="C. Inputs";
+    style="rounded,filled"; fillcolor="#F1F5F9"; color="#64748B"; fontsize=14;
+    node [shape=cylinder, fillcolor="#E2E8F0"];
+    src [label="Source project\n(.java files,\nbuild.gradle / pom.xml)"];
+    bundled [label="Bundled resources\npyscripts/* · check_hash\njava decryptor templates"];
+  }
+
+  /* ---------- D. Working area ---------- */
+  subgraph cluster_temp {
+    label="D. Working Area  (temp_asdf_qwer/  — deleted on finish)";
+    style="rounded,filled"; fillcolor="#FFF7ED"; color="#EA580C"; fontsize=14;
+    node [shape=box, style="rounded,filled", fillcolor="#FED7AA"];
+    venv [label="venv/\n(per-run interpreter + libs)"];
+    scripts [label="*.py scripts\n(hash-verified copies)"];
+  }
+
+  /* ---------- E. Output artifacts ---------- */
+  subgraph cluster_out {
+    label="E. Output  (obfuscated_project_folder/)";
+    style="rounded,filled"; fillcolor="#ECFDF5"; color="#059669"; fontsize=14;
+    node [shape=box, style="rounded,filled", fillcolor="#A7F3D0"];
+    obfsrc  [label="Obfuscated .java source"];
+    jar     [label="Built jar\n(gradle / maven)"];
+    ajson   [label="analysis_result.json\n(sensitivity + methods)"];
+    ttxt    [label="taint_result.txt\n(tainted flows)"];
+    amd     [label="analysis_result.md\n(human report)"];
+    llmd    [label="llm_analysis_result.md\n(Claude, optional)"];
+    log     [label="taint_analysis.log"];
+  }
+
+  /* ---------- External ---------- */
+  claude [label="Claude API", shape=oval, fillcolor="#FDE68A"];
+
+  /* ----- relationships ----- */
+  t_conf -> cfg [label="edits", style=dashed, color="#CA8A04"];
+  cfg -> scripts [label="flags + apiKey\npassed as args", style=dashed, lhead=cluster_temp];
+
+  t_exec -> src [label="triggers run on", style=dashed];
+  src -> obfsrc [label="copied then\ntransformed", color="#059669"];
+  bundled -> scripts [label="hash-verified copy"];
+  bundled -> venv [label="installScripts.py"];
+
+  scripts -> ajson [label="main.py", color="#059669"];
+  scripts -> ttxt  [color="#059669"];
+  ajson -> obfsrc [label="levelObfuscate\nreads sensitivity", style=dashed, color="#7C3AED"];
+  ajson -> amd; ttxt -> amd;
+  ajson -> claude [label="priority flow", style=dashed];
+  claude -> llmd [style=dashed];
+  obfsrc -> jar [label="build"];
+
+  amd -> t_logs [style=invis];
+}

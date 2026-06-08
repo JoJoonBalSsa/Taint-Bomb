@@ -6,7 +6,7 @@
 !/.idea/icon.png
 !/.idea/workspace.xml
 !/.run/
-!/.docs/
+!/docs/
 !.gitignore
 !build.gradle.kts
 !CHANGELOG.md

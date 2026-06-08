@@ -35,6 +35,32 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
   </a>
 </div>
 
+# Architecture & Design
+
+The diagrams below are generated from the source under [`docs/diagrams`](./docs/diagrams) (Graphviz `.dot` sources are kept alongside each image; regenerate with `dot -Tpng -Gdpi=150 docs/diagrams/<name>.dot -o docs/diagrams/<name>.png`).
+
+## System Architecture
+
+The plugin is a Kotlin/IntelliJ front end that orchestrates a Python taint-analysis & obfuscation engine, executed in a per-run virtual environment.
+
+<div align="center"><img src="./docs/diagrams/01_system_architecture.png" alt="System Architecture" width="900"></div>
+
+## Work Breakdown Structure (WBS)
+
+<div align="center"><img src="./docs/diagrams/02_wbs.png" alt="Work Breakdown Structure" width="420"></div>
+
+## As-Is Runtime Process Flow
+
+The actual sequence executed from a single click on the **Obfuscate** button, including the SHA-256 script-integrity gate and the per-sensitivity obfuscation steps.
+
+<div align="center"><img src="./docs/diagrams/03_as_is_flow.png" alt="As-Is Runtime Process Flow" width="360"></div>
+
+## Information Architecture
+
+Tool-window navigation, persisted configuration, and the data/artifact flow from input project to the generated `obfuscated_project_folder/`.
+
+<div align="center"><img src="./docs/diagrams/04_information_architecture.png" alt="Information Architecture" width="900"></div>
+
 # Requirements
 
 ## for Plugin

@@ -1,0 +1,111 @@
+digraph SystemArchitecture {
+  rankdir=TB;
+  fontname="Helvetica";
+  labelloc="t";
+  fontsize=22;
+  label="Taint-Bomb — System Architecture\n(IntelliJ Kotlin Plugin orchestrating a Python taint-analysis & obfuscation engine)";
+  node [fontname="Helvetica", shape=box, style="rounded,filled", fontsize=11];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  compound=true;
+  nodesep=0.35;
+  ranksep=0.6;
+
+  /* ---------------- Actor ---------------- */
+  user [label="Developer", shape=oval, fillcolor="#FDE68A", style="filled"];
+
+  /* ============ LAYER 1: IntelliJ Plugin (Kotlin) ============ */
+  subgraph cluster_plugin {
+    label="IntelliJ Plugin  (Kotlin / JVM)";
+    style="rounded,filled"; fillcolor="#EFF6FF"; color="#2563EB"; fontsize=15; fontcolor="#1E3A8A";
+
+    subgraph cluster_ui {
+      label="UI / Tool Window";
+      style="rounded,filled"; fillcolor="#DBEAFE"; color="#3B82F6"; fontsize=12;
+      factory [label="TaintBombFactory\n(Execution · Configuration · Logs tabs)", fillcolor="#BFDBFE"];
+      viewer  [label="MyConsoleViewer\nMyConsoleLogger", fillcolor="#BFDBFE"];
+      settings [label="TaintBombSettings\n(persistent: apiKey, enable* flags)", fillcolor="#BFDBFE"];
+    }
+
+    subgraph cluster_services {
+      label="Orchestration Services";
+      style="rounded,filled"; fillcolor="#DBEAFE"; color="#3B82F6"; fontsize=12;
+      svc      [label="TaintBombService\n(Backgroundable Task entry)", fillcolor="#93C5FD"];
+      tasks    [label="TasksManager\n(pipeline coordinator)", fillcolor="#93C5FD"];
+      pretask  [label="ManagePreTask\n(copy · venv · install · scripts)", fillcolor="#BFDBFE"];
+      hash     [label="ManageHash\n(SHA-256 script integrity)", fillcolor="#BFDBFE"];
+      obf      [label="ManageObfuscate\n(drives Python scripts)", fillcolor="#BFDBFE"];
+      build    [label="ManageBuild\n(Gradle / Maven jar)", fillcolor="#BFDBFE"];
+    }
+  }
+
+  /* ============ LAYER 2: Python Engine ============ */
+  subgraph cluster_py {
+    label="Python Engine  (executed in per-run venv via subprocess)";
+    style="rounded,filled"; fillcolor="#ECFDF5"; color="#059669"; fontsize=15; fontcolor="#065F46";
+
+    subgraph cluster_analysis {
+      label="Taint Analysis  (analysis/)";
+      style="rounded,filled"; fillcolor="#D1FAE5"; color="#10B981"; fontsize=12;
+      taintcoord [label="taintAnalyzer\n(coordinator)", fillcolor="#6EE7B7"];
+      astp   [label="astParser\n(javalang AST)", fillcolor="#A7F3D0"];
+      varext [label="variableExtractor\n(sources / sinks)", fillcolor="#A7F3D0"];
+      flow   [label="flowTracker\n(taint propagation)", fillcolor="#A7F3D0"];
+      manal  [label="methodAnalyzer", fillcolor="#A7F3D0"];
+      sensdb [label="sensitivityDB\n(sensitivity rules)", fillcolor="#A7F3D0"];
+      report [label="reportGenerator\nresultManager", fillcolor="#A7F3D0"];
+    }
+
+    subgraph cluster_obf {
+      label="Obfuscation Transforms";
+      style="rounded,filled"; fillcolor="#D1FAE5"; color="#10B981"; fontsize=12;
+      level  [label="levelObfuscate\n(per-sensitivity driver)", fillcolor="#6EE7B7"];
+      strobf [label="stringObfuscate\n(search · encrypt · insert)", fillcolor="#A7F3D0"];
+      transforms [label="operationObfuscate · controlFlowFlatten\nmethodSplit · opaquePredicate\nstringSplit · dummyInsert (dumbDB)\nidentifierObfuscate", fillcolor="#A7F3D0"];
+      safety [label="javaValidate.safe_transform\n(parse-only safety net)", fillcolor="#FCA5A5"];
+      apply  [label="applyObfuscated\n(write back to files)", fillcolor="#A7F3D0"];
+    }
+  }
+
+  /* ============ LAYER 3: Resources & External ============ */
+  subgraph cluster_ext {
+    label="Bundled Resources & External Systems";
+    style="rounded,filled"; fillcolor="#FEF3F2"; color="#DC2626"; fontsize=15; fontcolor="#7F1D1D";
+    jres   [label="Java decryptor templates\nstringDecrypt{Lin,Win}.java\nkeyDecrypt{Lin,Win}.java", fillcolor="#FECACA"];
+    manifest [label="check_hash\n(integrity manifest)", fillcolor="#FECACA"];
+    claude [label="Claude API\n(claude_simple, optional)", fillcolor="#FDE68A", shape=oval];
+    pylibs [label="PyPI libs\njavalang · pycryptodome", fillcolor="#FECACA", shape=cylinder];
+    buildtools [label="Gradle / Maven", fillcolor="#FDE68A", shape=oval];
+  }
+
+  /* ---------------- Edges ---------------- */
+  user -> factory [label="click Obfuscate"];
+  factory -> settings [style=dashed, label="read/write"];
+  factory -> svc [label="startTaintBomb()"];
+  svc -> tasks;
+  tasks -> pretask -> hash;
+  tasks -> obf;
+  tasks -> build;
+  obf -> settings [style=dashed, label="feature flags / apiKey"];
+
+  /* plugin -> python (subprocess) */
+  obf -> level [lhead=cluster_py, label="venv subprocess\n(main.py, levelObfuscate.py, ...)", color="#7C3AED", fontcolor="#7C3AED", penwidth=1.4];
+
+  /* analysis internal */
+  taintcoord -> astp; taintcoord -> varext; taintcoord -> flow; taintcoord -> manal;
+  varext -> sensdb; flow -> sensdb;
+  taintcoord -> report;
+
+  /* analysis -> obfuscation hand-off */
+  report -> level [style=dashed, label="analysis_result.json\n(sensitivity levels)", color="#059669"];
+
+  /* obfuscation internal */
+  level -> transforms; level -> strobf;
+  transforms -> safety -> apply;
+  strobf -> jres [style=dashed, label="inject decryptor"];
+
+  /* external */
+  report -> claude [style=dashed, label="priority flow"];
+  hash -> manifest [style=dashed, label="verify"];
+  pretask -> pylibs [style=dashed, label="pip install"];
+  build -> buildtools [label="package jar"];
+}
