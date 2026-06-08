@@ -1,5 +1,6 @@
 import re
-import random
+import secrets
+import string
 
 
 class InsertDummyCode:
@@ -17,14 +18,16 @@ class InsertDummyCode:
             method_start = match.start()
             method_declaration = match.group()
 
-            # static 메소드인지 확인
+            # static 메소드인지 확인. static 이면 더미 호출을 인스턴스 컨텍스트에
+            # 넣을 수 없으므로 건너뛰고 "다음" 비-static 메서드를 찾는다.
+            # (기존엔 첫 매치가 static 이면 곧장 None 을 반환해, 뒤에 비-static
+            #  메서드가 있어도 더미 삽입이 조용히 무산됐다.)
             is_static = 'static' in method_declaration
 
             if not is_static:
-                print()
                 return self.__insert_dummy_code(self.java_code[method_start:])
-            else:
-                return None
+            # static → 다음 매치로 계속
+        return None
 
 
     # def __insert_dummy_code(self, method_body):
@@ -66,14 +69,28 @@ class InsertDummyCode:
 
 
     def __add_dummy_if(self):
-        # 의미 없는 중첩 if 문을 추가합니다.
+        # 불투명-거짓 술어로 가드된 dummy 호출.
+        #
+        # 기존 구현은 `new Random()` 을 썼는데, 대상 클래스가 java.util.Random 을
+        # import 하지 않으면 컴파일이 깨졌다. 이제는 import 가 전혀 필요 없는
+        # 정수 비트 연산 불투명 술어를 사용한다.
+        #   ((v * v) & 3) == 3 은 임의 정수 제곱이 (mod 4) 0/1 이므로 항상 거짓.
+        # 따라서 unusedFunction 호출은 절대 실행되지 않지만 컴파일은 유지된다.
+        v = self.__rand_name()
+        seed = secrets.randbelow(2_000_000_000) + 1
         return f"""
-        Random random = new Random();
-        int randomValue = random.nextInt();
-        int randomValue2 = random.nextInt(101) + 101;
-        if (randomValue == randomValue2) 
+        int {v} = {seed};
+        if ((({v} * {v}) & 3) == 3) {{
             unusedFunction{self.rand}();
+        }}
 """
+
+    @staticmethod
+    def __rand_name(length=8):
+        first = secrets.choice(string.ascii_lowercase)
+        rest = "".join(secrets.choice(string.ascii_lowercase + string.digits)
+                       for _ in range(length - 1))
+        return first + rest
 
 
     def get_obfuscated_code(self):

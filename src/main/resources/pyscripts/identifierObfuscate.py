@@ -46,20 +46,26 @@ class ob_identifier:
             obfuscated_name = None
             ran = self.ran
 
+            # 동형이의(homoglyph) 문자 풀은 작아서(예: l/1/I) 충돌 가능한 이름 수가
+            # 제한적이다. 한 길이에서 일정 횟수 실패하면 길이를 늘려 무한 루프를 막는다.
+            attempts = 0
+            existing = set(self.identifier_map.values())
             while True:
                 if ran == 0:
                     obfuscated_name = (''.join(secrets.choice(["l", "I"])) +
                                        ''.join(self.choose_chars(['l', '1', 'I'], length)))
-                # elif ran == 1:
-                #     obfuscated_name = (''.join(secrets.choice(['l', 'I', 'α', 'β', 'γ', 'δ', 'π'])) +
-                #                        ''.join(self.choose_chars(['l', '1', 'I', 'α', 'β', 'γ', 'δ', 'π'], length)))
                 elif ran == 1:
                     obfuscated_name = (''.join(secrets.choice(['O', 'o'])) +
                                        ''.join(self.choose_chars(['0', 'O', 'o'], length)))
 
-                if obfuscated_name not in self.identifier_map.values():
+                if obfuscated_name not in existing:
                     self.identifier_map[name] = obfuscated_name
                     break
+
+                attempts += 1
+                if attempts >= 64:
+                    attempts = 0
+                    length += 1  # 이름 길이를 늘려 가용 조합 수를 키운다
 
 
     def choose_chars(self, random_list, k):

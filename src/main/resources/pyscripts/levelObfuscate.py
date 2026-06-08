@@ -3,6 +3,10 @@ from applyObfuscated import ApplyObfuscated
 from dumbDB import DumbDB
 from dummyInsert import InsertDummyCode
 from methodSplit import MethodSplit
+from opaquePredicate import OpaquePredicate
+from stringSplit import StringArraySplit
+from controlFlowFlatten import ControlFlowFlatten
+from javaValidate import safe_transform
 
 import json
 
@@ -41,72 +45,95 @@ class LevelObfuscation:
             elif item["sensitivity"] == 2:
                 self._process_level2_obfuscation(item)
 
+    # ------------------------------------------------------------------
+    # 안전망: 각 변환은 직전의 유효한 코드 위에서 수행되고, 결과가 구문상 유효할
+    # 때만 채택된다. 깨진 Java 를 만들면 그 단계는 통째로 버려지고 직전 코드가 유지된다.
+    # 어떤 변환이 예외를 던져도 전체 난독화가 중단되지 않도록 보호한다.
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _safe(prev, transform_callable):
+        try:
+            candidate = transform_callable()
+        except Exception as e:  # noqa: BLE001
+            print(f"  transform skipped (raised): {e}")
+            return prev
+        return safe_transform(prev, candidate)
+
     def _process_level3_obfuscation(self, item):
-        """Level 3: 연산자 난독화, 메소드 분할, 더미 코드 삽입"""
+        """Level 3 (높은 민감도): 가능한 모든 변환을 안전망으로 누적 적용.
+
+        순서: 연산자 → 제어흐름 평탄화 → 메소드 분할 → 불투명 술어 → 문자열 분해 → 더미.
+        각 단계는 검증을 통과해야만 반영된다.
+        """
         ddb = DumbDB() if self.dummy_obf else None
 
         for tainted in item["tainted"]:
-            obfuscated_code = tainted["source_code"]
+            original = tainted["source_code"]
+            code = original
 
-            # 연산자 난독화
             if self.operator_obf:
-                print("operation obfuscation started...")
-                obfuscated_code = self._apply_operator_obfuscation(obfuscated_code, tainted)
+                print("operation obfuscation...")
+                code = self._safe(code, lambda c=code: self._operator(c, tainted))
 
-            # 메소드 분할
             if self.method_obf:
-                print("function spliting...")
-                obfuscated_code = self._apply_method_split(obfuscated_code)
+                print("control-flow flattening...")
+                code = self._safe(code, lambda c=code: ControlFlowFlatten(c).get_obfuscated_code())
 
-            # 더미 코드 추가
+                print("function splitting...")
+                code = self._safe(code, lambda c=code: MethodSplit(c).get_new_method())
+
+            print("opaque predicate insertion...")
+            code = self._safe(code, lambda c=code: OpaquePredicate(c, count=2).get_obfuscated_code())
+
+            print("string split encoding...")
+            code = self._safe(code, lambda c=code: StringArraySplit(c).get_obfuscated_code())
+
             if self.dummy_obf:
-                obfuscated_code = self._apply_dummy_code(obfuscated_code, ddb)
+                print("dummy code insertion...")
+                code = self._safe(code, lambda c=code: self._dummy(c, ddb))
 
-            # 난독화가 실제로 적용된 경우에만 파일 업데이트
-            if obfuscated_code != tainted["source_code"]:
-                ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+            if code != original:
+                ApplyObfuscated(tainted["file_path"], original, code)
 
     def _process_level2_obfuscation(self, item):
-        """Level 2: 연산자 난독화만 수행"""
-        if not self.operator_obf:
-            return
-
+        """Level 2 (중간 민감도): 가벼운 변환만 — 연산자 + 불투명 술어 + 문자열 분해."""
         for tainted in item["tainted"]:
-            print("operation obfuscation started...")
-            obfuscated_code = self._apply_operator_obfuscation(
-                tainted["source_code"],
-                tainted
-            )
+            original = tainted["source_code"]
+            code = original
 
-            if obfuscated_code is not None:
-                ApplyObfuscated(tainted["file_path"], tainted["source_code"], obfuscated_code)
+            if self.operator_obf:
+                print("operation obfuscation...")
+                code = self._safe(code, lambda c=code: self._operator(c, tainted))
 
-    def _apply_operator_obfuscation(self, source_code, tainted):
-        """연산자 난독화 적용"""
-        O = ObfuscateOperations(tainted)
-        obfuscated_code = O.return_obfuscated_code()
-        return obfuscated_code if obfuscated_code is not None else source_code
+            print("opaque predicate insertion...")
+            code = self._safe(code, lambda c=code: OpaquePredicate(c, count=1).get_obfuscated_code())
 
-    def _apply_method_split(self, code):
-        """메소드 분할 적용"""
-        O = MethodSplit(code)
-        temp_ob = O.get_new_method()
-        return temp_ob if temp_ob is not None else code
+            print("string split encoding...")
+            code = self._safe(code, lambda c=code: StringArraySplit(c).get_obfuscated_code())
 
-    def _apply_dummy_code(self, code, ddb):
-        """더미 코드 삽입 적용"""
+            if code != original:
+                ApplyObfuscated(tainted["file_path"], original, code)
+
+    # ------------------------------------------------------------------
+    # 개별 변환 래퍼 (현재 코드 위에서 동작하도록 source_code 를 교체해 전달)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _operator(code, tainted):
+        # ObfuscateOperations 는 tainted["source_code"] 를 읽으므로, 체이닝을 위해
+        # 현재 단계의 코드로 교체한 사본을 넘긴다.
+        t2 = dict(tainted)
+        t2["source_code"] = code
+        return ObfuscateOperations(t2).return_obfuscated_code()
+
+    @staticmethod
+    def _dummy(code, ddb):
         if ddb is None:
-            return code
-
+            return None
         rand = ddb.get_unique_random_number()
         if rand is None:
-            return code
-
-        print("dummy code insertion started...")
+            return None
         dummy_code = ddb.get_dumb(rand)
-        idc = InsertDummyCode(code, dummy_code, rand)
-        temp_ob = idc.get_obfuscated_code()
-        return temp_ob if temp_ob is not None else code
+        return InsertDummyCode(code, dummy_code, rand).get_obfuscated_code()
 
 
 if __name__ == '__main__':

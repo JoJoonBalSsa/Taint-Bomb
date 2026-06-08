@@ -16,3 +16,7 @@
 !gradlew.bat
 !README.md
 !settings.gradle.kts
+
+# Taint-Bomb obfuscation test harness
+.venv-test/
+obfuscation_tests/__pycache__/

@@ -23,7 +23,13 @@ class MethodSplit:
             param_list = []
             if parameters:
                 for param in parameters.split(','):
-                    param_type, param_name = param.strip().split()
+                    # 제네릭 타입(`Map<String, Integer> m`)은 split() 시 토큰이 2개를
+                    # 넘으므로, 마지막 공백 기준으로 (타입, 이름)을 분리한다.
+                    # 분리 불가하면 안전하게 split 을 포기(None)해 원본을 유지한다.
+                    parts = param.strip().rsplit(None, 1)
+                    if len(parts) != 2:
+                        return None
+                    param_type, param_name = parts
                     param_list.append((param_type, param_name))
 
             start_index = match.end()
@@ -65,6 +71,20 @@ class MethodSplit:
         for line in statements:
             line = line.strip()
             if not line:
+                continue
+
+            # 완결된 제어 블록(`while(...){...}`, `for(...){...}`, `if(...){...}` 등)은
+            # 세미콜론이 필요 없다. 특히 `while(true){...}` 같은 무한 루프 뒤에 빈 문장
+            # `;` 을 붙이면 "도달 불가(unreachable)" 컴파일 에러가 난다(파싱은 통과).
+            # 단, 배열 초기화(`int[] a = {1,2}`)처럼 '}'로 끝나지만 세미콜론이 필요한
+            # 경우는 제어 키워드로 시작하지 않으므로 구분된다.
+            stripped = line.strip()
+            is_control_block = (
+                re.match(r'^(for|if|while|switch|try|do|synchronized)\b', stripped)
+                and stripped.endswith('}')
+            )
+            if is_control_block:
+                modified_body.append(line)
                 continue
 
             if re.match(r'^\s*(for|if|while)\s*\(', line) or '{' in line or '}' in line:
@@ -170,10 +190,12 @@ class MethodSplit:
         return modified_method, extracted_functions
 
     def __merge_methods_and_functions(self, modified_method, extracted_functions):
+        # 실패 시 None 을 반환한다. (기존에는 "// Error..." 주석 문자열을 반환했는데,
+        # 그러면 levelObfuscate 가 그 주석을 실제 메서드 본문으로 적용해 컴파일이
+        # 깨졌다. None 을 반환하면 오케스트레이터가 원본 메서드를 그대로 유지한다.)
         try:
-
             if modified_method is None:
-                raise ValueError("Modified method is None. The input method code might not match the expected Java method pattern.")
+                return None
 
             if modified_method.endswith("}\n"):
                 modified_method = modified_method[:-2]
@@ -182,13 +204,9 @@ class MethodSplit:
 
             return merged_code
 
-        except AttributeError as e:
-            print(f"An error occurred: {e}")
-            return "// Error: Invalid method code."
-
-        except ValueError as e:
-            print(f"An error occurred: {e}")
-            return "// Error: Method pattern did not match the expected format."
+        except (AttributeError, ValueError) as e:
+            print(f"MethodSplit merge failed, keeping original: {e}")
+            return None
 
     def __generate_random_string(self, length=8):
         if length < 1:
