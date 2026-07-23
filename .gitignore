@@ -15,6 +15,7 @@
 !gradlew
 !gradlew.bat
 !README.md
+!README-kor.md
 !settings.gradle.kts
 
 # Taint-Bomb obfuscation test harness

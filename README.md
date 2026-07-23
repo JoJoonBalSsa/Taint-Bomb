@@ -30,7 +30,7 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 <!-- Plugin description end -->
 
 <div style="text-align: center">
-  <a href="../README-kor.md">
+  <a href="./README-kor.md">
     <div style="font-size:250%">🇰🇷 한국어 문서</div>
   </a>
 </div>
@@ -87,7 +87,7 @@ Tool-window navigation, persisted configuration, and the data/artifact flow from
 2. Open the target project to obfuscate on IntelliJ, and open Taint Bomb window.
 3. Set obfuscation methods and AI api key(optional) on Configuration tab.
 4. Click Obfuscate button.
-5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file. And also Taint-Analysis result(taint_anlaysis.txt & analysis_result.md) and analysis result by Claude AI
+5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file. And also Taint-Analysis result(taint_anlaysis.txt & analysis_result.md) and analysis result by Claude AI. `analysis_result.md` also ends with a **Static Weakness Scan** section listing insecure-code patterns found in the sources.
 
 ## Obfuscation techniques
 
@@ -107,8 +107,11 @@ New in this release:
 - **Opaque predicate insertion** – guards junk blocks with always-false predicates that the compiler cannot fold away (no extra imports required).
 - **String split encoding** – replaces string literals with runtime-assembled, per-string XOR-encoded char arrays, so no plaintext string remains in the source.
 - **Syntax-validation safety net** – every transformation is re-parsed before being accepted; if a step would produce invalid Java it is automatically reverted to the last valid version, and a failing transform can never abort the whole run.
+- **Static weakness scan** – a secure-code review of the analyzed sources, flagging insecure deserialization, permissive TLS/hostname verification, SQL-injection surface, hardcoded secrets, and sensitive-data logging. Results are appended as a table to `analysis_result.md`. It can also be run standalone: `python findJavaWeak.py <path>`.
 
 > Reflection-based call indirection is also bundled as an experimental, opt-in module. It is excluded from the default pipeline because syntax validation alone cannot guarantee its runtime semantics.
+
+> The static weakness scan runs on the analyzed copy in `obfuscated_project_folder`. With string encryption or comment removal enabled (default), literal-based findings (e.g. hardcoded secret values) may be reduced; run `findJavaWeak.py` on the original source for full coverage.
 
 ## Caution
 

@@ -9,6 +9,12 @@ try:
 except ImportError:
     CLAUDE_AVAILABLE = False
 
+try:
+    from findJavaWeak import FindJavaWeakpoint
+    WEAK_SCAN_AVAILABLE = True
+except ImportError:
+    WEAK_SCAN_AVAILABLE = False
+
 def create_result(output_folder, flows):
     path = output_folder + "/taint_result.txt"
     with open(path, 'w', encoding='utf-8') as file:  # 결과 파일 생성
@@ -78,6 +84,47 @@ def __run_claude_analysis(priority_flow, output_folder, api_key=None):
         print(f"Claude 분석 오류: {e}")
 
 
+def _append_weakness_scan(output_folder):
+    """정적 취약 코드 스캔 결과를 analysis_result.md 에 덧붙인다.
+
+    findJavaWeak 의 규칙(SQL 주입 표면, 안전하지 않은 역직렬화, 약한 TLS,
+    하드코딩된 비밀값, 민감정보 로깅)을 분석 대상 Java 소스에 적용한다.
+    스캔 오류가 taint 분석을 중단시키면 안 되므로 best-effort 로 처리한다.
+    """
+    if not WEAK_SCAN_AVAILABLE:
+        return
+
+    import pathlib
+    try:
+        findings = FindJavaWeakpoint.scan_path(pathlib.Path(output_folder))
+    except Exception as e:
+        print(f"약점 스캔 오류: {e}")
+        return
+
+    # 우리가 생성한 산출물(.md/.txt/.json)이나 무관한 파일이 아니라
+    # 실제 Java 소스의 발견만 보고한다.
+    findings = [t for t in findings
+                if str(t[0]).lower().endswith(('.java', '.jsp', '.jspx'))]
+
+    md_path = output_folder + "/analysis_result.md"
+    with open(md_path, "a", encoding="utf-8") as md:
+        md.write("\n## Static Weakness Scan\n")
+        md.write("> Scans the analyzed copy in the output folder. With string "
+                 "encryption or comment removal enabled, literal-based findings "
+                 "(e.g. hardcoded secret values) may be reduced; run "
+                 "`findJavaWeak.py <source>` on the original source for full coverage.\n\n")
+        if not findings:
+            md.write("No static weakness patterns were detected.\n")
+            return
+        md.write(f"Detected {len(findings)} potential weakness(es):\n\n")
+        md.write("| File | Line | Finding |\n")
+        md.write("|------|------|---------|\n")
+        for f, ln, msg in findings:
+            name = getattr(f, "name", str(f))
+            safe = str(msg).replace("|", "\\|")
+            md.write(f"| {name} | {ln} | {safe} |\n")
+
+
 def main(output_folder, api_key=None) :
     tainted = TaintAnalysis(output_folder)
     priority_flow = tainted._priority_flow()
@@ -106,6 +153,8 @@ def main(output_folder, api_key=None) :
 
         make_md = MakeMD(output_folder + "/taint_result.txt", output_folder + "/analysis_result.md", priority_flow)
         make_md.make_md_file()
+
+    _append_weakness_scan(output_folder)
 
 
 if __name__ == '__main__':

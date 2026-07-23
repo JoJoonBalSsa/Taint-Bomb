@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- Static weakness scan wired into the analysis pipeline: `findJavaWeak` now runs during `main.py` and appends a **Static Weakness Scan** section (insecure deserialization, weak TLS/hostname verification, SQL-injection surface, hardcoded secrets, sensitive-data logging) to `analysis_result.md`. Previously the scanner existed but was never invoked.
+- Test coverage for the weakness scan (`obfuscation_tests/test_java_weak.py`).
+
+### Fixed
+
+- `findJavaWeak.py` standalone entry point no longer uses a hardcoded `C:/taintboom/...` path; it now takes a target path argument (`python findJavaWeak.py <path>`).
+- Regenerated `pyscripts/check_hash`: the committed manifest was stale (content mismatches) and missing five scripts imported by `levelObfuscate` (`controlFlowFlatten`, `opaquePredicate`, `reflectionIndirect`, `stringSplit`, `javaValidate`), which the runtime script-integrity gate would have rejected.
+
 ### Changed
 
 - Upgrade Gradle Wrapper to `8.10.2`

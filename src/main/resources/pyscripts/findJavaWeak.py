@@ -199,7 +199,8 @@ class FindJavaWeakpoint(ast.NodeVisitor):
 
 
 if __name__ == '__main__':
-    path = pathlib.Path("C:/taintboom/javaWeak.java").resolve()
+    target = sys.argv[1] if len(sys.argv) > 1 else '.'
+    path = pathlib.Path(target).resolve()
     if not path.exists():
         print(f"Error: path does not exist -> {path}")
         sys.exit(1)
