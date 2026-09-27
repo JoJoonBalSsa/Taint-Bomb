@@ -17,6 +17,7 @@ class TaintBombSettings : PersistentStateComponent<TaintBombSettings> {
     var enableIdentifierObfuscation: Boolean = true
 
     var apiKey: String = ""
+    var androidBuildVariant: String = "Debug"
 
     companion object {
         fun getInstance(): TaintBombSettings {

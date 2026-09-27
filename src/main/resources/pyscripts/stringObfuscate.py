@@ -6,7 +6,7 @@ from obfuscateTool import ObfuscateTool
 
 
 class StringObfuscate:
-    def __init__(self, output_folder, keyDecryptJava, stringDecryptJava):
+    def __init__(self, output_folder, keyDecryptJava, stringDecryptJava, is_android=False):
         searched_strings = StringSearch(output_folder)
         print("string search complete")
 
@@ -15,7 +15,7 @@ class StringObfuscate:
 
         random_classes = ObfuscateTool.random_class(searched_strings.class_names, 2)
         StringInsert(searched_strings.Literals, encrypted_strings.encrypted_Literals, random_classes, output_folder,
-                     keyDecryptJava, stringDecryptJava)
+                     keyDecryptJava, stringDecryptJava, is_android)
         print("string insert complete")
 
 
@@ -25,5 +25,6 @@ if __name__ == '__main__':
     output_folder = sys.argv[1]
     keyDecryptJava = sys.argv[2]
     stringDecryptJava = sys.argv[3]
+    is_android = sys.argv[4].lower() == 'true' if len(sys.argv) > 4 else False
 
-    StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava)
+    StringObfuscate(output_folder, keyDecryptJava, stringDecryptJava, is_android)

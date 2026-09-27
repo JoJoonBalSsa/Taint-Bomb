@@ -126,11 +126,121 @@ class DumbDB:
     private byte[] unusedFunction4(byte[] block) {
         try {
             byte[] result = block;
-            
+
             return result;
         }
         catch (Exception e){
             throw new RuntimeException("Decryption failed", e);
+        }
+    }
+    """,
+        """
+    private int unusedFunction5() {
+        int[] state = {0x9e, 0x37, 0x79, 0xb9};
+        return unusedFunction5(state, 16);
+    }
+
+    private int unusedFunction5(int[] seed, int rounds) {
+        try {
+            int h = 0x811c9dc5;
+            for (int r = 0; r < rounds; r++) {
+                for (int i = 0; i < seed.length; i++) {
+                    h ^= (seed[i] + r) & 0xff;
+                    h *= 0x01000193;
+                    h = (h << 13) | (h >>> 19);
+                }
+            }
+            return h;
+        }
+        catch (Exception e){
+            throw new RuntimeException("Mixing failed", e);
+        }
+    }
+    """,
+        """
+    private long unusedFunction6() {
+        long[] vec = {1469598103934665603L, 1099511628211L};
+        return unusedFunction6(vec);
+    }
+
+    private long unusedFunction6(long[] vec) {
+        try {
+            long acc = vec[0];
+            for (int i = 1; i < vec.length; i++) {
+                acc ^= vec[i];
+                acc *= 0x100000001b3L;
+                acc ^= (acc >>> 32);
+            }
+            return acc;
+        }
+        catch (Exception e){
+            throw new RuntimeException("Hashing failed", e);
+        }
+    }
+    """,
+        """
+    private char[] unusedFunction7() {
+        char[] table = {'a', 'f', '3', '9', 'z'};
+        return unusedFunction7(table, 5);
+    }
+
+    private char[] unusedFunction7(char[] table, int n) {
+        try {
+            char[] out = new char[n];
+            int idx = 7;
+            for (int i = 0; i < n; i++) {
+                idx = (idx * 31 + 17) & 0x7fffffff;
+                out[i] = table[idx % table.length];
+            }
+            return out;
+        }
+        catch (Exception e){
+            throw new RuntimeException("Encoding failed", e);
+        }
+    }
+    """,
+        """
+    private byte[] unusedFunction8() {
+        byte[] iv = {0x10, 0x32, 0x54, 0x76, (byte) 0x98};
+        return unusedFunction8(iv);
+    }
+
+    private byte[] unusedFunction8(byte[] iv) {
+        try {
+            byte[] out = new byte[iv.length];
+            byte carry = 1;
+            for (int i = iv.length - 1; i >= 0; i--) {
+                int v = (iv[i] & 0xff) + (carry & 0xff);
+                out[i] = (byte) (v & 0xff);
+                carry = (byte) (v >>> 8);
+            }
+            return out;
+        }
+        catch (Exception e){
+            throw new RuntimeException("Counter failed", e);
+        }
+    }
+    """,
+        """
+    private int unusedFunction9() {
+        int[] lut = {2, 3, 5, 7, 11, 13, 17, 19};
+        return unusedFunction9(lut, 23);
+    }
+
+    private int unusedFunction9(int[] lut, int salt) {
+        try {
+            int crc = 0xffffffff;
+            for (int i = 0; i < lut.length; i++) {
+                crc ^= (lut[i] ^ salt);
+                for (int b = 0; b < 8; b++) {
+                    int mask = -(crc & 1);
+                    crc = (crc >>> 1) ^ (0xedb88320 & mask);
+                }
+            }
+            return ~crc;
+        }
+        catch (Exception e){
+            throw new RuntimeException("Checksum failed", e);
         }
     }
     """

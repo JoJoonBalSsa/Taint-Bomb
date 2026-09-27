@@ -1,198 +1,376 @@
-import re
+import javalang
 
 from operationExtract import ExtractOperations
 from operationDB import OperationDB
 
 
+_INTEGRAL = {"byte", "short", "char", "int", "long"}
+_PRECEDENCE = [
+    {"||"}, {"&&"}, {"|"}, {"^"}, {"&"}, {"==", "!="},
+    {"<", "<=", ">", ">=", "instanceof"}, {"<<", ">>", ">>>"},
+    {"+", "-"}, {"*", "/", "%"},
+]
+_ASSIGNMENTS = {
+    "=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
+    "<<=", ">>=", ">>>=",
+}
+_PREFIX = {"!", "~", "+", "-"}
+
+
+class _Node:
+    def __init__(self, kind, start, end, value=None, left=None, right=None):
+        self.kind = kind
+        self.start = start
+        self.end = end
+        self.value = value
+        self.left = left
+        self.right = right
+
+
+class _Expression:
+    def __init__(self, source, symbols, templates):
+        self.source = source
+        self.symbols = symbols
+        self.templates = templates
+        self.tokens = self._tokenize()
+        self.matches = self._delimiter_matches()
+
+    @staticmethod
+    def _line_offsets(source):
+        offsets = [0]
+        for index, char in enumerate(source):
+            if char == "\n":
+                offsets.append(index + 1)
+        return offsets
+
+    def _tokenize(self):
+        offsets = self._line_offsets(self.source)
+        raw = []
+        for token in javalang.tokenizer.tokenize(self.source + "\n"):
+            start = offsets[token.position.line - 1] + token.position.column - 1
+            if start >= len(self.source):
+                continue
+            raw.append({
+                "value": token.value,
+                "kind": type(token).__name__,
+                "start": start,
+                "end": start + len(token.value),
+            })
+
+        tokens = []
+        index = 0
+        while index < len(raw):
+            token = raw[index]
+            if token["value"] == ">":
+                count = 1
+                while (
+                    count < 3
+                    and index + count < len(raw)
+                    and raw[index + count]["value"] == ">"
+                    and raw[index + count - 1]["end"] == raw[index + count]["start"]
+                ):
+                    count += 1
+                if count > 1:
+                    tokens.append({
+                        "value": ">" * count,
+                        "kind": "Operator",
+                        "start": token["start"],
+                        "end": raw[index + count - 1]["end"],
+                    })
+                    index += count
+                    continue
+            tokens.append(token)
+            index += 1
+        return tokens
+
+    def _delimiter_matches(self):
+        pairs = {"(": ")", "[": "]", "{": "}"}
+        stack = []
+        matches = {}
+        for index, token in enumerate(self.tokens):
+            value = token["value"]
+            if value in pairs:
+                stack.append((value, index))
+            elif value in pairs.values():
+                if not stack or pairs[stack[-1][0]] != value:
+                    return None
+                _, opening = stack.pop()
+                matches[opening] = index
+                matches[index] = opening
+        return matches if not stack else None
+
+    def has_comments(self):
+        if not self.tokens:
+            return False
+        gaps = [self.source[:self.tokens[0]["start"]]]
+        gaps.extend(
+            self.source[left["end"]:right["start"]]
+            for left, right in zip(self.tokens, self.tokens[1:])
+        )
+        gaps.append(self.source[self.tokens[-1]["end"]:])
+        return any(gap.strip() for gap in gaps)
+
+    def parse(self):
+        if not self.tokens or self.matches is None:
+            return None
+        return self._parse(0, len(self.tokens))
+
+    def _parse(self, lower, upper):
+        first = self.tokens[lower]
+        last = self.tokens[upper - 1]
+        if first["value"] == "(" and self.matches.get(lower) == upper - 1:
+            child = self._parse(lower + 1, upper - 1)
+            return _Node("group", first["start"], last["end"], left=child)
+
+        top = self._top_level(lower, upper)
+        if any(self.tokens[index]["value"] in _ASSIGNMENTS for index in top):
+            return _Node("atom", first["start"], last["end"])
+        if any(self.tokens[index]["value"] in {"?", ":", "->", "::"} for index in top):
+            return _Node("atom", first["start"], last["end"])
+
+        for operators in _PRECEDENCE:
+            candidates = [
+                index for index in top
+                if self.tokens[index]["value"] in operators
+                and self._is_binary(index, lower, upper)
+            ]
+            if candidates:
+                operator = candidates[-1]
+                left = self._parse(lower, operator)
+                right = self._parse(operator + 1, upper)
+                return _Node(
+                    "binary", left.start, right.end,
+                    value=self.tokens[operator]["value"], left=left, right=right,
+                )
+
+        if first["value"] in _PREFIX and lower + 1 < upper:
+            child = self._parse(lower + 1, upper)
+            return _Node("unary", first["start"], child.end, value=first["value"], left=child)
+        return _Node("atom", first["start"], last["end"])
+
+    def _top_level(self, lower, upper):
+        result = []
+        index = lower
+        while index < upper:
+            value = self.tokens[index]["value"]
+            if value in {"(", "[", "{"}:
+                closing = self.matches.get(index)
+                if closing is None or closing >= upper:
+                    return []
+                index = closing + 1
+                continue
+            result.append(index)
+            index += 1
+        return result
+
+    def _is_binary(self, index, lower, upper):
+        value = self.tokens[index]["value"]
+        if value not in {"+", "-"}:
+            return index > lower and index + 1 < upper
+        if index == lower:
+            return False
+        previous = self.tokens[index - 1]["value"]
+        return previous not in (
+            _ASSIGNMENTS | _PREFIX | {"(", "[", "{", ",", "?", ":", "&&", "||",
+                                      "&", "|", "^", "==", "!=", "<", "<=", ">", ">=",
+                                      "<<", ">>", ">>>", "*", "/", "%"}
+        )
+
+    def shape(self, node):
+        if node.kind == "group":
+            return self.shape(node.left)
+        if node.kind == "binary":
+            return (node.value, self.shape(node.left), self.shape(node.right))
+        if node.kind == "unary":
+            return (node.value, self.shape(node.left))
+        return "atom"
+
+    def render(self, node):
+        if node.kind == "atom":
+            return self.source[node.start:node.end]
+        if node.kind == "group":
+            return (
+                self.source[node.start:node.left.start]
+                + self.render(node.left)
+                + self.source[node.left.end:node.end]
+            )
+        if node.kind == "unary":
+            rendered = self.render(node.left)
+            if node.value == "!":
+                return self.templates["!"].format(a=rendered)
+            if node.value == "~" and self.type_of(node.left) in _INTEGRAL:
+                return self.templates["~"].format(a=rendered)
+            return self.source[node.start:node.left.start] + rendered
+
+        left = self.render(node.left)
+        right = self.render(node.right)
+        node_type = self.type_of(node)
+        if node.value in {"+", "-", "*", "/", "%"} and node_type in {"int", "long"}:
+            if node_type == "long":
+                left = f"((long) ({left}))"
+                right = f"((long) ({right}))"
+            return self.templates[node.value].format(a=left, b=right)
+        if node.value in {"&", "|", "^"} and node_type in {"int", "long"}:
+            return self.templates[node.value + "_integral"].format(a=left, b=right)
+        if node.value in {"&", "|", "^"} and node_type == "boolean":
+            return self.templates[node.value + "_boolean"].format(a=left, b=right)
+        if node.value in {"<<", ">>", ">>>"} and node_type in {"int", "long"}:
+            return self.templates[node.value].format(a=left, b=right)
+        if node.value in {"<", "<=", ">", ">="} and self._integral_operands(node):
+            return self.templates[node.value].format(a=left, b=right)
+        if node.value in {"==", "!=", "instanceof"}:
+            return self.templates[node.value].format(a=left, b=right)
+        if node.value in {"&&", "||"}:
+            return self.templates[node.value].format(a=left, b=right)
+        return left + self.source[node.left.end:node.right.start] + right
+
+    def type_of(self, node):
+        if node.kind == "group":
+            return self.type_of(node.left)
+        if node.kind == "atom":
+            relevant = [
+                token for token in self.tokens
+                if token["start"] >= node.start and token["end"] <= node.end
+            ]
+            if len(relevant) != 1:
+                return None
+            token = relevant[0]
+            if token["kind"] == "Identifier":
+                return self.symbols.get(token["value"])
+            if token["kind"] == "Boolean":
+                return "boolean"
+            if token["kind"] == "Character":
+                return "int"
+            if "Integer" in token["kind"]:
+                return "long" if token["value"].lower().endswith("l") else "int"
+            if "FloatingPoint" in token["kind"]:
+                return "floating"
+            return None
+        if node.kind == "unary":
+            operand = self.type_of(node.left)
+            if node.value == "!":
+                return "boolean" if operand == "boolean" else None
+            if node.value in {"~", "+", "-"} and operand in _INTEGRAL:
+                return "long" if operand == "long" else "int"
+            return None
+
+        left = self.type_of(node.left)
+        right = self.type_of(node.right)
+        if node.value in {"+", "-", "*", "/", "%", "&", "|", "^"}:
+            if left in _INTEGRAL and right in _INTEGRAL:
+                return "long" if "long" in {left, right} else "int"
+            if node.value in {"&", "|", "^"} and left == right == "boolean":
+                return "boolean"
+        if node.value in {"<<", ">>", ">>>"} and left in _INTEGRAL and right in _INTEGRAL:
+            return "long" if left == "long" else "int"
+        if node.value in {"<", "<=", ">", ">=", "==", "!=", "instanceof", "&&", "||"}:
+            return "boolean"
+        return None
+
+    def _integral_operands(self, node):
+        return self.type_of(node.left) in _INTEGRAL and self.type_of(node.right) in _INTEGRAL
+
+
+def _ast_shape(node):
+    if isinstance(node, javalang.tree.BinaryOperation):
+        shape = (node.operator, _ast_shape(node.operandl), _ast_shape(node.operandr))
+    elif isinstance(node, (javalang.tree.TernaryExpression, javalang.tree.Assignment,
+                           javalang.tree.LambdaExpression)):
+        shape = (type(node).__name__,)
+    else:
+        shape = "atom"
+    for operator in reversed(getattr(node, "prefix_operators", None) or []):
+        shape = (operator, shape)
+    return shape
+
+
+def _symbol_types(source):
+    symbols = {}
+    try:
+        tree = javalang.parse.parse("class __OperatorProbe__ {\n" + source + "\n}")
+    except Exception:
+        return symbols
+
+    def record(name, type_node, extra_dimensions=False):
+        name_type = getattr(type_node, "name", None)
+        dimensions = getattr(type_node, "dimensions", None) or []
+        primitive = name_type if name_type in _INTEGRAL | {"boolean", "float", "double"} else None
+        if dimensions or extra_dimensions:
+            primitive = None
+        if name in symbols and symbols[name] != primitive:
+            symbols[name] = None
+        else:
+            symbols[name] = primitive
+
+    declarations = [
+        node for node in tree.types[0].body
+        if isinstance(node, (javalang.tree.MethodDeclaration, javalang.tree.ConstructorDeclaration))
+    ]
+    if len(declarations) != 1:
+        return symbols
+
+    declaration = declarations[0]
+    direct_parameters = {id(parameter) for parameter in declaration.parameters}
+    for parameter in declaration.parameters:
+        record(parameter.name, parameter.type, parameter.varargs)
+
+    # ponytail: without lexical scopes, any shadowing declaration makes the parameter unknown.
+    for _, node in declaration:
+        if isinstance(node, javalang.tree.FormalParameter) and id(node) not in direct_parameters:
+            if node.name in symbols:
+                symbols[node.name] = None
+        elif isinstance(node, javalang.tree.LambdaExpression):
+            for parameter in node.parameters:
+                if (isinstance(parameter, javalang.tree.MemberReference)
+                        and parameter.member in symbols):
+                    symbols[parameter.member] = None
+        elif isinstance(node, (javalang.tree.LocalVariableDeclaration,
+                               javalang.tree.FieldDeclaration)):
+            for declarator in node.declarators:
+                if declarator.name in symbols:
+                    symbols[declarator.name] = None
+    return symbols
+
+
 class ObfuscateOperations:
     def __init__(self, tainted):
-        # 연산자 우선순위 리스트 (우선순위 높은 것부터 나열)
-        self.operator_priority = [
-            r'**',  # 거듭제곱 연산자 (Python 스타일)
-            r'*', r'/', r'%',  # 곱셈, 나눗셈, 나머지
-            r'+', r'-',  # 덧셈, 뺄셈
-            r'<<', r'>>', r'>>>',  # 시프트 연산자
-            r'<', r'<=', r'>', r'>=', r'instanceof',  # 비교 연산자
-            r'==', r'!=',  # 동등 비교 연산자
-            r'&',  # 비트 AND
-            r'^',  # 비트 XOR
-            r'|',  # 비트 OR
-            r'&&',  # 논리 AND
-            r'||',  # 논리 OR
-            r'\?', r'\:',  # 삼항 연산자
-            r'=', r'\+=', r'-=', r'\*=', r'/=', r'%=', r'<<=', r'>>=', r'>>>=', r'&=', r'\^=', r'\|=',  # 대입 연산자
-        ]
-
-        self.file_path = tainted["file_path"]
-        self.method_name = tainted["method_name"]
-        self.tree_position = tainted["tree_position"]
         self.source_code = tainted["source_code"]
-
-        O = OperationDB()
-        self.op_json = O.op_db()
-
-        self.obfuscated = None
-        temp_result = ''
-
-        self.obfuscation_map = {}  # 난독화된 부분을 임시 저장할 맵
-        self.counter = 0  # 난독화 넘버링에 사용
-
-        e = ExtractOperations(self.source_code)
-
-        expressions = e.expressions
-
-        if expressions is not None:
-            for expression_list in expressions:
-                if len(expression_list) > 0:
-                    obfuscate_list = self.obfuscate_expression(expression_list)
-
-                    # 변환된 표현식으로 소스 코드를 교체
-                    self.obfuscated = self.replace_expression(self.source_code, expression_list, obfuscate_list)
-
-
+        self.op_json = OperationDB().op_db()
+        self.symbols = _symbol_types(self.source_code)
+        self.obfuscated = self._obfuscate()
 
     def return_obfuscated_code(self):
         return self.obfuscated
 
-    def obfuscate_expression(self, expression_list):
-        # 괄호 안의 내용을 먼저 처리
-        result_list=[]
-        for expression in expression_list:
-            expression = self.apply_operator_priority(expression)
-            # 임시 기호를 원래의 난독화된 표현으로 대체
-            for key, value in sorted(self.obfuscation_map.items(), reverse=True):
-                expression = expression.replace(key, f"{value}")  # 괄호를 추가하지 않고 원래 표현으로
-            result_list.append(expression)
-
-        return result_list
-
+    def _obfuscate(self):
+        result = self.source_code
+        extractor = ExtractOperations(self.source_code)
+        conditions = []
+        for condition in sorted(extractor.conditions, key=lambda item: (item[1], -item[2])):
+            if conditions and condition[1] < conditions[-1][2]:
+                continue
+            conditions.append(condition)
+        for _, start, end in reversed(conditions):
+            original = self.source_code[start:end]
+            transformed = self.apply_operator_priority(original)
+            result = result[:start] + transformed + result[end:]
+        return result
 
     def apply_operator_priority(self, expression):
-        # 함수 호출과 일반 괄호를 구분하기 위한 패턴
-        function_call_pattern = re.compile(r'\b[\w\.]+\s*\([^()]*\)')
-
-        # 함수 호출의 괄호는 건드리지 않도록 미리 찾아둠
-        def preserve_function_calls(match):
-            inner = match.group(0)
-            temp_key = f"__FUNC_CALL_{self.counter}__"
-            self.obfuscation_map[temp_key] = inner  # 함수 호출 저장
-            self.counter += 1
-            return temp_key
-
-        # 모든 함수 호출을 임시 키로 치환
-        expression = function_call_pattern.sub(preserve_function_calls, expression)
-
-        # 괄호 내부를 재귀적으로 처리 (단, 함수 호출은 제외)
-        while '(' in expression:
-            expression = re.sub(
-                r'\(([^()]+)\)',
-                lambda x: self.apply_operator_priority(x.group(1)),
-                expression
+        try:
+            parsed = javalang.parse.parse_expression(expression)
+            tree = _Expression(expression, self.symbols, self.op_json)
+            if tree.has_comments():
+                return expression
+            root = tree.parse()
+            if root is None or tree.shape(root) != _ast_shape(parsed):
+                return expression
+            transformed = (
+                expression[:root.start]
+                + tree.render(root)
+                + expression[root.end:]
             )
-
-        # 숫자값 전용 연산자 리스트
-        integer_operators = {r'**', r'*', r'/', r'%', r'+', r'-', r'<<', r'>>', r'>>>'}
-
-        for operator_pattern in self.operator_priority:
-            # 단항 연산자까지 포함한 정규식
-            pattern = re.compile(
-                rf'(\([^()]+\)|\b-?\w+\b|-?\d+|[!~]\s*\([^()]+\)|[!~]\s*\b-?\w+\b|-?\d+)\s*'
-                rf'({re.escape(operator_pattern)})\s*'
-                rf'(\([^()]+\)|\b-?\w+\b|-?\d+|[!~]\s*\([^()]+\)|[!~]\s*\b-?\w+\b|-?\d+)'
-            )
-            expression = ''.join(expression)
-            match = pattern.search(expression)
-            while match:
-                operand1 = match.group(1) if match.group(1) else "q"
-                operator = match.group(2) if match.group(2) else "q"
-                operand2 = match.group(3) if match.group(3) else "q"
-
-                # 디버깅용 출력
-                print(f"Identified operator: {operator} between '{operand1}' and '{operand2}'")
-
-                # == 또는 != 연산자 처리
-                if operator in ['==', '!=']:
-                    # null 체크: 하나의 피연산자만 null일 때 처리
-                    if operand1 == 'null' and operand2 != 'null':
-                        operand = operand2  # null이 아닌 피연산자를 operand로 사용
-                        if operator == '==':
-                            obfuscated = self.op_json["not_null_check"].format(a=operand)
-                        else:  # operator == '!='
-                            obfuscated = self.op_json["null_check"].format(a=operand)
-                    elif operand2 == 'null' and operand1 != 'null':
-                        operand = operand1  # null이 아닌 피연산자를 operand로 사용
-                        if operator == '==':
-                            obfuscated = self.op_json["not_null_check"].format(a=operand)
-                        else:  # operator == '!='
-                            obfuscated = self.op_json["null_check"].format(a=operand)
-                    else:
-                        # null이 둘 다 있거나 없을 때 기존 처리 유지
-                        is_integer_operand1 = operand1.isdigit() or '__INTEGER_' in operand1
-                        is_integer_operand2 = operand2.isdigit() or '__INTEGER_' in operand2
-
-                        # 숫자값이 포함된 경우
-                        if is_integer_operand1 or is_integer_operand2:
-                            obfuscated = self.op_json[f"{operator}_integer"].format(a=operand1, b=operand2)
-                        else:
-                            # 숫자값이 아닌 객체 비교
-                            obfuscated = self.op_json[f"{operator}_object"].format(a=operand1, b=operand2)
-                else:
-                    # 기존 난독화 규칙 적용
-                    obfuscated = self.op_json[operator].format(a=operand1, b=operand2)
-
-                # 숫자 값 전용 연산자일 경우 __INTEGER__로 변환
-                if operator_pattern in integer_operators:
-                    temp_key = f"__INTEGER_{self.counter}__"
-                else:
-                    temp_key = f"__OBFUSCATED_{self.counter}__"
-
-                self.obfuscation_map[temp_key] = f"{obfuscated}"
-                expression = (
-                        expression[:match.start()]
-                        + temp_key
-                        + expression[match.end():]
-                )
-                self.counter += 1
-
-                # 다음 연산자 처리
-                match = pattern.search(expression)
-
-        # 임시로 치환한 함수 호출을 원래대로 복원
-        for key, value in self.obfuscation_map.items():
-            if key.startswith("__FUNC_CALL_"):
-                expression = expression.replace(key, value)
-
-        return expression
-
-
-
-
-
-    def replace_expression(self, source_code, original_list,obfuscate_list):
-        result = source_code
-
-        for original, obfuscated in zip(original_list, obfuscate_list):
-            print("오리지널:",original)
-            print("난독화: ",obfuscated)
-            # 임시 변수 초기화
-            temp_result = ""
-            index = 0
-
-            while index < len(result):
-                # 원본 표현식 찾기
-                found_index = result.find(original, index)
-                if found_index == -1:
-                    # 더 이상 찾을 수 없으면 남은 부분을 결과에 추가하고 종료
-                    temp_result += result[index:]
-                    break
-                # 찾은 위치 이전까지의 코드를 임시 결과에 추가
-                temp_result += result[index:found_index]
-                # 원본 표현식을 난독화된 표현식으로 대체
-                temp_result += obfuscated
-                # 다음 검색 위치 갱신
-                index = found_index + len(original)
-
-            # 현재 단계의 난독화된 결과로 업데이트
-            result = temp_result
-
-        return result
+            javalang.parse.parse_expression(transformed)
+            return transformed
+        except Exception:
+            return expression

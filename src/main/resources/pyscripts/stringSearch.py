@@ -81,6 +81,17 @@ class StringSearch:
             if 'Cipher' in node.value:
                 self.ban_list.append(node.value)
 
+            # 파일 확장자가 있는 문자열 (파일 이름으로 사용될 가능성)
+            # .db, .xml, .json, .txt, .dat 등
+            value_without_quotes = node.value.strip('"')
+            file_extensions = ['.db', '.xml', '.json', '.txt', '.dat', '.sql', '.properties']
+            if any(value_without_quotes.endswith(ext) for ext in file_extensions):
+                self.ban_list.append(node.value)
+
+            # 경로 구분자가 포함된 문자열 (파일 경로)
+            if '/' in value_without_quotes or '\\' in value_without_quotes:
+                self.ban_list.append(node.value)
+
     # 기존 문자열 추출 함수에 switch-case 처리 추가
     def __extract_strings(self, node, package_name):
         string_literals = []

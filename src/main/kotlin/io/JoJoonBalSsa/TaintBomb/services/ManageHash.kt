@@ -10,13 +10,9 @@ import java.io.InputStream
 import java.security.MessageDigest
 
 class ManageHash(private val scriptFolder : String, private val indicator: ProgressIndicator) {
-    private var scriptNames = mutableListOf<String>()
-    private var scriptHashes = mutableListOf<String>()
+    private val scriptHashes = linkedMapOf<String, String>()
 
-    fun getScriptNames(): MutableList<String> {
-        val scripts = scriptNames
-        return scripts
-    }
+    fun getScriptNames(): MutableList<String> = scriptHashes.keys.toMutableList()
 
     fun compareFileHashes(fractionValue: Double) {
         indicator.text = "Comparing file hashes..."
@@ -24,31 +20,25 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
         MyConsoleViewer.println("Comparing file hashes...")
         MyConsoleLogger.logPrint("Comparing file hashes...")
 
-        for (i in 0..scriptNames.size - 1) {
-            val fileName = scriptNames[i] + ".py"
-            val expectedHash = scriptHashes[i]
-
+        for ((scriptName, expectedHash) in scriptHashes) {
+            val fileName = "$scriptName.py"
             val file = File(scriptFolder, fileName)
-            if (file.exists()) {
-                try {
-                    val actualHash = calculateSHA256(file)
-                    if (actualHash == expectedHash) {
-                        // MyConsoleLogger.println("File $fileName matches the expected hash.")
-                    } else {
-                        MyConsoleViewer.println("File $fileName does not match the expected hash.")
-                        MyConsoleLogger.logPrint("File $fileName does not match the expected hash.")
-                        throw IllegalArgumentException("File $fileName does not match the expected hash.")
-                    }
-                }
-                catch (e: IOException) {
-                    MyConsoleViewer.println("Error reading file: ${e.message}")
-                    MyConsoleLogger.logPrint("Error reading file: ${e.message}")
-                    throw IllegalArgumentException("Error reading file: ${e.message}")
-                }
-            } else {
+            if (!file.exists()) {
                 MyConsoleViewer.println("File $fileName does not exist.")
                 MyConsoleLogger.logPrint("File $fileName does not exist.")
                 throw IllegalArgumentException("File $fileName does not exist.")
+            }
+            try {
+                val actualHash = calculateSHA256(file)
+                if (actualHash != expectedHash) {
+                    MyConsoleViewer.println("File $fileName does not match the expected hash.")
+                    MyConsoleLogger.logPrint("File $fileName does not match the expected hash.")
+                    throw IllegalArgumentException("File $fileName does not match the expected hash.")
+                }
+            } catch (e: IOException) {
+                MyConsoleViewer.println("Error reading file: ${e.message}")
+                MyConsoleLogger.logPrint("Error reading file: ${e.message}")
+                throw IllegalArgumentException("Error reading file: ${e.message}")
             }
         }
     }
@@ -82,8 +72,7 @@ class ManageHash(private val scriptFolder : String, private val indicator: Progr
         for(fileList in fileLists) {
             val parts = fileList.split(" ")
             if (parts.size == 2) {
-                scriptNames.add(parts[0])
-                scriptHashes.add(parts[1])
+                scriptHashes[parts[0]] = parts[1]
             } else {
                 MyConsoleLogger.logPrint("Invalid line: $fileList")
             }
