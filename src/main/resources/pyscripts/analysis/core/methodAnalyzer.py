@@ -11,28 +11,40 @@ class MethodAnalyzer:
         self._get_position = ""
         self._current_node = None
         self._file_path = ""
+        # 파일별로 source_lines 분할과 MethodEndLineFinder 인스턴스를 캐싱.
+        # get_cut_tree 가 메서드마다 source 를 다시 splitlines 하던 비용을 제거.
+        self._finder_cache = {}
+        # 메서드 이름 -> [(class, file_path, MethodDeclaration node), ...] 인덱스
+        self._decls_by_name = self._build_decl_index(methods)
+
+    @staticmethod
+    def _build_decl_index(methods):
+        index = {}
+        for (class_name, method_name), method_nodes in methods.items():
+            bucket = index.setdefault(method_name, [])
+            for file_path, method_node in method_nodes:
+                for _path, node in method_node:
+                    if isinstance(node, javalang.tree.MethodDeclaration) and node.name == method_name:
+                        bucket.append((class_name, file_path, node))
+                        break
+        return index
+
+    def _get_finder(self, file_path):
+        finder = self._finder_cache.get(file_path)
+        if finder is None:
+            finder = MethodEndLineFinder(self.source_codes[file_path])
+            self._finder_cache[file_path] = finder
+        return finder
 
     def get_cut_tree(self, m_name):
         """메소드 이름으로 해당 메소드의 트리 정보를 반환"""
-        for (class_name, method_name), method_nodes in self.methods.items():
-            if method_name == m_name:
-                for file_path, method_node in method_nodes:
-                    for path, node in method_node:
-                        if isinstance(node, javalang.tree.MethodDeclaration) and node.name == method_name:
-                            self._current_node = node
-                            self._file_path = file_path
-
-                            # 시작 줄
-                            start_line = node.position.line
-
-                            # 끝 줄을 재귀적으로 계산합니다.
-                            finder = MethodEndLineFinder(self.source_codes[file_path])
-                            end_line = finder.find_method_end_line(start_line)
-
-                            # Store start and end positions in a single variable
-                            self._get_position = f"{start_line}-{end_line}"
-                            # Return or use node_positions as needed
-                            return self._method_declaration_to_string(node)
+        for class_name, file_path, node in self._decls_by_name.get(m_name, ()):
+            self._current_node = node
+            self._file_path = file_path
+            start_line = node.position.line
+            end_line = self._get_finder(file_path).find_method_end_line(start_line)
+            self._get_position = f"{start_line}-{end_line}"
+            return self._method_declaration_to_string(node)
 
     def _method_declaration_to_string(self, method_node):
         """MethodDeclaration 객체를 전체적으로 문자열로 변환"""
@@ -63,26 +75,18 @@ class MethodAnalyzer:
 
     def extract_method_source_code(self):
         """메소드의 소스 코드를 추출"""
-        start_line_str, end_line_str = self._get_position.split('-')
-
-        # 파일 경로에 해당하는 소스 코드를 가져옵니다.
         if self._file_path not in self.source_codes:
             raise ValueError(f"파일 경로 '{self._file_path}'가 source_codes에 존재하지 않습니다.")
 
-        source_code = self.source_codes[self._file_path]
+        start_str, end_str = self._get_position.split('-', 1)
+        start_line = int(start_str)
+        end_line = int(end_str)
 
-        # 시작 줄과 끝 줄을 분리하여 정수로 변환합니다.
-        start_line_str, end_line_str = self._get_position.split('-')
-        start_line = int(start_line_str)
-        end_line = int(end_line_str)
+        # MethodEndLineFinder 가 이미 split 한 결과를 재사용 (재분할 비용 제거)
+        lines = self._get_finder(self._file_path).source_lines
 
-        # 소스 코드에서 해당 범위를 추출합니다.
-        lines = source_code.splitlines()
-
-        # 시작 줄과 끝 줄을 기준으로 코드 추출
         if start_line < 1 or end_line > len(lines):
             raise ValueError(f"잘못된 줄 번호 범위: 시작 줄 {start_line}, 끝 줄 {end_line}")
 
-        extracted_lines = lines[start_line - 1:end_line]
-
-        return ''.join(extracted_lines)
+        # 원본의 ''.join 은 줄바꿈을 잃어 한 줄로 합쳐졌었음. '\n'.join 으로 보존.
+        return '\n'.join(lines[start_line - 1:end_line])

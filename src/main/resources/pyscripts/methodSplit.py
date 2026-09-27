@@ -2,6 +2,20 @@ import string
 import secrets
 import re
 
+CHECKED_EXCEPTION_TYPES = {
+    'FileReader', 'FileWriter', 'BufferedReader', 'BufferedWriter',
+    'FileInputStream', 'FileOutputStream', 'RandomAccessFile',
+    'PipedInputStream', 'PipedOutputStream', 'PrintWriter', 'PushbackReader',
+    'BufferedImage', 'ImageIO', 'ObjectInputStream', 'ObjectOutputStream',
+    'InputStreamReader', 'OutputStreamWriter', 'DataInputStream',
+    'DataOutputStream', 'FileChannel', 'FileLock', 'Socket', 'ServerSocket',
+    'HttpURLConnection', 'DatagramSocket', 'MulticastSocket', 'URL',
+    'URLConnection', 'JarURLConnection', 'Connection', 'Statement',
+    'PreparedStatement', 'ResultSet', 'CallableStatement', 'Thread',
+    'ExecutorService', 'FutureTask', 'StreamTokenizer', 'LineNumberReader',
+    'SequenceInputStream', 'PrintStream', 'Console'
+}
+
 class MethodSplit:
     def __init__(self, method):
         self.method = method
@@ -10,7 +24,10 @@ class MethodSplit:
         self.merged_code = self.__merge_methods_and_functions(modified_method, functions)
 
     def __extract_java_method_info(self, method_code):
-        method_pattern = re.compile(r'\b(public|protected|private)\s+(static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)\s*\{')
+        java_type = r'[\w$.]+(?:<[^>{}]+>)?(?:\[\])?'
+        method_pattern = re.compile(
+            rf'\b(public|protected|private)?\s*(static\s+)?({java_type})\s+(\w+)\s*\(([^)]*)\)\s*\{{'
+        )
         match = method_pattern.search(method_code)
 
         if match:
@@ -22,8 +39,11 @@ class MethodSplit:
 
             param_list = []
             if parameters:
-                for param in parameters.split(','):
-                    param_type, param_name = param.strip().split()
+                for param in self.__split_parameters(parameters):
+                    parts = param.strip().rsplit(None, 1)
+                    if len(parts) != 2:
+                        return None
+                    param_type, param_name = parts
                     param_list.append((param_type, param_name))
 
             start_index = match.end()
@@ -41,7 +61,33 @@ class MethodSplit:
             return access_modifier, return_type, method_name, param_list, body, is_static
 
         else:
-            return None 
+            return None
+
+    def __split_parameters(self, parameters):
+        params = []
+        start = 0
+        generic_depth = 0
+        for i, char in enumerate(parameters):
+            if char == '<':
+                generic_depth += 1
+            elif char == '>':
+                generic_depth = max(0, generic_depth - 1)
+            elif char == ',' and generic_depth == 0:
+                params.append(parameters[start:i])
+                start = i + 1
+        params.append(parameters[start:])
+        return params
+
+    def __mutates_known_variable(self, expression, names):
+        for name in names:
+            escaped = re.escape(name)
+            if re.search(
+                rf'(?:\+\+|--)\s*\b{escaped}\b|'
+                rf'\b{escaped}\b\s*(?:\+\+|--|(?:<<|>>>|>>|[+\-*/%&|^])?=(?!=))',
+                expression,
+            ):
+                return True
+        return False
 
     def __dynamic_method_split(self, method_code):
         result = self.__extract_java_method_info(method_code)
@@ -57,7 +103,7 @@ class MethodSplit:
 
         statements = self.__split_top_level_statements(body)
 
-        var_pattern = re.compile(r'^\s*(\w+)\s+(\w+)\s*=\s*(.+)$')
+        var_pattern = re.compile(r'^\s*([\w$.]+(?:<[^>{}]+>)?(?:\[\])?)\s+(\w+)\s*=\s*(.+)$')
         update_pattern = re.compile(r'^\s*(\w+)\s*=\s*(?![=!])(.*)$')
 
         local_vars = {}
@@ -65,6 +111,20 @@ class MethodSplit:
         for line in statements:
             line = line.strip()
             if not line:
+                continue
+
+            # 완결된 제어 블록(`while(...){...}`, `for(...){...}`, `if(...){...}` 등)은
+            # 세미콜론이 필요 없다. 특히 `while(true){...}` 같은 무한 루프 뒤에 빈 문장
+            # `;` 을 붙이면 "도달 불가(unreachable)" 컴파일 에러가 난다(파싱은 통과).
+            # 단, 배열 초기화(`int[] a = {1,2}`)처럼 '}'로 끝나지만 세미콜론이 필요한
+            # 경우는 제어 키워드로 시작하지 않으므로 구분된다.
+            stripped = line.strip()
+            is_control_block = (
+                re.match(r'^(for|if|while|switch|try|do|synchronized)\b', stripped)
+                and stripped.endswith('}')
+            )
+            if is_control_block:
+                modified_body.append(line)
                 continue
 
             if re.match(r'^\s*(for|if|while)\s*\(', line) or '{' in line or '}' in line:
@@ -78,7 +138,16 @@ class MethodSplit:
                 var_type, var_name, expr = declare_m.groups()
                 expr = expr.strip().rstrip(';')
 
+                base_type = var_type.rsplit('.', 1)[-1].split('<', 1)[0].removesuffix('[]')
+                if base_type in CHECKED_EXCEPTION_TYPES:
+                    modified_body.append(f"{var_type} {var_name} = {expr};")
+                    continue
+
                 local_vars[var_name] = var_type
+
+                if self.__mutates_known_variable(expr, local_vars.keys() | param_types.keys()):
+                    modified_body.append(f"{var_type} {var_name} = {expr};")
+                    continue
 
                 tokens = re.findall(r'\b[a-zA-Z_]\w*\b', expr)
                 used_order = []
@@ -100,8 +169,7 @@ class MethodSplit:
                 new_function = (
                     f"public {'static ' if is_static else ''}{var_type} {function_name}"
                     f"({', '.join(sig_parts)}) {{\n"
-                    f"    {var_type} {var_name} = {expr};\n"
-                    f"    return {var_name};\n"
+                    f"    return {expr};\n"
                     f"}}\n"
                 )
                 extracted_functions.append(new_function)
@@ -117,6 +185,10 @@ class MethodSplit:
 
                 target_type = local_vars.get(var_name) or param_types.get(var_name)
                 if not target_type:
+                    modified_body.append(f"{var_name} = {expr};")
+                    continue
+
+                if self.__mutates_known_variable(expr, local_vars.keys() | param_types.keys()):
                     modified_body.append(f"{var_name} = {expr};")
                     continue
 
@@ -147,8 +219,7 @@ class MethodSplit:
                     new_function = (
                         f"public {'static ' if is_static else ''}{target_type} {function_name}"
                         f"({', '.join(sig_parts)}) {{\n"
-                        f"    {var_name} = {expr};\n"
-                        f"    return {var_name};\n"
+                        f"    return {expr};\n"
                         f"}}\n"
                     )
                     extracted_functions.append(new_function)
@@ -162,18 +233,21 @@ class MethodSplit:
 
 
         header_params = ', '.join([f"{ptype} {pname}" for ptype, pname in param_list])
+        access_prefix = f"{access_modifier} " if access_modifier else ""
         modified_method = (
-            f"public {'static ' if is_static else ''}{return_type} {method_name}({header_params}) {{\n    "
+            f"{access_prefix}{'static ' if is_static else ''}{return_type} {method_name}({header_params}) {{\n    "
             + "\n    ".join(modified_body)
         )
 
         return modified_method, extracted_functions
 
     def __merge_methods_and_functions(self, modified_method, extracted_functions):
+        # 실패 시 None 을 반환한다. (기존에는 "// Error..." 주석 문자열을 반환했는데,
+        # 그러면 levelObfuscate 가 그 주석을 실제 메서드 본문으로 적용해 컴파일이
+        # 깨졌다. None 을 반환하면 오케스트레이터가 원본 메서드를 그대로 유지한다.)
         try:
-
             if modified_method is None:
-                raise ValueError("Modified method is None. The input method code might not match the expected Java method pattern.")
+                return None
 
             if modified_method.endswith("}\n"):
                 modified_method = modified_method[:-2]
@@ -182,13 +256,9 @@ class MethodSplit:
 
             return merged_code
 
-        except AttributeError as e:
-            print(f"An error occurred: {e}")
-            return "// Error: Invalid method code."
-
-        except ValueError as e:
-            print(f"An error occurred: {e}")
-            return "// Error: Method pattern did not match the expected format."
+        except (AttributeError, ValueError) as e:
+            print(f"MethodSplit merge failed, keeping original: {e}")
+            return None
 
     def __generate_random_string(self, length=8):
         if length < 1:

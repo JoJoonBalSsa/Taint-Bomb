@@ -1,11 +1,19 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
-# IntelliJ Platform Plugin Template Changelog
+# Taint-Bomb Changelog
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-27
+
+### Added
+
+- Static weakness scan wired into the analysis pipeline: `findJavaWeak` now runs during `main.py` and appends a **Static Weakness Scan** section (insecure deserialization, weak TLS/hostname verification, SQL-injection surface, hardcoded secrets, sensitive-data logging) to `analysis_result.md`. Previously the scanner existed but was never invoked.
+- Test coverage for the weakness scan (`obfuscation_tests/test_java_weak.py`).
+
 ### Changed
 
+- Integrate all existing project branches, preserving Android support, modular taint analysis, and the guarded obfuscation transforms.
 - Upgrade Gradle Wrapper to `8.10.2`
 - Update `platformVersion` to `2023.3.8`
 - Dependencies - upgrade `org.jetbrains.intellij.platform` to `2.1.0`
@@ -15,6 +23,20 @@
 
 ### Fixed
 
+- Replace the deprecated `DynamicBundle(String)` constructor with `DynamicBundle(MyBundle::class.java, BUNDLE)` for IntelliJ IDEA 2026.3 EAP (263.5153.40).
+- Test project-service registration and resource-bundle lookups without invoking a full build on an empty IDE fixture.
+- Fail plugin verification on deprecated API usages.
+- Apply source-based level obfuscation before identifier renaming and honor the string-obfuscation setting.
+- Preserve external API members, reflection class names, annotation class literals, and Java string identity during obfuscation; add executable regression and target-project smoke checks.
+- Correct operator rewrite formulas and source ranges while preserving precedence, operand evaluation, and numeric promotion; retain expressions whose types cannot be established safely.
+- Encode constant-sensitive string expressions without losing Java compile-time constant identity; retain runtime char-array encoding for ordinary literals.
+- Keep declaration-dependent statements together during control-flow flattening instead of hoisting locals, preserving final constants, definite assignment, initializer order, and field/local binding.
+- Preserve quoted annotation data and unrelated `forName` receivers while rewriting real class literals and reflection targets.
+- Avoid generated identifier collisions in dispatcher, opaque-predicate, and dummy-code insertion; preserve explicit constructor calls before injected statements.
+- Preserve generic parameter boundaries and local mutation state during method splitting, and reject inferred-lambda shadowing in operator type proofs.
+- Use actual source literal boundaries for AES replacement of non-BMP text while retaining the existing escaped/path-literal exclusion policy.
+- `findJavaWeak.py` standalone entry point no longer uses a hardcoded `C:/taintboom/...` path; it now takes a target path argument (`python findJavaWeak.py <path>`).
+- Regenerated `pyscripts/check_hash`: the committed manifest was stale (content mismatches) and missing five scripts imported by `levelObfuscate` (`controlFlowFlatten`, `opaquePredicate`, `reflectionIndirect`, `stringSplit`, `javaValidate`), which the runtime script-integrity gate would have rejected.
 - Fixed _Run Plugin_ run configuration logs location
 
 ### Removed
@@ -547,7 +569,7 @@
 - Template Cleanup: Run `ktlintFormat` task to fix imports order
 - GitHub Actions: Use the correct property in the "Upload artifact" step
 
-## [0.8.0] - 2020-12-21
+## [0.8.0-template] - 2020-12-21
 
 ### Added
 
@@ -795,7 +817,7 @@
 [0.8.3]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.8.0...v0.8.1
-[0.8.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.7.1...v0.8.0
+[0.8.0-template]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.6.0...v0.6.1

@@ -31,6 +31,6 @@ def python_in_directory(directory_path, exclude_file='create_hash.py', output_fi
     print(f"SHA-256 해시값이 {output_file} 파일에 저장되었습니다.")
 
 
-# 사용 예시
-python_path = './'
-python_in_directory(python_path)
+if __name__ == '__main__':
+    python_path = './'
+    python_in_directory(python_path)

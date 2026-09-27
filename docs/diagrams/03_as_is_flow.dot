@@ -1,0 +1,68 @@
+digraph AsIs {
+  rankdir=TB;
+  fontname="Helvetica";
+  labelloc="t"; fontsize=22;
+  label="Taint-Bomb — As-Is Runtime Process Flow\n(one click → obfuscated jar)";
+  node [fontname="Helvetica", fontsize=11];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  nodesep=0.3; ranksep=0.45;
+
+  start [label="Developer clicks\n\"Obfuscate\"", shape=oval, style=filled, fillcolor="#FDE68A"];
+  endok [label="Obfuscated jar in\nobfuscated_project_folder\n+ analysis_result.md opened", shape=oval, style=filled, fillcolor="#86EFAC"];
+
+  node [shape=box, style="rounded,filled", fillcolor="#DBEAFE"];
+
+  /* Pre-task (Kotlin) */
+  p1 [label="Detect OS"];
+  p2 [label="Delete old output / temp dirs"];
+  p3 [label="Copy project → obfuscated_project_folder\n(exclude build, .git, test, docs)"];
+  p4 [label="Parse check_hash manifest"];
+  p5 [label="Copy py scripts → temp_asdf_qwer"];
+  p6 [label="Create Python venv"];
+  p7 [label="pip install libs (javalang, pycryptodome)"];
+
+  /* Obfuscation drive (Kotlin → Python) */
+  node [fillcolor="#D1FAE5"];
+  o0 [label="Verify script SHA-256 hashes", shape=diamond, fillcolor="#FCA5A5"];
+  o1 [label="checkJavaSyntax.py\n(Java SE 8 spec)"];
+  o2 [label="removeComments.py"];
+  o3 [label="String encryption?", shape=diamond, fillcolor="#FEF08A"];
+  o3a [label="stringObfuscate.py\n(search → encrypt → inject decryptor)"];
+  o4 [label="main.py — Taint Analysis\nAST → extract → flow → sensitivity\n→ analysis_result.json + reports"];
+  o5 [label="levelObfuscate.py\nper sensitivity (2 = light, 3 = full)\nsafe_transform after each step"];
+  o6 [label="Identifier obfuscation?", shape=diamond, fillcolor="#FEF08A"];
+  o6a [label="identifierObfuscate.py"];
+
+  /* Build + finish */
+  node [fillcolor="#FCE7F3"];
+  b0 [label="Detect build manager", shape=diamond, fillcolor="#F9A8D4"];
+  b1 [label="gradle jar"];
+  b2 [label="mvn package"];
+  b3 [label="Open result .md files in editor"];
+  b4 [label="Delete temp_asdf_qwer"];
+
+  /* main spine */
+  start -> p1 -> p2 -> p3 -> p4 -> p5 -> p6 -> p7 -> o0;
+  o0 -> o1 [label="match"];
+  o0 -> fail [label="mismatch", color="#DC2626", fontcolor="#DC2626"];
+  fail [label="Abort\n(integrity error)", shape=oval, style=filled, fillcolor="#FCA5A5"];
+
+  o1 -> o2 -> o3;
+  o3 -> o3a [label="yes"];
+  o3 -> o4 [label="no"];
+  o3a -> o4;
+  o4 -> o5 -> o6;
+  o6 -> o6a [label="yes"];
+  o6 -> b0 [label="no"];
+  o6a -> b0;
+
+  b0 -> b1 [label="gradle"];
+  b0 -> b2 [label="maven"];
+  b1 -> b3; b2 -> b3;
+  b3 -> b4 -> endok;
+
+  /* swimlane hint */
+  { rank=same; o3a o3 }
+  { rank=same; o6 o6a }
+  { rank=same; b1 b2 }
+}

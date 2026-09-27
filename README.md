@@ -30,10 +30,36 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 <!-- Plugin description end -->
 
 <div style="text-align: center">
-  <a href="./docs/README-KOR.md">
+  <a href="./README-kor.md">
     <div style="font-size:250%">🇰🇷 한국어 문서</div>
   </a>
 </div>
+
+# Architecture & Design
+
+The diagrams below are generated from the source under [`docs/diagrams`](./docs/diagrams) (Graphviz `.dot` sources are kept alongside each image; regenerate with `dot -Tpng -Gdpi=150 docs/diagrams/<name>.dot -o docs/diagrams/<name>.png`).
+
+## System Architecture
+
+The plugin is a Kotlin/IntelliJ front end that orchestrates a Python taint-analysis & obfuscation engine, executed in a per-run virtual environment.
+
+<div align="center"><img src="./docs/diagrams/01_system_architecture.png" alt="System Architecture" width="900"></div>
+
+## Work Breakdown Structure (WBS)
+
+<div align="center"><img src="./docs/diagrams/02_wbs.png" alt="Work Breakdown Structure" width="420"></div>
+
+## As-Is Runtime Process Flow
+
+The actual sequence executed from a single click on the **Obfuscate** button, including the SHA-256 script-integrity gate and the per-sensitivity obfuscation steps.
+
+<div align="center"><img src="./docs/diagrams/03_as_is_flow.png" alt="As-Is Runtime Process Flow" width="360"></div>
+
+## Information Architecture
+
+Tool-window navigation, persisted configuration, and the data/artifact flow from input project to the generated `obfuscated_project_folder/`.
+
+<div align="center"><img src="./docs/diagrams/04_information_architecture.png" alt="Information Architecture" width="900"></div>
 
 # Requirements
 
@@ -62,7 +88,31 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 2. Open the target project to obfuscate on IntelliJ, and open Taint Bomb window.
 3. Set obfuscation methods and AI api key(optional) on Configuration tab.
 4. Click Obfuscate button.
-5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file. And also Taint-Analysis result(taint_anlaysis.txt & analysis_result.md) and analysis result by AI(llm_analysis_result.md).
+5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file, Taint-Analysis results (`taint_anlaysis.txt` and `analysis_result.md`), and optional Claude, ChatGPT, or Gemini analysis (`llm_analysis_result.md`). `analysis_result.md` also ends with a **Static Weakness Scan** section listing insecure-code patterns found in the sources.
+
+## Obfuscation techniques
+
+Taint Bomb performs **differential obfuscation**: stronger transformations are applied only to the code regions that Taint Analysis marks as sensitive, while low-sensitivity code is left untouched for performance and stability.
+
+| Sensitivity | Transformations applied |
+| --- | --- |
+| Level 1 (low) | skipped |
+| Level 2 (medium) | operator obfuscation, opaque predicate insertion, string split encoding |
+| Level 3 (high) | operator obfuscation, control-flow flattening, method splitting, opaque predicate insertion, string split encoding, dummy code insertion |
+
+Project-wide transformations (applied regardless of sensitivity): comment removal, string encryption, and identifier obfuscation.
+
+New in this release:
+
+- **Control-flow flattening** – rewrites straight-line method bodies into a randomized dispatcher `switch`-loop.
+- **Opaque predicate insertion** – guards junk blocks with always-false predicates that the compiler cannot fold away (no extra imports required).
+- **String split encoding** – replaces string literals with runtime-assembled, per-string XOR-encoded char arrays, so no plaintext string remains in the source.
+- **Syntax-validation safety net** – every transformation is re-parsed before being accepted; if a step would produce invalid Java it is automatically reverted to the last valid version, and a failing transform can never abort the whole run.
+- **Static weakness scan** – a secure-code review of the analyzed sources, flagging insecure deserialization, permissive TLS/hostname verification, SQL-injection surface, hardcoded secrets, and sensitive-data logging. Results are appended as a table to `analysis_result.md`. It can also be run standalone: `python findJavaWeak.py <path>`.
+
+> Reflection-based call indirection is also bundled as an experimental, opt-in module. It is excluded from the default pipeline because syntax validation alone cannot guarantee its runtime semantics.
+
+> The static weakness scan runs on the analyzed copy in `obfuscated_project_folder`. With string encryption or comment removal enabled (default), literal-based findings (e.g. hardcoded secret values) may be reduced; run `findJavaWeak.py` on the original source for full coverage.
 
 ## Caution
 

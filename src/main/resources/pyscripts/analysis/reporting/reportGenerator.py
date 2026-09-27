@@ -22,8 +22,9 @@ class MakeMD:
         f = 0
         while i < len(lines):
             line = lines[i].strip()
-            if line is None == "":
-                raise ValueError("No Line Error")
+            if not line:
+                i += 1
+                continue
             if line.startswith("Tainted Variable:"):
                 variable_name = lines[i + 1].strip()
                 flow = []
@@ -181,11 +182,11 @@ class MakeMD:
             for i, var_info in enumerate(tainted_variables, 1):
                 anchor = create_anchor(f"흐름 {i} {var_info['variable']}")
                 if var_info['sensitivity'] == 3:
-                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor})" + " - 상\n")
+                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor}) - 상\n")
                 elif var_info['sensitivity'] == 2:
-                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor})" + " - 중\n")
+                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor}) - 중\n")
                 else:
-                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor})" + " - 하\n")
+                    md_file.write(f"- [흐름 {i}: {var_info['variable']}](#{anchor}) - 하\n")
             md_file.write("\n")
 
             # 개요 작성
@@ -200,11 +201,11 @@ class MakeMD:
             # 각 흐름에 대한 콜 그래프와 상세 정보 작성
             for i, var_info in enumerate(tainted_variables, 1):
                 if var_info['sensitivity'] == 3:
-                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}`\n\n")
+                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}` - 상\n\n")
                 elif var_info['sensitivity'] == 2:
-                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}`\n\n")
+                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}` - 중\n\n")
                 else:
-                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}`\n\n")
+                    md_file.write(f"## 흐름 {i}: `{var_info['variable']}` - 하\n\n")
 
                 # SVG 콜 그래프 생성 및 삽입
                 svg_content = self.create_call_graph_svg(var_info['flow'])
