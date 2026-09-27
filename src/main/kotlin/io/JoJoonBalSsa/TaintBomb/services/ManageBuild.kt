@@ -92,15 +92,7 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
                 "jar"
             }
 
-            val processBuilder = when {
-                "windows" in osName -> ProcessBuilder("gradle.bat", gradleTask)
-                "linux" in osName-> ProcessBuilder("gradle", gradleTask)
-                "mac" in osName -> ProcessBuilder("gradle", gradleTask)
-                else -> throw IllegalArgumentException("Unsupported OS: $osName")
-            }
-
-            processBuilder.directory(File(outFolder))
-            processBuilder.redirectErrorStream(true)
+            val processBuilder = gradleProcessBuilder(osName, gradleTask)
 
             try {
                 // 프로세스를 시작합니다.
@@ -131,6 +123,28 @@ class ManageBuild (private val javaFilesPath: String, private var outFolder : St
             MyConsoleViewer.println("Error in jar building process: ${e.message}")
             MyConsoleLogger.logPrint("Error in jar building process: ${e.message}")
         }
+    }
+
+    internal fun gradleProcessBuilder(osName: String, gradleTask: String): ProcessBuilder {
+        val wrapper = File(outFolder, if ("windows" in osName) "gradlew.bat" else "gradlew")
+        val processBuilder = when {
+            "windows" in osName -> if (wrapper.isFile) {
+                ProcessBuilder("cmd.exe", "/d", "/c", ".\\gradlew.bat", gradleTask)
+            } else {
+                ProcessBuilder("gradle.bat", gradleTask)
+            }
+            "linux" in osName || "mac" in osName -> if (wrapper.isFile) {
+                // 복사된 wrapper의 실행 권한과 무관하게 프로젝트 버전을 사용합니다.
+                ProcessBuilder("sh", wrapper.absolutePath, gradleTask)
+            } else {
+                ProcessBuilder("gradle", gradleTask)
+            }
+            else -> throw IllegalArgumentException("Unsupported OS: $osName")
+        }
+
+        processBuilder.directory(File(outFolder))
+        processBuilder.redirectErrorStream(true)
+        return processBuilder
     }
 
     fun checkBuildManager() : String {
