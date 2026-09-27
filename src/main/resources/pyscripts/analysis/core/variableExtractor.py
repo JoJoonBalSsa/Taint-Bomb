@@ -3,6 +3,15 @@ from collections import defaultdict
 from sensitivityDB import SensitivityDB as S
 
 
+class MethodPath(str):
+    """Legacy flow label carrying its exact AST declaration when known."""
+
+    def __new__(cls, value, declaration):
+        instance = super().__new__(cls, value)
+        setattr(instance, 'declaration', declaration)
+        return instance
+
+
 def _annotation_name(ann):
     """javalang 의 Annotation 노드에서 단순 이름을 얻는다.
     예) @org.springframework.web.bind.annotation.RequestParam -> 'RequestParam'.
@@ -42,36 +51,40 @@ class VariableExtractor:
         for param in getattr(node, 'parameters', []) or []:
             for ann in (getattr(param, 'annotations', None) or ()):
                 if _annotation_name(ann) in S.parameter_source_annotations:
-                    self.tainted_variables.append(
-                        (f"{current_class}.{method_name}.PARAM", param.name, 0)
-                    )
-                    self.method_check.append(method_name)
+                    self._add_tainted(current_class, method_name, "PARAM", param.name, 0, node)
                     break
 
         # (B) 본문에서 source 호출로 만들어지는 taint 변수 탐색
         count = 0
         for _sub_path, sub_node in node:
             count += 1
-            self._extract_variables(sub_node, current_class, method_name, count)
+            self._extract_variables(sub_node, current_class, method_name, count, node)
 
-    def _extract_variables(self, sub_node, current_class, method_name, count):
-        """AST 노드에서 taint된 변수를 추출"""
+    def _add_tainted(self, current_class, method_name, source_name, var_name, count, declaration):
+        path = MethodPath(f"{current_class}.{method_name}.{source_name}", declaration)
+        self.tainted_variables.append((path, var_name, count))
+        self.method_check.append(method_name)
+
+    def _extract_variables(self, sub_node, current_class, method_name, count, declaration):
+        """AST 노드에서 taint된 변수들을 추출"""
         # 변수 선언 및 정의일 때
         if isinstance(sub_node, javalang.tree.VariableDeclarator):
-            self._handle_var_declarator(sub_node, current_class, method_name, count)
+            self._handle_var_declarator(
+                sub_node, current_class, method_name, count, declaration
+            )
             return
 
         # 변수 할당일 때
         if isinstance(sub_node, javalang.tree.Assignment):
-            self._handle_assignment(sub_node, current_class, method_name, count)
+            self._handle_assignment(sub_node, current_class, method_name, count, declaration)
             return
 
         # try-with-resources
         if isinstance(sub_node, javalang.tree.TryResource):
-            self._handle_try_resource(sub_node, current_class, method_name, count)
+            self._handle_try_resource(sub_node, current_class, method_name, count, declaration)
             return
 
-    def _handle_var_declarator(self, sub_node, current_class, method_name, count):
+    def _handle_var_declarator(self, sub_node, current_class, method_name, count, declaration):
         init = getattr(sub_node, 'initializer', None)
         if init is None:
             return
@@ -79,30 +92,27 @@ class VariableExtractor:
         # source 함수가 직접 RHS 인 케이스
         if isinstance(init, javalang.tree.MethodInvocation):
             if init.member in S.source_functions:
-                self.tainted_variables.append(
-                    (f"{current_class}.{method_name}.{init.member}", sub_node.name, count)
+                self._add_tainted(
+                    current_class, method_name, init.member, sub_node.name, count, declaration
                 )
-                self.method_check.append(method_name)
                 return
             # 인자나 qualifier 에 source 가 중첩된 경우
             nested = self._find_nested_source(init)
             if nested:
-                self.tainted_variables.append(
-                    (f"{current_class}.{method_name}.{nested}", sub_node.name, count)
+                self._add_tainted(
+                    current_class, method_name, nested, sub_node.name, count, declaration
                 )
-                self.method_check.append(method_name)
                 return
 
         # try-with-resources 비슷한 ClassCreator 패턴
         if isinstance(init, javalang.tree.ClassCreator):
             nested = self._find_nested_source_in_creator(init)
             if nested:
-                self.tainted_variables.append(
-                    (f"{current_class}.{method_name}.{nested}", sub_node.name, count)
+                self._add_tainted(
+                    current_class, method_name, nested, sub_node.name, count, declaration
                 )
-                self.method_check.append(method_name)
 
-    def _handle_assignment(self, sub_node, current_class, method_name, count):
+    def _handle_assignment(self, sub_node, current_class, method_name, count, declaration):
         value = getattr(sub_node, 'value', None)
         lhs = getattr(sub_node, 'expressionl', None)
         if value is None:
@@ -122,21 +132,19 @@ class VariableExtractor:
             return
 
         for var_name in self._lhs_var_names(lhs):
-            self.tainted_variables.append(
-                (f"{current_class}.{method_name}.{source_name}", var_name, count)
+            self._add_tainted(
+                current_class, method_name, source_name, var_name, count, declaration
             )
-            self.method_check.append(method_name)
 
-    def _handle_try_resource(self, sub_node, current_class, method_name, count):
+    def _handle_try_resource(self, sub_node, current_class, method_name, count, declaration):
         value = getattr(sub_node, 'value', None)
         if not isinstance(value, javalang.tree.ClassCreator):
             return
         nested = self._find_nested_source_in_creator(value)
         if nested:
-            self.tainted_variables.append(
-                (f"{current_class}.{method_name}.{nested}", sub_node.name, count)
+            self._add_tainted(
+                current_class, method_name, nested, sub_node.name, count, declaration
             )
-            self.method_check.append(method_name)
 
     @staticmethod
     def _lhs_var_names(lhs):

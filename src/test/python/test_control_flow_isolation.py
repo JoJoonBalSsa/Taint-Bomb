@@ -267,6 +267,19 @@ class ControlFlowIsolationTests(unittest.TestCase):
         )
         self.assertNotIn(dispatcher.group(1), {"_s0", "_s1"})
 
+    def test_constructor_invocations_are_preserved_with_real_jdk17(self):
+        for name, invocation in (("super", "super();"), ("this", "this(7);")):
+            with self.subTest(invocation=name):
+                constructor = 'Main() { ' + invocation + ' System.out.print("ok"); }'
+                source = ('public class Main {\n' + constructor + '\n'
+                          'Main(int value) {}\n'
+                          'public static void main(String[] args) { new Main(); }\n}')
+                candidate = ControlFlowFlatten(constructor).get_obfuscated_code()
+                transformed = source.replace(constructor, candidate or constructor, 1)
+                self._run_pair("constructor_" + name, source, transformed, "ok",
+                               {"constructor_preserved": candidate is None})
+                self.assertIsNone(candidate)
+
     def test_disabled_control_preserves_source_exactly(self):
         method = '''static int disabled(int value) {
         value += 2;

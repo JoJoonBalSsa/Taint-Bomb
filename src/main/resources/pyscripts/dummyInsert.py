@@ -4,8 +4,9 @@ import string
 
 
 class InsertDummyCode:
-    def __init__(self, java_code, dummy, rand):
+    def __init__(self, java_code, dummy, rand, reserved_code=None):
         self.java_code = java_code
+        self.reserved_code = java_code + ("\n" + reserved_code if reserved_code else "")
         self.rand = rand
         original_name = f"unusedFunction{rand}"
         self.dummy_name = self.__unused_name(original_name)
@@ -88,7 +89,7 @@ class InsertDummyCode:
 """
 
     def __unused_name(self, name):
-        while re.search(rf'\b{re.escape(name)}\b', self.java_code):
+        while re.search(rf'\b{re.escape(name)}\b', self.reserved_code):
             name += "_"
         return name
 

@@ -88,7 +88,7 @@ Tool-window navigation, persisted configuration, and the data/artifact flow from
 2. Open the target project to obfuscate on IntelliJ, and open Taint Bomb window.
 3. Set obfuscation methods and AI api key(optional) on Configuration tab.
 4. Click Obfuscate button.
-5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file, Taint-Analysis results (`taint_anlaysis.txt` and `analysis_result.md`), and optional Claude, ChatGPT, or Gemini analysis (`llm_analysis_result.md`). `analysis_result.md` also ends with a **Static Weakness Scan** section listing insecure-code patterns found in the sources.
+5. 'obfuscated_project_folder' will be created in the project files. It contains obfuscated project code and built jar file, Taint-Analysis results (`taint_result.txt` and `analysis_result.md`), and optional Claude, ChatGPT, or Gemini analysis (`llm_analysis_result.md`). `taint_result.txt` is generated only when taint flows are found. `analysis_result.md` also ends with a **Static Weakness Scan** section listing insecure-code patterns found in the sources.
 
 ## Obfuscation techniques
 

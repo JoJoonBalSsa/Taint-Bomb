@@ -59,6 +59,16 @@ class ControlFlowFlatten:
         if not code:
             return None
 
+        try:
+            member = javalang.parse.parse(
+                "class __TaintBombFlowProbe__ { " + code + " }"
+            ).types[0].body[0]
+        except (javalang.parser.JavaSyntaxError, javalang.parser.JavaParserError,
+                javalang.tokenizer.LexerError, IndexError):
+            return None
+        if isinstance(member, javalang.tree.ConstructorDeclaration):
+            return None  # Constructor invocation/initialization order must stay intact.
+
         parsed = self._extract_method(code)
         if parsed is None:
             return None

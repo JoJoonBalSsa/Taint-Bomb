@@ -93,7 +93,12 @@ class LevelObfuscation:
 
             if self.dummy_obf:
                 print("dummy code insertion...")
-                code = self._safe(code, lambda c=code: self._dummy(c, ddb))
+                with open(tainted["file_path"], 'r', encoding='utf-8') as file:
+                    reserved_code = file.read()
+                code = self._safe(
+                    code,
+                    lambda c=code: self._dummy(c, ddb, reserved_code),
+                )
 
             if code != original:
                 ApplyObfuscated(tainted["file_path"], original, code, self.output_folder)
@@ -130,14 +135,14 @@ class LevelObfuscation:
         return ObfuscateOperations(t2).return_obfuscated_code()
 
     @staticmethod
-    def _dummy(code, ddb):
+    def _dummy(code, ddb, reserved_code=None):
         if ddb is None:
             return None
         rand = ddb.get_unique_random_number()
         if rand is None:
             return None
         dummy_code = ddb.get_dumb(rand)
-        return InsertDummyCode(code, dummy_code, rand).get_obfuscated_code()
+        return InsertDummyCode(code, dummy_code, rand, reserved_code).get_obfuscated_code()
 
 
 if __name__ == '__main__':
