@@ -40,9 +40,9 @@ class TaintAnalysis:
         """민감도에 따른 우선순위 흐름 반환"""
         return self.flow_tracker.priority_flow()
 
-    def _get_cut_tree(self, m_name):
-        """메소드 이름으로 해당 메소드의 트리 정보를 반환"""
-        return self.method_analyzer.get_cut_tree(m_name)
+    def _get_cut_tree(self, m_name, class_name=None, declaration=None):
+        """메소드 식별자로 해당 메소드의 트리 정보를 반환"""
+        return self.method_analyzer.get_cut_tree(m_name, class_name, declaration)
 
     def _extract_method_source_code(self):
         """메소드의 소스 코드를 추출"""

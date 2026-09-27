@@ -51,17 +51,24 @@ class StringInsert:
                     key_decryptor_code = key_decryptor_code.split('\n')
                     key_decryptor_code = [line for line in key_decryptor_code if not line.startswith('import')]
                     key_decryptor_code = '\n'.join(key_decryptor_code)
+                    if self.is_android:
+                        key_decryptor_code = key_decryptor_code.replace(
+                            "Base64.getDecoder().decode(key)", "Base64.decode(key, Base64.DEFAULT)"
+                        ).replace(
+                            "Base64.getDecoder().decode(key2)", "Base64.decode(key2, Base64.DEFAULT)"
+                        )
 
 
                     lines.insert(pos,key_decryptor_code)
 
 
+                    base64_import = "import android.util.Base64;" if self.is_android else "import java.util.Base64;"
                     import_statements = [
                         "import java.security.MessageDigest;",
                         "import java.security.NoSuchAlgorithmException;",
                         "import java.util.ArrayList;",
                         "import java.util.Arrays;",
-                        "import java.util.Base64;",
+                        base64_import,
                         "import java.util.List;",
                         "import java.util.Random;"
                     ]

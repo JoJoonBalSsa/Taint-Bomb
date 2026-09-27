@@ -2,6 +2,7 @@ import javalang
 import logging
 from collections import defaultdict
 from sensitivityDB import SensitivityDB as S
+from variableExtractor import MethodPath
 
 
 MAX_RECURSION_DEPTH = 20
@@ -125,20 +126,22 @@ class FlowTracker:
         # _track_variable_flow 시작 시 set 이고, track_all_flows 가 매 변수마다 비운다.
         self._visited = set()
 
-    def _flatten(self, class_name, method_name):
+    def _flatten(self, class_name, method_name, declaration=None):
         """관심 노드 타입만 (visit_index, node) 쌍으로 캐싱.
 
         visit_index 는 VariableExtractor 의 count 와 동일한 의미 — 메서드 본문 전체를
         재귀 순회했을 때의 1-based 방문 순번. 이렇게 해 둬야 source 가 자기 자신보다
         이전에 나온 노드를 다시 sink 로 처리하지 않는다는 기존 의미가 그대로 유지된다.
         """
-        key = (class_name, method_name)
+        key = (class_name, method_name, id(declaration) if declaration is not None else None)
         cached = self._nodes_cache.get(key)
         if cached is not None:
             return cached
 
         relevant = []
-        for _file_path, method_node in self.methods.get(key, ()):
+        for _file_path, method_node in self.methods.get((class_name, method_name), ()):
+            if declaration is not None and method_node is not declaration:
+                continue
             visit_index = 0
             for _path, node in method_node:
                 visit_index += 1
@@ -171,9 +174,12 @@ class FlowTracker:
             second_dot = rest.find('.')
             method_name = rest if second_dot == -1 else rest[:second_dot]
 
+        declaration = getattr(class_method, 'declaration', None)
+
         # 같은 (class, method, var) 조합을 같은 세션 내에서 다시 추적하지 않는다.
         # 순환 호출/상호 재귀에서의 폭발을 막는 핵심 가드.
-        visit_key = (class_name, method_name, var_name)
+        visit_key = (class_name, method_name, var_name,
+                     id(declaration) if declaration is not None else None)
         if visit_key in self._visited:
             return
         self._visited.add(visit_key)
@@ -188,14 +194,16 @@ class FlowTracker:
         TR = javalang.tree.TryResource
         TE = javalang.tree.TernaryExpression
 
-        for current_count, node in self._flatten(class_name, method_name):
+        for current_count, node in self._flatten(class_name, method_name, declaration):
             if current_count <= count:
                 continue
 
             node_type = type(node)
 
             if node_type is MI:
-                self._if_find_sink(node, class_method, class_name, method_name, var_name)
+                self._if_find_sink(
+                    node, class_method, class_name, method_name, var_name, declaration
+                )
                 self._if_call_method(node, var_name, count, current_count, depth)
             elif node_type is AS:
                 self._if_variable_assignment(node, class_method, var_name, count, current_count, depth)
@@ -211,7 +219,8 @@ class FlowTracker:
         if self.flow:
             self.flow.pop()
 
-    def _if_find_sink(self, node, class_method, class_name, method_name, var_name):
+    def _if_find_sink(self, node, class_method, class_name, method_name, var_name,
+                      declaration):
         if not node.arguments or node.member not in self._sink_keys:
             return
 
@@ -221,7 +230,9 @@ class FlowTracker:
         else:
             return
 
-        self.flow.append(f"{class_name}.{method_name}.{node.member}")
+        self.flow.append(MethodPath(
+            f"{class_name}.{method_name}.{node.member}", declaration
+        ))
         logging.info(f".{method_name}.{getattr(node, 'qualifier', None)}.{node.member}")
         self.sink_check.append(node.member)
         existing_key = (class_method, var_name)
@@ -321,9 +332,13 @@ class FlowTracker:
     def _call2method(self, node, arg_index):
         invoked_method = node.member
         # _methods_by_name 인덱스로 O(1) 조회
-        for target_class_name, _file_path, target_method_node in self._methods_by_name.get(invoked_method, ()):
+        candidates = self._methods_by_name.get(invoked_method, ())
+        for target_class_name, _file_path, target_method_node in candidates:
             if len(target_method_node.parameters) > arg_index:
-                return f"{target_class_name}.{invoked_method}", target_method_node.parameters[arg_index].name
+                method_path = f"{target_class_name}.{invoked_method}"
+                if len(candidates) == 1:
+                    method_path = MethodPath(method_path, target_method_node)
+                return method_path, target_method_node.parameters[arg_index].name
         return "UnknownClass." + invoked_method, None
 
     def _if_for_statement(self, node, class_method, var_name, count, current_count, depth):

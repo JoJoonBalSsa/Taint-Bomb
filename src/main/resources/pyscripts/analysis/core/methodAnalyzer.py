@@ -14,20 +14,28 @@ class MethodAnalyzer:
         # 파일별로 source_lines 분할과 MethodEndLineFinder 인스턴스를 캐싱.
         # get_cut_tree 가 메서드마다 source 를 다시 splitlines 하던 비용을 제거.
         self._finder_cache = {}
-        # 메서드 이름 -> [(class, file_path, MethodDeclaration node), ...] 인덱스
-        self._decls_by_name = self._build_decl_index(methods)
+        # 메서드 이름 및 (클래스, 메서드)별 선언 인덱스
+        (self._decls_by_name,
+         self._decls_by_identity,
+         self._decls_by_node) = self._build_decl_index(methods)
 
     @staticmethod
     def _build_decl_index(methods):
-        index = {}
+        by_name = {}
+        by_identity = {}
+        by_node = {}
+        declaration_types = (
+            javalang.tree.MethodDeclaration,
+            javalang.tree.ConstructorDeclaration,
+        )
         for (class_name, method_name), method_nodes in methods.items():
-            bucket = index.setdefault(method_name, [])
             for file_path, method_node in method_nodes:
-                for _path, node in method_node:
-                    if isinstance(node, javalang.tree.MethodDeclaration) and node.name == method_name:
-                        bucket.append((class_name, file_path, node))
-                        break
-        return index
+                if isinstance(method_node, declaration_types) and method_node.name == method_name:
+                    declaration = (class_name, file_path, method_node)
+                    by_name.setdefault(method_name, []).append(declaration)
+                    by_identity.setdefault((class_name, method_name), []).append(declaration)
+                    by_node[id(method_node)] = declaration
+        return by_name, by_identity, by_node
 
     def _get_finder(self, file_path):
         finder = self._finder_cache.get(file_path)
@@ -36,15 +44,32 @@ class MethodAnalyzer:
             self._finder_cache[file_path] = finder
         return finder
 
-    def get_cut_tree(self, m_name):
-        """메소드 이름으로 해당 메소드의 트리 정보를 반환"""
-        for class_name, file_path, node in self._decls_by_name.get(m_name, ()):
-            self._current_node = node
-            self._file_path = file_path
-            start_line = node.position.line
-            end_line = self._get_finder(file_path).find_method_end_line(start_line)
-            self._get_position = f"{start_line}-{end_line}"
-            return self._method_declaration_to_string(node)
+    def _reset_selection(self):
+        self._get_position = ""
+        self._current_node = None
+        self._file_path = ""
+
+    def get_cut_tree(self, m_name, class_name=None, declaration=None):
+        """클래스/메소드 식별자로 유일한 선언의 트리 정보를 반환"""
+        self._reset_selection()
+        if declaration is not None:
+            selected = self._decls_by_node.get(id(declaration))
+            declarations = (selected,) if selected is not None else ()
+        elif class_name is None:
+            declarations = self._decls_by_name.get(m_name, ())
+        else:
+            declarations = self._decls_by_identity.get((class_name, m_name), ())
+
+        if len(declarations) != 1:
+            return None
+
+        _class_name, file_path, node = declarations[0]
+        self._current_node = node
+        self._file_path = file_path
+        start_line = node.position.line
+        end_line = self._get_finder(file_path).find_method_end_line(start_line)
+        self._get_position = f"{start_line}-{end_line}"
+        return self._method_declaration_to_string(node)
 
     def _method_declaration_to_string(self, method_node):
         """MethodDeclaration 객체를 전체적으로 문자열로 변환"""

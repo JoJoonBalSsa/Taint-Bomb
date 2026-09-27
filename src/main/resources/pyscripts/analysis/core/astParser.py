@@ -1,7 +1,7 @@
 import javalang
 import os
 import logging
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 
 
 def _parse_one(file_path):
@@ -28,12 +28,12 @@ class ASTParser:
 
     def parse_java_files(self, folder_path):
         """주어진 폴더의 모든 Java 파일을 병렬 파싱하여 (file_path, tree) 리스트와 source_codes 딕셔너리를 반환"""
-        java_files = [
+        java_files = sorted(
             os.path.join(root, name)
             for root, _, files in os.walk(folder_path)
             for name in files
             if name.endswith('.java')
-        ]
+        )
 
         trees = []
         source_codes = {}
@@ -51,8 +51,7 @@ class ASTParser:
         else:
             workers = min(self.max_workers, len(java_files))
             with ProcessPoolExecutor(max_workers=workers) as ex:
-                for fut in as_completed(ex.submit(_parse_one, fp) for fp in java_files):
-                    fp, src, tree, err = fut.result()
+                for fp, src, tree, err in ex.map(_parse_one, java_files):
                     self._collect(fp, src, tree, err, trees, source_codes, error_files)
 
         total = len(java_files)

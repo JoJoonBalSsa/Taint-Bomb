@@ -62,7 +62,7 @@ Taint Bomb은 IntelliJ에서 작동하는 원클릭 자동 자바 난독화 플�
 2. 난독화 대상 프로젝트를 IntelliJ에서 연 다음, 좌측 화면에서 Taint Bomb아이콘을 클릭하여 창을 열어주세요.
 3. Configuration 탭에서 적용할 난독화 기법, AI api 키(선택사항) 등을 설정해줍니다.
 4. Obfuscate 버튼을 클릭합니다.
-5. 프로젝트 폴더 내에 난독화 된 프로젝트 폴더인 'obfuscated_project_folder'가 생성됩니다. 내부에는 난독화 된 코드와 빌드가 완료된 jar 파일이 있습니다. 또, Taint 분석 결과(taint_anlaysis.txt & analysis_result.md)와 AI를 사용한 분석 결과(llm_analysis_result.md)가 생성됩니다.
+5. 프로젝트 폴더 내에 난독화 된 프로젝트 폴더인 'obfuscated_project_folder'가 생성됩니다. 내부에는 난독화 된 코드와 빌드가 완료된 jar 파일이 있습니다. 또, Taint 분석 결과(taint_result.txt & analysis_result.md)와 AI를 사용한 분석 결과(llm_analysis_result.md)가 생성됩니다. `taint_result.txt`는 taint flow가 발견된 경우에 생성됩니다.
 
 ## 주의사항
 

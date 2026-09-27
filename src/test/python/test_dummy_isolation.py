@@ -22,6 +22,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(PYSCRIPTS))
 import dumbDB  # noqa: E402
 import dummyInsert  # noqa: E402
+import levelObfuscate  # noqa: E402
 from dumbDB import DumbDB  # noqa: E402
 from dummyInsert import InsertDummyCode  # noqa: E402
 from levelObfuscate import LevelObfuscation  # noqa: E402
@@ -200,6 +201,89 @@ class DummyIsolationTests(unittest.TestCase):
                            indent=2),
                 encoding="utf-8",
             )
+
+    def test_level_reserves_class_members_and_prior_dummy_names(self):
+        methods = [
+            '    public String first() { return "first"; }',
+            '    public String second() { return "second"; }',
+        ]
+        source = """public class Collision {
+    private byte[] unusedFunction0() { return new byte[] {42}; }
+    public int existing() { return unusedFunction0()[0]; }
+
+%s
+
+%s
+}
+""" % tuple(methods)
+        runner = """import java.lang.reflect.Method;
+import java.util.TreeSet;
+
+public class Runner {
+    public static void main(String[] args) {
+        Collision value = new Collision();
+        TreeSet<String> names = new TreeSet<>();
+        for (Method method : Collision.class.getDeclaredMethods()) {
+            if (method.getName().startsWith("unusedFunction0")) {
+                names.add(method.getName());
+            }
+        }
+        System.out.println(value.existing() + "|" + value.first() + "|" + value.second()
+                + "|" + String.join(",", names));
+    }
+}
+"""
+
+        class IdentityPredicate:
+            def __init__(self, code, count):
+                self.code = code
+
+            def get_obfuscated_code(self):
+                return self.code
+
+        database = mock.Mock()
+        database.get_unique_random_number.side_effect = [0, 0]
+        database.get_dumb.side_effect = lambda _index: DumbDB().get_dumb(0)
+
+        with self._workdir() as root:
+            java_file = root / "Collision.java"
+            java_file.write_text(source, encoding="utf-8")
+            (root / "analysis_result.json").write_text(
+                json.dumps([{
+                    "sensitivity": 3,
+                    "tainted": [
+                        {"file_path": str(java_file), "source_code": method}
+                        for method in methods
+                    ],
+                }]),
+                encoding="utf-8",
+            )
+
+            original = self._compile_run(
+                root,
+                "class-scope-original",
+                {"Collision.java": source, "Runner.java": runner},
+            )
+            with mock.patch.object(levelObfuscate, "DumbDB", return_value=database), \
+                    mock.patch.object(levelObfuscate, "OpaquePredicate", IdentityPredicate), \
+                    mock.patch.object(dummyInsert.secrets, "choice", side_effect=list("abcdefgh") * 2), \
+                    mock.patch.object(dummyInsert.secrets, "randbelow", return_value=7), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                LevelObfuscation(str(root), "False", "False", "True", "False")
+
+            transformed = java_file.read_text(encoding="utf-8")
+            candidate = self._compile_run(
+                root,
+                "class-scope-candidate",
+                {"Collision.java": transformed, "Runner.java": runner},
+            )
+            self.assertEqual("42|first|second|unusedFunction0\n", original["run"]["stdout"])
+            self.assertEqual(
+                "42|first|second|unusedFunction0,unusedFunction0_,unusedFunction0__\n",
+                candidate["run"]["stdout"],
+            )
+            self.assertIn("private byte[] unusedFunction0_()", transformed)
+            self.assertIn("private byte[] unusedFunction0__()", transformed)
 
 
 if __name__ == "__main__":

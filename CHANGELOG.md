@@ -9,7 +9,6 @@
 ### Added
 
 - Static weakness scan wired into the analysis pipeline: `findJavaWeak` now runs during `main.py` and appends a **Static Weakness Scan** section (insecure deserialization, weak TLS/hostname verification, SQL-injection surface, hardcoded secrets, sensitive-data logging) to `analysis_result.md`. Previously the scanner existed but was never invoked.
-- Test coverage for the weakness scan (`obfuscation_tests/test_java_weak.py`).
 
 ### Changed
 

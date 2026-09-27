@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Run full Java-target acceptance with no AI key; output directory must be new.
 
-Requires javalang, pycryptodome, JDK 17, target Gradle wrapper, and Xvfb for EXIF.
+Requires Python 3.10+, javalang, pycryptodome, JDK 17, target Gradle wrapper,
+and Xvfb for EXIF. This maintainer harness is not the plugin runtime.
 Target baseline JARs must already have been built. See docs/release-0.8.0.md.
 """
 
@@ -15,6 +16,9 @@ import re
 import shutil
 import subprocess
 import sys
+
+if sys.version_info < (3, 10):
+    raise SystemExit("run_target_smoke.py requires Python 3.10 or later")
 
 EXCLUDED = {"obfuscated_project_folder", "build", "temp", ".git", "test", "docs"}
 SCRIPT_DIRS = ("", "analysis/core", "analysis/data", "analysis/utils", "analysis/reporting")

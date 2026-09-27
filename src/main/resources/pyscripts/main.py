@@ -45,13 +45,20 @@ def __analyze_method(output_folder, tainted):
 
         for count in range(1, len(flow)):
             method_full_path = flow[count]
+            declaration = getattr(method_full_path, 'declaration', None)
             big_parts = method_full_path.split(',')
             if len(big_parts) == 1:
                 big_parts.append("")
-            parts = big_parts[0].split('.')
-            little_method_name = parts[1]
+            parts = big_parts[0].split('.', 2)
+            if len(parts) < 2:
+                continue
+            class_name, little_method_name = parts[:2]
 
-            cut_tree = tainted._get_cut_tree(little_method_name)
+            cut_tree = tainted._get_cut_tree(
+                little_method_name, class_name, declaration
+            )
+            if cut_tree is None:
+                continue
             current_path = tainted._file_path
             tree_position = tainted._get_position
             source_code = tainted._extract_method_source_code()
