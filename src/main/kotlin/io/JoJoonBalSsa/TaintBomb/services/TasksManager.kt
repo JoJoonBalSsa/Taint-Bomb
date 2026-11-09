@@ -1,7 +1,6 @@
 package io.JoJoonBalSsa.TaintBomb.services
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
@@ -48,10 +47,7 @@ class TasksManager(private val project : Project, private val javaFilesPath: Str
                 file!!.refresh(false, false)
                 if (file!!.exists()) {
                     try {
-                        FileEditorManager.getInstance(project).openTextEditor(
-                            OpenFileDescriptor(project, file!!),
-                            true // requestFocus
-                        )
+                        OpenFileDescriptor(project, file!!).navigateInEditor(project, true)
                         MyConsoleLogger.logPrint("File opened successfully: $filePath")
                     } catch (e: Exception) {
                         MyConsoleLogger.logPrint("Error opening file: ${e.message}")

@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-09
+
+### Fixed
+
+- Open analysis reports through `OpenFileDescriptor.navigateInEditor` instead of the deprecated `FileEditorManager.openTextEditor` API on IntelliJ IDEA 2026.3, retaining editor focus and IntelliJ IDEA 2023.3 compatibility.
+
 ## [0.8.0] - 2026-09-27
 
 ### Added
@@ -551,7 +557,7 @@
 - Dependencies - upgrade `org.jetbrains.changelog` to `1.1.1`
 - Configure the `changelog` Gradle plugin
 
-## [0.8.1] - 2021-01-12
+## [0.8.1-template] - 2021-01-12
 
 ### Added
 
@@ -815,7 +821,8 @@
 [0.9.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.8.1...v0.8.2
-[0.8.1]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.8.0...v0.8.1
+[0.8.1]: https://github.com/JoJoonBalSsa/Taint-Bomb/compare/v0.8.0...v0.8.1
+[0.8.1-template]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.8.0...v0.8.1
 [0.8.0-template]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/JetBrains/intellij-platform-plugin-template/compare/v0.6.1...v0.7.0
